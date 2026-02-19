@@ -349,7 +349,7 @@ export default function CallingDiagnosisPage() {
                         borderRadius: "8px",
                         border: "1px solid #e7e5e4",
                       }}
-                      formatter={(value: number) => [`${value}점`, "점수"]}
+                      formatter={(value: any) => [`${value}점`, "점수"]}
                       labelFormatter={(label) => label}
                     />
                     <Legend />
