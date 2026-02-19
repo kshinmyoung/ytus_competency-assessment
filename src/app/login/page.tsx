@@ -46,7 +46,7 @@ export default function LoginPage() {
         sessionStorage.setItem("student_id", studentId);
         // 로그인 성공 시점에 students 테이블에서 role을 다시 조회해 정확히 판단
         const { data: studentRow } = await supabase
-          .from<StudentRow>("students")
+          .from("students")
           .select("student_id, name, role")
           .eq("student_id", studentId)
           .maybeSingle();
