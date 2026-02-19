@@ -256,10 +256,11 @@ export default function AdminPage() {
     e.preventDefault();
     if (!editingStudent) return;
     setSaving(true);
-    const payload: { name?: string; password?: string; role?: string } = {
-      name: editForm.name.trim() || null,
+    const payload: Partial<Pick<Student, "name" | "password" | "role">> = {
       role: editForm.role,
     };
+    const trimmedName = editForm.name.trim();
+    if (trimmedName) payload.name = trimmedName;
     if (editForm.password.trim()) payload.password = editForm.password.trim();
     const { error } = await supabase
       .from("students")
