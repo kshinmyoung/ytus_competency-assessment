@@ -262,13 +262,25 @@ export default function AdminPage() {
     const trimmedName = editForm.name.trim();
     if (trimmedName) payload.name = trimmedName;
     if (editForm.password.trim()) payload.password = editForm.password.trim();
-    const { error } = await supabase
-      .from("students")
-      .update(payload)
-      .eq("student_id", editingStudent.student_id);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+      setSaving(false);
+      return;
+    }
+    const res = await fetch("/api/admin/students", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        student_id: editingStudent.student_id,
+        ...payload,
+      }),
+    });
     setSaving(false);
-    if (error) {
-      alert("수정 실패: " + error.message);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error ?? "수정 실패");
       return;
     }
     setEditingStudent(null);
@@ -277,9 +289,19 @@ export default function AdminPage() {
 
   const handleDeleteStudent = async (studentId: string) => {
     if (!confirm("해당 학생을 삭제할까요?")) return;
-    const { error } = await supabase.from("students").delete().eq("student_id", studentId);
-    if (error) {
-      alert("삭제 실패: " + error.message);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+      return;
+    }
+    const res = await fetch(`/api/admin/students?student_id=${encodeURIComponent(studentId)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error ?? "삭제 실패");
       return;
     }
     loadStudents();
