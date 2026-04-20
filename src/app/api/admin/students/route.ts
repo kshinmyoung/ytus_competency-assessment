@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     const { admin } = result;
     const { data: students, error: listError } = await admin
       .from("students")
-      .select("student_id, name, password, role")
+      .select("student_id, name, password, role, department_id, grade_year, admission_year, phone, email")
       .order("student_id");
     if (listError) {
       return NextResponse.json({ error: listError.message }, { status: 500 });

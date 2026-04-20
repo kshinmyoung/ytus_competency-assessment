@@ -26,6 +26,12 @@ export async function POST(request: Request) {
     const student_id = typeof body.student_id === "string" ? body.student_id.trim() : "";
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const role = typeof body.role === "string" ? body.role.trim() : "student";
+    const department_id = typeof body.department_id === "number" ? body.department_id : null;
+    const grade_year = typeof body.grade_year === "number" ? body.grade_year : null;
+    const admission_year = typeof body.admission_year === "number" ? body.admission_year : null;
+    const phone = typeof body.phone === "string" ? body.phone.trim() : null;
+    const email_field = typeof body.email === "string" ? body.email.trim() : null;
 
     if (!student_id || !password) {
       return NextResponse.json(
@@ -56,7 +62,12 @@ export async function POST(request: Request) {
       student_id,
       password,
       name: name || null,
-      role: "student",
+      role: role || "student",
+      department_id,
+      grade_year,
+      admission_year,
+      phone: phone || null,
+      email: email_field || null,
     });
 
     if (insertError) {

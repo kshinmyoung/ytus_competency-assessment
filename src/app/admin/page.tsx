@@ -5,12 +5,18 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTimeKorea } from "@/lib/date";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import AdminLayout from "@/components/AdminLayout";
 
 type Student = {
   student_id: string;
   name: string | null;
   password: string | null;
   role: string | null;
+  department_id: number | null;
+  grade_year: number | null;
+  admission_year: number | null;
+  phone: string | null;
+  email: string | null;
 };
 
 type DiagnosisResult = {
@@ -80,32 +86,48 @@ function parseCsvLine(line: string): string[] {
   return out;
 }
 
-/** CSV 텍스트에서 student_id, password, name, role 행 배열 추출 (첫 줄 헤더 가정) */
-function parseCsvToStudents(csvText: string): { student_id: string; password: string; name: string; role: string }[] {
+type CsvStudentRow = {
+  student_id: string; password: string; name: string; role: string;
+  department_id: string; grade_year: string; admission_year: string; phone: string; email: string;
+};
+
+/** CSV 텍스트에서 학생 정보 추출 (첫 줄 헤더)
+ *  헤더: student_id, password, name, role, department_id, grade_year, admission_year, phone, email */
+function parseCsvToStudents(csvText: string): CsvStudentRow[] {
   const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   if (lines.length < 2) return [];
   const header = parseCsvLine(lines[0]).map((h) => h.toLowerCase().replace(/\s/g, "_"));
-  const idx = (key: string) => {
+  const col = (key: string) => {
     const i = header.indexOf(key);
     if (i >= 0) return i;
     const alt = header.find((h) => h.includes(key));
     return alt ? header.indexOf(alt) : -1;
   };
-  const sidx = idx("student_id") >= 0 ? idx("student_id") : 0;
-  const pidx = idx("password") >= 0 ? idx("password") : 1;
-  const nidx = idx("name") >= 0 ? idx("name") : 2;
-  const ridx = idx("role") >= 0 ? idx("role") : 3;
-  const rows: { student_id: string; password: string; name: string; role: string }[] = [];
+  const sidx = col("student_id") >= 0 ? col("student_id") : 0;
+  const pidx = col("password") >= 0 ? col("password") : 1;
+  const nidx = col("name") >= 0 ? col("name") : 2;
+  const ridx = col("role");
+  const didx = col("department_id");
+  const gidx = col("grade_year");
+  const aidx = col("admission_year");
+  const phidx = col("phone");
+  const eidx = col("email");
+  const rows: CsvStudentRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const cells = parseCsvLine(lines[i]);
-    const student_id = (cells[sidx] ?? "").trim();
-    const password = (cells[pidx] ?? "").trim();
+    const c = parseCsvLine(lines[i]);
+    const student_id = (c[sidx] ?? "").trim();
+    const password = (c[pidx] ?? "").trim();
     if (!student_id || !password) continue;
     rows.push({
       student_id,
       password,
-      name: (cells[nidx] ?? "").trim(),
-      role: (cells[ridx] ?? "student").trim() || "student",
+      name: (c[nidx] ?? "").trim(),
+      role: ridx >= 0 ? (c[ridx] ?? "student").trim() || "student" : "student",
+      department_id: didx >= 0 ? (c[didx] ?? "").trim() : "",
+      grade_year: gidx >= 0 ? (c[gidx] ?? "").trim() : "",
+      admission_year: aidx >= 0 ? (c[aidx] ?? "").trim() : "",
+      phone: phidx >= 0 ? (c[phidx] ?? "").trim() : "",
+      email: eidx >= 0 ? (c[eidx] ?? "").trim() : "",
     });
   }
   return rows;
@@ -123,13 +145,19 @@ export default function AdminPage() {
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", password: "", role: "student" });
+  const [editForm, setEditForm] = useState({ name: "", password: "", role: "student", department_id: "", grade_year: "", admission_year: "", phone: "", email: "" });
   const [newStudent, setNewStudent] = useState({
     student_id: "",
     name: "",
     password: "",
     role: "student",
+    department_id: "" as string,
+    grade_year: "" as string,
+    admission_year: "" as string,
+    phone: "",
+    email: "",
   });
+  const [departments, setDepartments] = useState<{ id: number; name: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [printData, setPrintData] = useState<{
     title: string;
@@ -143,6 +171,7 @@ export default function AdminPage() {
     scoreRows: { label: string; score: number }[];
   } | null>(null);
   const [searchStudent, setSearchStudent] = useState("");
+  const [filterDiagnosis, setFilterDiagnosis] = useState<"all" | "core" | "learning" | "calling" | "none">("all");
   const [searchResult, setSearchResult] = useState("");
   const [showLowScore, setShowLowScore] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
@@ -207,6 +236,8 @@ export default function AdminPage() {
       setAuthorized(true);
       await loadStudents();
       await loadDiagnosis();
+      const { data: depts } = await supabase.from("departments").select("id, name").order("id");
+      setDepartments(depts ?? []);
     })();
   }, [router, loadStudents, loadDiagnosis]);
 
@@ -223,6 +254,12 @@ export default function AdminPage() {
           student_id: newStudent.student_id.trim(),
           name: newStudent.name.trim(),
           password: newStudent.password.trim(),
+          role: newStudent.role,
+          department_id: newStudent.department_id ? Number(newStudent.department_id) : null,
+          grade_year: newStudent.grade_year ? Number(newStudent.grade_year) : null,
+          admission_year: newStudent.admission_year ? Number(newStudent.admission_year) : null,
+          phone: newStudent.phone.trim() || null,
+          email: newStudent.email.trim() || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -240,7 +277,7 @@ export default function AdminPage() {
         return;
       }
       setShowAddStudent(false);
-      setNewStudent({ student_id: "", name: "", password: "", role: "student" });
+      setNewStudent({ student_id: "", name: "", password: "", role: "student", department_id: "", grade_year: "", admission_year: "", phone: "", email: "" });
       loadStudents();
     } finally {
       setSaving(false);
@@ -249,15 +286,29 @@ export default function AdminPage() {
 
   const handleEditStudent = (s: Student) => {
     setEditingStudent(s);
-    setEditForm({ name: s.name ?? "", password: "", role: s.role ?? "student" });
+    setEditForm({
+      name: s.name ?? "",
+      password: "",
+      role: s.role ?? "student",
+      department_id: s.department_id ? String(s.department_id) : "",
+      grade_year: s.grade_year ? String(s.grade_year) : "",
+      admission_year: s.admission_year ? String(s.admission_year) : "",
+      phone: s.phone ?? "",
+      email: s.email ?? "",
+    });
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStudent) return;
     setSaving(true);
-    const payload: Partial<Pick<Student, "name" | "password" | "role">> = {
+    const payload: Record<string, unknown> = {
       role: editForm.role,
+      department_id: editForm.department_id ? Number(editForm.department_id) : null,
+      grade_year: editForm.grade_year ? Number(editForm.grade_year) : null,
+      admission_year: editForm.admission_year ? Number(editForm.admission_year) : null,
+      phone: editForm.phone.trim() || null,
+      email: editForm.email.trim() || null,
     };
     const trimmedName = editForm.name.trim();
     if (trimmedName) payload.name = trimmedName;
@@ -339,6 +390,12 @@ export default function AdminPage() {
             student_id: row.student_id,
             name: row.name,
             password: row.password,
+            role: row.role || "student",
+            department_id: row.department_id ? Number(row.department_id) || null : null,
+            grade_year: row.grade_year ? Number(row.grade_year) || null : null,
+            admission_year: row.admission_year ? Number(row.admission_year) || null : null,
+            phone: row.phone || null,
+            email: row.email || null,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -369,15 +426,33 @@ export default function AdminPage() {
     return resultsCalling;
   };
 
+  // 학생별 진단 완료 유형 맵
+  const studentDiagnosisMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    [...resultsCore, ...resultsLearning, ...resultsCalling].forEach((r) => {
+      if (!map[r.student_id]) map[r.student_id] = new Set();
+      map[r.student_id].add(r.diagnosis_type);
+    });
+    return map;
+  }, [resultsCore, resultsLearning, resultsCalling]);
+
   const filteredStudents = useMemo(() => {
+    let list = students;
     const q = searchStudent.trim().toLowerCase();
-    if (!q) return students;
-    return students.filter(
-      (s) =>
-        s.student_id.toLowerCase().includes(q) ||
-        (s.name ?? "").toLowerCase().includes(q)
-    );
-  }, [students, searchStudent]);
+    if (q) {
+      list = list.filter(
+        (s) =>
+          s.student_id.toLowerCase().includes(q) ||
+          (s.name ?? "").toLowerCase().includes(q)
+      );
+    }
+    if (filterDiagnosis === "none") {
+      list = list.filter((s) => !studentDiagnosisMap[s.student_id] || studentDiagnosisMap[s.student_id].size === 0);
+    } else if (filterDiagnosis !== "all") {
+      list = list.filter((s) => studentDiagnosisMap[s.student_id]?.has(filterDiagnosis));
+    }
+    return list;
+  }, [students, searchStudent, filterDiagnosis, studentDiagnosisMap]);
 
   const filteredResults = useMemo(() => {
     const list = getResultsByTab();
@@ -457,7 +532,7 @@ export default function AdminPage() {
   const currentResults = getResultsByTab();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <AdminLayout>
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -536,29 +611,7 @@ export default function AdminPage() {
           </table>
         </div>
       )}
-      <header className="no-print border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <h1 className="text-lg font-bold text-slate-900">관리자 대시보드</h1>
-          <button
-            type="button"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              if (typeof window !== "undefined") {
-                sessionStorage.removeItem("student_id");
-                sessionStorage.removeItem("student_name");
-              }
-              router.push("/");
-            }}
-            className="no-print flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900"
-          >
-            <LogOut className="h-4 w-4" />
-            로그아웃
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        {/* 학생 관리 */}
+      {/* 학생 관리 */}
         <section className="mb-10 no-print">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-base font-semibold text-slate-800">학생 관리</h2>
@@ -573,6 +626,17 @@ export default function AdminPage() {
                   className="w-56 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm"
                 />
               </div>
+              <select
+                value={filterDiagnosis}
+                onChange={(e) => setFilterDiagnosis(e.target.value as typeof filterDiagnosis)}
+                className="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm"
+              >
+                <option value="all">전체 학생</option>
+                <option value="core">핵심역량 완료</option>
+                <option value="learning">학습역량 완료</option>
+                <option value="calling">소명진단 완료</option>
+                <option value="none">미진단 학생</option>
+              </select>
               <button
                 type="button"
                 onClick={() => setShowAddStudent(true)}
@@ -599,6 +663,9 @@ export default function AdminPage() {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">학번</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">이름</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">역할</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">연락처</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">이메일</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">진단현황</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">관리</th>
                 </tr>
               </thead>
@@ -608,6 +675,16 @@ export default function AdminPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-900">{s.student_id}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{s.name ?? "-"}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{s.role ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{s.phone ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{s.email ?? "-"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        {studentDiagnosisMap[s.student_id]?.has("core") && <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">핵심</span>}
+                        {studentDiagnosisMap[s.student_id]?.has("learning") && <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">학습</span>}
+                        {studentDiagnosisMap[s.student_id]?.has("calling") && <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-700">소명</span>}
+                        {!studentDiagnosisMap[s.student_id] && <span className="text-[10px] text-slate-400">미진단</span>}
+                      </div>
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       <button
                         type="button"
@@ -719,44 +796,64 @@ export default function AdminPage() {
             </table>
           </div>
         </section>
-      </main>
 
       {/* 학생 수정 모달 */}
       {editingStudent && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">학생 수정</h3>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">학생/사용자 수정</h3>
             <p className="mt-1 text-sm text-slate-500">학번: {editingStudent.student_id}</p>
             <form onSubmit={handleSaveEdit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">이름</label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">비밀번호 (변경 시에만 입력)</label>
-                <input
-                  type="password"
-                  value={editForm.password}
-                  onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="비워두면 기존 유지"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">역할</label>
-                <select
-                  value={editForm.role}
-                  onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                >
-                  <option value="student">student</option>
-                  <option value="admin">admin</option>
-                </select>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">이름</label>
+                  <input type="text" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">비밀번호 (변경 시에만)</label>
+                  <input type="password" value={editForm.password} onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="비워두면 기존 유지" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">역할</label>
+                  <select value={editForm.role} onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="student">학생</option>
+                    <option value="admin">관리자</option>
+                    <option value="department_head">학과장</option>
+                    <option value="mentor_professor">멘토링교수</option>
+                    <option value="ctl">교수학습지원센터</option>
+                    <option value="career_center">취창업진로지원센터</option>
+                    <option value="counseling_center">학생생활상담센터</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">학과</label>
+                  <select value={editForm.department_id} onChange={(e) => setEditForm((f) => ({ ...f, department_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">선택 안함</option>
+                    {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">학년</label>
+                  <select value={editForm.grade_year} onChange={(e) => setEditForm((f) => ({ ...f, grade_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">선택 안함</option>
+                    <option value="1">1학년</option>
+                    <option value="2">2학년</option>
+                    <option value="3">3학년</option>
+                    <option value="4">4학년</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">입학년도</label>
+                  <input type="number" value={editForm.admission_year} onChange={(e) => setEditForm((f) => ({ ...f, admission_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">연락처</label>
+                  <input type="text" value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">이메일</label>
+                  <input type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
               </div>
               <div className="flex gap-2 pt-2">
                 <button
@@ -782,53 +879,67 @@ export default function AdminPage() {
       {/* 학생 추가 모달 */}
       {showAddStudent && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">학생 추가</h3>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">학생/사용자 추가</h3>
             <form onSubmit={handleAddStudent} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">학번</label>
-                <input
-                  type="text"
-                  value={newStudent.student_id}
-                  onChange={(e) => setNewStudent((s) => ({ ...s, student_id: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">이름</label>
-                <input
-                  type="text"
-                  value={newStudent.name}
-                  onChange={(e) => setNewStudent((s) => ({ ...s, name: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">비밀번호</label>
-                <input
-                  type="password"
-                  value={newStudent.password}
-                  onChange={(e) => setNewStudent((s) => ({ ...s, password: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  required
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">학번 (ID) *</label>
+                  <input type="text" value={newStudent.student_id} onChange={(e) => setNewStudent((s) => ({ ...s, student_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">이름</label>
+                  <input type="text" value={newStudent.name} onChange={(e) => setNewStudent((s) => ({ ...s, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">비밀번호 *</label>
+                  <input type="password" value={newStudent.password} onChange={(e) => setNewStudent((s) => ({ ...s, password: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">역할</label>
+                  <select value={newStudent.role} onChange={(e) => setNewStudent((s) => ({ ...s, role: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="student">학생</option>
+                    <option value="admin">관리자</option>
+                    <option value="department_head">학과장</option>
+                    <option value="mentor_professor">멘토링교수</option>
+                    <option value="ctl">교수학습지원센터</option>
+                    <option value="career_center">취창업진로지원센터</option>
+                    <option value="counseling_center">학생생활상담센터</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">학과</label>
+                  <select value={newStudent.department_id} onChange={(e) => setNewStudent((s) => ({ ...s, department_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">선택 안함</option>
+                    {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">학년</label>
+                  <select value={newStudent.grade_year} onChange={(e) => setNewStudent((s) => ({ ...s, grade_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">선택 안함</option>
+                    <option value="1">1학년</option>
+                    <option value="2">2학년</option>
+                    <option value="3">3학년</option>
+                    <option value="4">4학년</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">입학년도</label>
+                  <input type="number" placeholder="예: 2026" value={newStudent.admission_year} onChange={(e) => setNewStudent((s) => ({ ...s, admission_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">연락처</label>
+                  <input type="text" placeholder="010-0000-0000" value={newStudent.phone} onChange={(e) => setNewStudent((s) => ({ ...s, phone: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700">이메일</label>
+                  <input type="email" placeholder="example@email.com" value={newStudent.email} onChange={(e) => setNewStudent((s) => ({ ...s, email: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddStudent(false)}
-                  className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {saving ? "등록 중..." : "등록"}
-                </button>
+                <button type="button" onClick={() => setShowAddStudent(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">{saving ? "등록 중..." : "등록"}</button>
               </div>
             </form>
           </div>
@@ -853,7 +964,7 @@ export default function AdminPage() {
               <>
                 <h3 className="text-lg font-semibold text-slate-900">CSV 일괄 등록</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  첫 줄은 헤더(student_id, password, name, role)로 두고, .csv 파일만 업로드할 수 있습니다.
+                  CSV 헤더: student_id, password, name, role, department_id, grade_year, admission_year, phone, email (필수: student_id, password)
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button
@@ -1003,8 +1114,8 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {lowScoreResults.map((r) => (
-                    <tr key={`${r.student_id}-${r.created_at}`}>
+                  {lowScoreResults.map((r, i) => (
+                    <tr key={`${r.student_id}-${r.created_at}-${i}`}>
                       <td className="px-4 py-3 text-sm text-slate-900">{r.student_id}</td>
                       <td className="px-4 py-3 text-sm text-slate-900">{nameMap[r.student_id] ?? "-"}</td>
                       <td className="px-4 py-3 text-sm text-slate-900">{r.total_score}</td>
@@ -1027,6 +1138,6 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }
