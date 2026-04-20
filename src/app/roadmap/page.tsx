@@ -1,9 +1,10 @@
 "use client";
 
 import { ArrowRight, BookOpen, GraduationCap, Map, Search, Trophy } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Navigation from "@/components/Navigation";
-import { DEPTS, PREREQ, COMPETENCY_COURSES, CAREER_PATHS, CERTIFICATIONS } from "./data";
+import { DEPTS, COMPETENCY_COURSES, CAREER_PATHS, CERTIFICATIONS } from "./data";
+import FlowView from "./FlowView";
 
 type ViewKey = "explore" | "flow" | "career" | "mapping";
 const DEPT_KEYS = Object.keys(DEPTS);
@@ -16,16 +17,11 @@ const COMP_COLORS: Record<string, string> = {
 export default function RoadmapPage() {
   const [view, setView] = useState<ViewKey>("explore");
   const [deptKey, setDeptKey] = useState("theology");
-  const [flowDeptKey, setFlowDeptKey] = useState("theology");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [typeFilters, setTypeFilters] = useState({ liberal: true, core: true, required: true });
-  const [selectedCert, setSelectedCert] = useState<string | null>(null);
-  const [highlightedNode, setHighlightedNode] = useState<string | null>(null);
 
   const dept = DEPTS[deptKey];
-  const flowDept = DEPTS[flowDeptKey];
-  const flowSvgRef = useRef<SVGSVGElement>(null);
 
   // 검색
   const searchResults = useMemo(() => {
@@ -53,93 +49,6 @@ export default function RoadmapPage() {
     return counts;
   }, [dept]);
 
-  // 선후수 흐름: 노드 위치 계산
-  const flowData = useMemo(() => {
-    const d = DEPTS[flowDeptKey];
-    const nodes: { name: string; sem: number; type: string; x: number; y: number }[] = [];
-    const nodesByName: Record<string, typeof nodes[0]> = {};
-    const semCols: typeof nodes[] = [[], [], [], [], [], [], [], []];
-
-    d.semesters.forEach((s, semIdx) => {
-      [...s.core.map((n) => ({ n, type: "core" })), ...s.required.map((n) => ({ n, type: "required" }))].forEach(({ n, type }) => {
-        const node = { name: n, sem: semIdx, type, x: 0, y: 0 };
-        nodes.push(node);
-        nodesByName[n] = node;
-        semCols[semIdx].push(node);
-      });
-    });
-
-    const colW = 100, nodeH = 40, nodeW = 90, padY = 40;
-    const maxPerCol = Math.max(...semCols.map((c) => c.length), 3);
-    const gridH = padY * 2 + maxPerCol * (nodeH + 14) + 40;
-
-    nodes.forEach((n) => {
-      const col = semCols[n.sem];
-      const idx = col.indexOf(n);
-      n.x = 20 + n.sem * colW + colW / 2;
-      n.y = padY + 30 + idx * (nodeH + 14) + nodeH / 2;
-    });
-
-    // 전공선택 풀
-    const electiveGroups = Object.entries(d.electives);
-    const eNodeW = 115, eNodeH = 26, eGap = 6;
-    const W = 820;
-    const itemsPerRow = Math.floor((W - 40) / (eNodeW + eGap));
-    let poolH = 0;
-    const groupLayouts = electiveGroups.map(([label, items]) => {
-      const rows = Math.ceil(items.length / itemsPerRow);
-      const h = 22 + rows * (eNodeH + eGap);
-      poolH += h + 14;
-      return { label, items, rows, h };
-    });
-    const totalH = gridH + (electiveGroups.length > 0 ? 44 + poolH + 20 : 0);
-
-    return { nodes, nodesByName, semCols, colW, nodeH, nodeW, padY, gridH, W, totalH, electiveGroups, groupLayouts, eNodeW, eNodeH, eGap, itemsPerRow };
-  }, [flowDeptKey]);
-
-  const prereqs = PREREQ[flowDeptKey] ?? [];
-  const cert = selectedCert ? CERTIFICATIONS[selectedCert] : null;
-  const certRequired = cert ? new Set(cert.required) : null;
-  const certElective = cert ? new Set(cert.elective) : null;
-
-  // 하이라이트된 노드와 연결된 모든 노드
-  const connectedNodes = useMemo(() => {
-    if (!highlightedNode) return null;
-    const connected = new Set([highlightedNode]);
-    let changed = true;
-    while (changed) {
-      changed = false;
-      prereqs.forEach(([f, t]) => {
-        if (connected.has(f) && !connected.has(t)) { connected.add(t); changed = true; }
-        if (connected.has(t) && !connected.has(f)) { connected.add(f); changed = true; }
-      });
-    }
-    return connected;
-  }, [highlightedNode, prereqs]);
-
-  // 해당 학과 자격증
-  const flowCerts = useMemo(() => {
-    return Object.entries(CERTIFICATIONS).filter(([, c]) => c.dept === flowDeptKey);
-  }, [flowDeptKey]);
-
-  const getNodeStyle = (name: string, type: string) => {
-    if (cert) {
-      if (certRequired?.has(name)) return { fill: "#FFE5B4", stroke: "#E85D24", strokeWidth: 2, dash: "", textColor: "#5C2C00" };
-      if (certElective?.has(name)) return { fill: "#FFF8E1", stroke: "#E85D24", strokeWidth: 1.5, dash: "3 2", textColor: "#5C4A00" };
-      return { fill: "#f0f0f0", stroke: "#ccc", strokeWidth: 0.5, dash: "", textColor: "#aaa" };
-    }
-    if (type === "core") return { fill: "#FAC775", stroke: "#854F0B", strokeWidth: 0.5, dash: "", textColor: "#3d2b0a" };
-    return { fill: "#C0DD97", stroke: "#3B6D11", strokeWidth: 0.5, dash: "", textColor: "#173404" };
-  };
-
-  const getElectiveStyle = (name: string) => {
-    if (cert) {
-      if (certRequired?.has(name)) return { fill: "#FFE5B4", stroke: "#E85D24", strokeWidth: 2, dash: "", textColor: "#5C2C00" };
-      if (certElective?.has(name)) return { fill: "#FFF8E1", stroke: "#E85D24", strokeWidth: 1.5, dash: "3 2", textColor: "#5C4A00" };
-      return { fill: "#f5f5f5", stroke: "#ddd", strokeWidth: 0.5, dash: "", textColor: "#aaa" };
-    }
-    return { fill: "#F4EEE4", stroke: "#A6876A", strokeWidth: 0.5, dash: "", textColor: "#5C3D1F" };
-  };
 
   const views = [
     { key: "explore" as ViewKey, label: "학과별 탐색", icon: BookOpen },
@@ -185,7 +94,7 @@ export default function RoadmapPage() {
           {views.map((v) => {
             const Icon = v.icon;
             return (
-              <button key={v.key} type="button" onClick={() => { setView(v.key); setSelectedCert(null); setHighlightedNode(null); }}
+              <button key={v.key} type="button" onClick={() => setView(v.key)}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition ${view === v.key ? "bg-slate-800 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
                 <Icon className="h-4 w-4" />{v.label}
               </button>
@@ -258,156 +167,9 @@ export default function RoadmapPage() {
           </div>
         )}
 
-        {/* === 선후수 흐름 (SVG) === */}
-        {view === "flow" && (
-          <div>
-            <div className="mb-4 grid grid-cols-5 gap-2">
-              {DEPT_KEYS.map((key) => { const d = DEPTS[key]; const active = key === flowDeptKey; return (
-                <button key={key} type="button" onClick={() => { setFlowDeptKey(key); setSelectedCert(null); setHighlightedNode(null); }}
-                  className="rounded-lg border-2 px-3 py-2.5 text-center text-xs font-medium transition"
-                  style={{ borderColor: active ? d.color : "transparent", backgroundColor: active ? d.bg : "white", color: active ? d.textColor : undefined }}>{d.name}</button>
-              ); })}
-            </div>
+        {/* === 선후수 흐름 === */}
+        {view === "flow" && <FlowView />}
 
-            {/* 자격증 필터 */}
-            {flowCerts.length > 0 && (
-              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-slate-100 px-3 py-2.5">
-                <span className="text-xs text-slate-500">자격증 필터:</span>
-                <button type="button" onClick={() => setSelectedCert(null)}
-                  className={`rounded-full px-3 py-1 text-xs transition ${!selectedCert ? "bg-slate-800 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>전체</button>
-                {flowCerts.map(([key, c]) => (
-                  <button key={key} type="button" onClick={() => setSelectedCert(selectedCert === key ? null : key)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${selectedCert === key ? "text-white" : "border border-slate-300 bg-white hover:bg-slate-50"}`}
-                    style={selectedCert === key ? { backgroundColor: c.color } : { color: c.color }}>{c.name}</button>
-                ))}
-              </div>
-            )}
-
-            <p className="mb-3 text-xs text-slate-500">교과목을 클릭하면 관련된 선후수·심화 과목이 강조됩니다. 자격증 필터를 선택하면 해당 자격증 필수 과목이 표시됩니다.</p>
-
-            {/* SVG 캔버스 */}
-            <div className="overflow-x-auto rounded-xl bg-slate-100 p-4">
-              <svg
-                ref={flowSvgRef}
-                width="100%"
-                viewBox={`0 0 ${flowData.W} ${flowData.totalH}`}
-                style={{ minWidth: flowData.W, display: "block" }}
-                onClick={() => setHighlightedNode(null)}
-              >
-                <defs>
-                  <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                    <path d={`M1 1L8 5L1 9`} fill="none" stroke={flowDept.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-                  </marker>
-                </defs>
-
-                {/* 학기 헤더 & 세로선 */}
-                {["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"].map((t, i) => (
-                  <g key={t}>
-                    <text x={20 + i * flowData.colW + flowData.colW / 2} y={24} textAnchor="middle" fontSize="12" fontWeight="500" fill="#888">{t}</text>
-                    {i > 0 && <line x1={20 + i * flowData.colW} y1={flowData.padY} x2={20 + i * flowData.colW} y2={flowData.gridH - 20} stroke="#ddd" strokeWidth="0.5" strokeDasharray="2 3" />}
-                  </g>
-                ))}
-
-                {/* 학년 배경 & 라벨 */}
-                {[0, 1, 2, 3].map((yr) => (
-                  <g key={yr}>
-                    {yr % 2 === 0 && <rect x={20 + yr * 2 * flowData.colW} y={flowData.padY + 10} width={2 * flowData.colW} height={flowData.gridH - flowData.padY - 30} fill="white" opacity="0.5" />}
-                    <text x={20 + yr * 2 * flowData.colW + flowData.colW} y={flowData.gridH - 8} textAnchor="middle" fontSize="11" fill="#aaa">{yr + 1}학년</text>
-                  </g>
-                ))}
-
-                {/* 선후수 화살표 */}
-                {prereqs.map(([from, to], i) => {
-                  const f = flowData.nodesByName[from], t = flowData.nodesByName[to];
-                  if (!f || !t) return null;
-                  const dx = t.x - f.x - flowData.nodeW / 2;
-                  const path = `M ${f.x + flowData.nodeW / 2} ${f.y} C ${f.x + flowData.nodeW / 2 + dx * 0.5} ${f.y}, ${t.x - flowData.nodeW / 2 - dx * 0.5} ${t.y}, ${t.x - flowData.nodeW / 2 - 3} ${t.y}`;
-                  const isActive = connectedNodes ? (connectedNodes.has(from) && connectedNodes.has(to)) : true;
-                  const isDirect = highlightedNode && (from === highlightedNode || to === highlightedNode);
-                  return (
-                    <path key={i} d={path} fill="none" stroke={flowDept.color}
-                      strokeWidth={isDirect ? 2 : 1.2}
-                      opacity={connectedNodes ? (isActive ? (isDirect ? 0.9 : 0.5) : 0.08) : 0.35}
-                      markerEnd="url(#fa)" />
-                  );
-                })}
-
-                {/* 과목 노드 */}
-                {flowData.nodes.map((n) => {
-                  const style = getNodeStyle(n.name, n.type);
-                  const isDim = connectedNodes ? !connectedNodes.has(n.name) : false;
-                  const lines = n.name.length > 8 ? [n.name.slice(0, 7), n.name.slice(7, 14)] : [n.name];
-                  return (
-                    <g key={n.name} onClick={(e) => { e.stopPropagation(); setHighlightedNode(highlightedNode === n.name ? null : n.name); }}
-                      opacity={isDim ? 0.2 : 1} cursor="pointer">
-                      <rect x={n.x - flowData.nodeW / 2} y={n.y - flowData.nodeH / 2} width={flowData.nodeW} height={flowData.nodeH} rx={6}
-                        fill={style.fill} stroke={style.stroke} strokeWidth={style.strokeWidth} strokeDasharray={style.dash} />
-                      {lines.length === 1 ? (
-                        <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize="10" fontWeight="500" fill={style.textColor}>{lines[0]}</text>
-                      ) : (
-                        <text x={n.x} textAnchor="middle" fontSize="10" fontWeight="500" fill={style.textColor}>
-                          <tspan x={n.x} dy={-4}>{lines[0]}</tspan>
-                          <tspan x={n.x} dy={13}>{lines[1]}</tspan>
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
-
-                {/* 전공선택 풀 섹션 */}
-                {flowData.electiveGroups.length > 0 && (
-                  <>
-                    <line x1={20} y1={flowData.gridH + 4} x2={flowData.W - 20} y2={flowData.gridH + 4} stroke="#ddd" strokeWidth="0.5" strokeDasharray="4 4" />
-                    <text x={20} y={flowData.gridH + 24} fontSize="12" fontWeight="500" fill="#888">전공선택 (학년 구분 없음)</text>
-                    {cert && <text x={flowData.W - 20} y={flowData.gridH + 24} textAnchor="end" fontSize="11" fill="#E85D24" fontWeight="500">{cert.name} 관련 과목 강조</text>}
-
-                    {(() => {
-                      let cursorY = flowData.gridH + 44;
-                      return flowData.groupLayouts.map((g, gi) => {
-                        const startY = cursorY;
-                        cursorY += g.h + 14;
-                        return (
-                          <g key={gi}>
-                            <text x={22} y={startY + 10} fontSize="11" fill="#aaa" fontWeight="500">{g.label}</text>
-                            {g.items.map((name, idx) => {
-                              const row = Math.floor(idx / flowData.itemsPerRow);
-                              const colIdx = idx % flowData.itemsPerRow;
-                              const x = 20 + colIdx * (flowData.eNodeW + flowData.eGap);
-                              const y = startY + 22 + row * (flowData.eNodeH + flowData.eGap);
-                              const style = getElectiveStyle(name);
-                              const displayName = name.length > 14 ? name.substring(0, 13) + "…" : name;
-                              return (
-                                <g key={idx}>
-                                  <rect x={x} y={y} width={flowData.eNodeW} height={flowData.eNodeH} rx={4}
-                                    fill={style.fill} stroke={style.stroke} strokeWidth={style.strokeWidth} strokeDasharray={style.dash} />
-                                  <text x={x + flowData.eNodeW / 2} y={y + flowData.eNodeH / 2} textAnchor="middle" dominantBaseline="central" fontSize="9.5" fill={style.textColor}>
-                                    {displayName}
-                                  </text>
-                                  <title>{name}</title>
-                                </g>
-                              );
-                            })}
-                          </g>
-                        );
-                      });
-                    })()}
-                  </>
-                )}
-              </svg>
-            </div>
-
-            {/* 범례 */}
-            <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#FAC775", border: "0.5px solid #854F0B" }} /> 전공핵심</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#C0DD97", border: "0.5px solid #3B6D11" }} /> 전공필수</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#F4EEE4", border: "0.5px solid #A6876A" }} /> 전공선택</span>
-              {cert && <>
-                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#FFE5B4", border: "2px solid #E85D24" }} /> 자격증 필수</span>
-                {certElective && certElective.size > 0 && <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#FFF8E1", border: "1.5px dashed #E85D24" }} /> 자격증 선택</span>}
-              </>}
-            </div>
-          </div>
-        )}
 
         {/* === 자격증 · 진로 === */}
         {view === "career" && (
