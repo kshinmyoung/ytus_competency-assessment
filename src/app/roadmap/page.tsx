@@ -1,8 +1,8 @@
 "use client";
 
 import { ArrowRight, BookOpen, GraduationCap, Map, Search, Trophy } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
-import Navigation from "@/components/Navigation";
 import { DEPTS, COMPETENCY_COURSES, CAREER_PATHS, CERTIFICATIONS } from "./data";
 import FlowView from "./FlowView";
 
@@ -59,7 +59,14 @@ export default function RoadmapPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navigation />
+      {/* 공개 페이지용 헤더 (로그인 불필요) */}
+      <header className="border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <Image src="/logo.png" alt="영남신학대학교" width={160} height={36} className="h-9 w-auto" />
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">교과목 로드맵</span>
+        </div>
+      </header>
+
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-2">
           <p className="text-xs text-slate-500">교과목 로드맵 · 종합 대시보드</p>
