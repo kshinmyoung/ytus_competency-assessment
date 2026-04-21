@@ -188,7 +188,7 @@ export default function AdminImportPage() {
             name: row.name,
             professor: row.professor || null,
             department_id: deptId,
-            credit: Number(row.credit) || 3,
+            credit: row.credit ? Number(row.credit) : 3,
             semester: row.semester || null,
             year: Number(row.year) || null,
             description: row.description || null,

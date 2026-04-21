@@ -118,7 +118,7 @@ export default function AdminCoursesPage() {
         name: row.name,
         professor: row.professor || null,
         department_id: deptId,
-        credit: Number(row.credit) || 3,
+        credit: row.credit ? Number(row.credit) : 3,
         semester: row.semester || null,
         year: Number(row.year) || null,
         description: row.description || null,
@@ -369,7 +369,7 @@ export default function AdminCoursesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">학점</label>
-                  <input type="number" min={1} max={6} value={form.credit} onChange={(e) => setForm({ ...form, credit: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <input type="number" min={0.5} max={6} step={0.5} value={form.credit} onChange={(e) => setForm({ ...form, credit: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">학기</label>
