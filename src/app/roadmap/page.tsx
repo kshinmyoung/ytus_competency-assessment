@@ -205,7 +205,10 @@ export default function RoadmapPage() {
                           <p className="mb-1.5 text-[10px] font-medium uppercase text-slate-500">필수 과목</p>
                           <div className="space-y-1">
                             {cert.required.map((c) => (
-                              <p key={c} className="rounded bg-amber-50 px-2 py-1 text-[11px] text-amber-900 border-l-2" style={{ borderColor: cert.color }}>{c}</p>
+                              <p key={c} className="flex items-center gap-1.5 rounded bg-amber-50 px-2 py-1 text-[11px] text-amber-900 border-l-2" style={{ borderColor: cert.color }}>
+                                {c.replace(" [SDU]", "")}
+                                {c.includes("[SDU]") && <span className="rounded bg-indigo-500 px-1.5 py-0.5 text-[8px] font-bold text-white">SDU</span>}
+                              </p>
                             ))}
                           </div>
                         </div>
@@ -214,7 +217,10 @@ export default function RoadmapPage() {
                             <p className="mb-1.5 text-[10px] font-medium uppercase text-slate-500">선택 과목</p>
                             <div className="space-y-1">
                               {cert.elective.map((c) => (
-                                <p key={c} className="rounded bg-slate-50 px-2 py-1 text-[11px] text-slate-700 border border-dashed border-slate-300">{c}</p>
+                                <p key={c} className="flex items-center gap-1.5 rounded bg-slate-50 px-2 py-1 text-[11px] text-slate-700 border border-dashed border-slate-300">
+                                  {c.replace(" [SDU]", "")}
+                                  {c.includes("[SDU]") && <span className="rounded bg-indigo-500 px-1.5 py-0.5 text-[8px] font-bold text-white">SDU</span>}
+                                </p>
                               ))}
                             </div>
                           </div>

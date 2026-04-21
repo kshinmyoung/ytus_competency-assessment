@@ -114,13 +114,19 @@ export default function FlowView() {
   };
 
   // 텍스트를 노드 안에 맞추기 위해 foreignObject 사용
-  const NodeText = ({ name, x, y, w, h, color }: { name: string; x: number; y: number; w: number; h: number; color: string }) => (
-    <foreignObject x={x} y={y} width={w} height={h}>
-      <div style={{ width: w, height: h, display: "flex", alignItems: "center", justifyContent: "center", fontSize: name.length > 12 ? 8.5 : name.length > 8 ? 9.5 : 10.5, fontWeight: 500, color, textAlign: "center", lineHeight: 1.2, padding: "0 4px", overflow: "hidden" }}>
-        {name}
-      </div>
-    </foreignObject>
-  );
+  const NodeText = ({ name, x, y, w, h, color }: { name: string; x: number; y: number; w: number; h: number; color: string }) => {
+    const isSDU = name.includes("[SDU]");
+    const displayName = name.replace(" [SDU]", "");
+    const fs = displayName.length > 14 ? 8 : displayName.length > 10 ? 8.5 : displayName.length > 8 ? 9.5 : 10.5;
+    return (
+      <foreignObject x={x} y={y} width={w} height={h}>
+        <div style={{ width: w, height: h, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, fontSize: fs, fontWeight: 500, color, textAlign: "center", lineHeight: 1.2, padding: "0 4px", overflow: "hidden" }}>
+          {isSDU && <span style={{ fontSize: 8, background: "#6366F1", color: "#fff", borderRadius: 3, padding: "1px 3px", flexShrink: 0 }}>SDU</span>}
+          {displayName}
+        </div>
+      </foreignObject>
+    );
+  };
 
   return (
     <div>
@@ -255,6 +261,7 @@ export default function FlowView() {
         {cert && <>
           <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#FFE5B4", border: "2px solid #E85D24" }} /> 자격증 필수</span>
           {certElecSet && <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded" style={{ background: "#FFF8E1", border: "1.5px dashed #E85D24" }} /> 자격증 선택</span>}
+          <span className="flex items-center gap-1.5"><span className="inline-block rounded bg-indigo-500 px-1 py-0.5 text-[8px] font-bold text-white">SDU</span> 타대학 온라인 과목</span>
         </>}
       </div>
     </div>
