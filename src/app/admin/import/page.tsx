@@ -184,7 +184,7 @@ export default function AdminImportPage() {
         else if (activeTab === "courses") {
           if (!row.name) { errors.push(`행${i + 2}: name 필수`); continue; }
           const deptId = row.department_id ? (Number(row.department_id) || deptNameMap[row.department_id] || null) : null;
-          const { error } = await supabase.from("courses").insert({
+          const payload = {
             name: row.name,
             professor: row.professor || null,
             department_id: deptId,
@@ -193,7 +193,19 @@ export default function AdminImportPage() {
             year: Number(row.year) || null,
             description: row.description || null,
             is_active: true,
-          });
+          };
+          // 같은 과목+년도+학기+교수 존재하면 덮어쓰기
+          let query = supabase.from("courses").select("id").eq("name", row.name);
+          if (row.year) query = query.eq("year", Number(row.year));
+          if (row.semester) query = query.eq("semester", row.semester);
+          if (row.professor) query = query.eq("professor", row.professor);
+          const { data: existing } = await query.maybeSingle();
+          let error;
+          if (existing) {
+            ({ error } = await supabase.from("courses").update(payload).eq("id", existing.id));
+          } else {
+            ({ error } = await supabase.from("courses").insert(payload));
+          }
           ok = !error;
           if (error) errors.push(`${row.name}: ${error.message}`);
         }
