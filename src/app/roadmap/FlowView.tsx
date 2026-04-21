@@ -26,12 +26,12 @@ export default function FlowView() {
 
   // 노드 배치
   const layout = useMemo(() => {
-    const colW = 150;
-    const nodeW = 130;
-    const nodeH = 36;
-    const gapY = 10;
-    const padTop = 50;
-    const padLeft = 10;
+    const colW = 160;
+    const nodeW = 140;
+    const nodeH = 44;
+    const gapY = 12;
+    const padTop = 55;
+    const padLeft = 15;
 
     const nodes: FlowNode[] = [];
     const semCols: FlowNode[][] = Array.from({ length: 8 }, () => []);
@@ -63,7 +63,7 @@ export default function FlowView() {
 
     // 전공선택 풀
     const electiveGroups = Object.entries(dept.electives);
-    const eNodeW = 150; const eNodeH = 26; const eGap = 6;
+    const eNodeW = 160; const eNodeH = 32; const eGap = 7;
     const W = padLeft * 2 + 8 * colW;
     const itemsPerRow = Math.floor((W - 40) / (eNodeW + eGap));
 
@@ -117,11 +117,11 @@ export default function FlowView() {
   const NodeText = ({ name, x, y, w, h, color }: { name: string; x: number; y: number; w: number; h: number; color: string }) => {
     const isSDU = name.includes("[SDU]");
     const displayName = name.replace(" [SDU]", "");
-    const fs = displayName.length > 14 ? 8 : displayName.length > 10 ? 8.5 : displayName.length > 8 ? 9.5 : 10.5;
+    const fs = displayName.length > 14 ? 10 : displayName.length > 10 ? 11 : displayName.length > 8 ? 12 : 13;
     return (
       <foreignObject x={x} y={y} width={w} height={h}>
         <div style={{ width: w, height: h, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, fontSize: fs, fontWeight: 500, color, textAlign: "center", lineHeight: 1.2, padding: "0 4px", overflow: "hidden" }}>
-          {isSDU && <span style={{ fontSize: 8, background: "#6366F1", color: "#fff", borderRadius: 3, padding: "1px 3px", flexShrink: 0 }}>SDU</span>}
+          {isSDU && <span style={{ fontSize: 9, background: "#6366F1", color: "#fff", borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700 }}>SDU</span>}
           {displayName}
         </div>
       </foreignObject>
@@ -166,7 +166,8 @@ export default function FlowView() {
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
         <svg
           width="100%" viewBox={`0 0 ${layout.W} ${layout.totalH}`}
-          style={{ minWidth: layout.W, display: "block" }}
+          preserveAspectRatio="xMidYMin meet"
+          style={{ display: "block", width: "100%" }}
           onClick={() => setHighlighted(null)}
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -179,7 +180,7 @@ export default function FlowView() {
           {/* 학기 헤더 */}
           {SEM_LABELS.map((t, i) => (
             <g key={`hdr-${t}`}>
-              <text x={layout.padLeft + i * layout.colW + layout.colW / 2} y={22} textAnchor="middle" fontSize="13" fontWeight="500" fill="#777">{t}</text>
+              <text x={layout.padLeft + i * layout.colW + layout.colW / 2} y={24} textAnchor="middle" fontSize="15" fontWeight="600" fill="#555">{t}</text>
               {i > 0 && <line x1={layout.padLeft + i * layout.colW} y1={32} x2={layout.padLeft + i * layout.colW} y2={layout.gridH - 20} stroke="#e5e5e5" strokeWidth="0.5" strokeDasharray="3 3" />}
             </g>
           ))}
@@ -188,7 +189,7 @@ export default function FlowView() {
           {[0, 1, 2, 3].map((yr) => (
             <g key={`yr-${yr}`}>
               {yr % 2 === 0 && <rect x={layout.padLeft + yr * 2 * layout.colW} y={32} width={2 * layout.colW} height={layout.gridH - 52} fill="white" opacity="0.6" rx="6" />}
-              <text x={layout.padLeft + yr * 2 * layout.colW + layout.colW} y={layout.gridH - 4} textAnchor="middle" fontSize="12" fill="#bbb">{yr + 1}학년</text>
+              <text x={layout.padLeft + yr * 2 * layout.colW + layout.colW} y={layout.gridH - 4} textAnchor="middle" fontSize="14" fontWeight="500" fill="#999">{yr + 1}학년</text>
             </g>
           ))}
 
@@ -224,13 +225,13 @@ export default function FlowView() {
             return (
               <g>
                 <line x1={20} y1={baseY} x2={layout.W - 20} y2={baseY} stroke="#ddd" strokeWidth="0.5" strokeDasharray="4 4" />
-                <text x={20} y={baseY + 18} fontSize="13" fontWeight="500" fill="#888">전공선택 (학년 구분 없음)</text>
-                {cert && <text x={layout.W - 20} y={baseY + 18} textAnchor="end" fontSize="11" fill="#E85D24" fontWeight="500">{cert.name} 관련 과목 강조</text>}
+                <text x={20} y={baseY + 20} fontSize="15" fontWeight="600" fill="#666">전공선택 (학년 구분 없음)</text>
+                {cert && <text x={layout.W - 20} y={baseY + 20} textAnchor="end" fontSize="13" fill="#E85D24" fontWeight="600">{cert.name} 관련 과목 강조</text>}
                 {layout.groupLayouts.map((g, gi) => {
                   const startY = baseY + 32 + layout.groupLayouts.slice(0, gi).reduce((sum, prev) => sum + prev.h + 14, 0);
                   return (
                     <g key={`eg-${gi}`}>
-                      <text x={22} y={startY + 12} fontSize="11" fill="#aaa" fontWeight="500">{g.label}</text>
+                      <text x={22} y={startY + 14} fontSize="13" fill="#999" fontWeight="500">{g.label}</text>
                       {g.items.map((name, idx) => {
                         const row = Math.floor(idx / layout.itemsPerRow); const col = idx % layout.itemsPerRow;
                         const x = 20 + col * (layout.eNodeW + layout.eGap);
