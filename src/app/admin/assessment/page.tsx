@@ -280,13 +280,15 @@ export default function AdminAssessmentPage() {
   };
 
   const openAddQuestion = (typeKey: string, catSortOrder: number, deptId?: number | null) => {
-    const typeQuestions = questionsByTypeAndCat[typeKey]?.[catSortOrder] ?? [];
+    // 같은 유형 + 같은 카테고리 + 같은 학과의 문항만 카운트
+    const allCatQ = questionsByTypeAndCat[typeKey]?.[catSortOrder] ?? [];
+    const deptQuestions = deptId ? allCatQ.filter((q) => q.department_id === deptId) : allCatQ;
     setEditingQ(null);
     setQForm({
       competency_type: typeKey,
       competency_id: catSortOrder,
       question_text: "",
-      question_order: typeQuestions.length + 1,
+      question_order: deptQuestions.length + 1,
       is_active: true,
       department_id: deptId ?? null,
       options: [...defaultOptions],
