@@ -62,8 +62,12 @@ export default function CustomDiagnosisPage() {
         supabase.from("major_competencies").select("id, name"),
       ]);
 
-      // 학과별 문항 필터링: department_id가 NULL(전체 공통)이거나 내 학과와 일치하는 것만
-      const filteredQ = (qRes.data ?? []).filter((q: any) => q.department_id === null || q.department_id === myDeptId);
+      // 기존 진단 유형과 전공역량진단 제외, 커스텀 유형만 표시
+      const builtinTypes = ["core_diagnosis", "learning_diagnosis", "calling_diagnosis", "major_competency_diagnosis"];
+      const filteredQ = (qRes.data ?? []).filter((q: any) =>
+        !builtinTypes.includes(q.competency_type) &&
+        (q.department_id === null || q.department_id === myDeptId)
+      );
       setQuestions(filteredQ);
 
       const map = new Map<number, Option[]>();

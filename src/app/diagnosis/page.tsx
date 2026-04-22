@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BookOpen, ClipboardList, Compass, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, ClipboardList, Compass, GraduationCap, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -28,9 +28,16 @@ const fixedCards = [
     icon: Compass,
     iconBg: "bg-green-50 text-green-600",
   },
+  {
+    title: "전공역량진단",
+    description: "학과별 전공역량(공통문항, 전공지식문항, SJT문항)을 진단합니다.",
+    href: "/diagnosis/major",
+    icon: GraduationCap,
+    iconBg: "bg-orange-50 text-orange-600",
+  },
 ];
 
-const BUILTIN_KEYS = ["core_diagnosis", "learning_diagnosis", "calling_diagnosis"];
+const BUILTIN_KEYS = ["core_diagnosis", "learning_diagnosis", "calling_diagnosis", "major_competency_diagnosis"];
 
 type DiagType = { key: string; label: string; description: string | null };
 
