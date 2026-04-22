@@ -38,8 +38,10 @@ type CourseRecord = {
   year: number | null;
   grade: string | null;
   status: string;
-  courses: { name: string; professor: string | null } | null;
+  courses: { name: string; professor: string | null; core_competency_tags: number[]; major_competency_tags: number[] } | null;
 };
+type CoreComp = { id: number; name: string; color_code: string };
+type MajorComp = { id: number; name: string };
 
 type ExtraRecord = {
   id: number;
@@ -55,6 +57,8 @@ export default function MyPage() {
   const [diagnosisResults, setDiagnosisResults] = useState<DiagnosisResult[]>([]);
   const [courseRecords, setCourseRecords] = useState<CourseRecord[]>([]);
   const [extraRecords, setExtraRecords] = useState<ExtraRecord[]>([]);
+  const [coreComps, setCoreComps] = useState<CoreComp[]>([]);
+  const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "extra" | "diagnosis">("overview");
 
   useEffect(() => {
@@ -62,12 +66,14 @@ export default function MyPage() {
       const studentId = await getCurrentStudentId();
       if (!studentId?.trim()) return;
 
-      const [studentRes, deptRes, diagRes, courseRes, extraRes] = await Promise.all([
+      const [studentRes, deptRes, diagRes, courseRes, extraRes, coreRes, majorRes] = await Promise.all([
         supabase.from("students").select("name, department_id").eq("student_id", studentId.trim()).maybeSingle(),
         supabase.from("departments").select("*"),
         supabase.from("diagnosis_results").select("*").eq("student_id", studentId.trim()).order("created_at", { ascending: false }),
-        supabase.from("student_courses").select("id, semester, year, grade, status, courses(name, professor)").eq("student_id", studentId.trim()).order("created_at", { ascending: false }),
+        supabase.from("student_courses").select("id, semester, year, grade, status, courses(name, professor, core_competency_tags, major_competency_tags)").eq("student_id", studentId.trim()).order("created_at", { ascending: false }),
         supabase.from("student_extracurricular").select("id, status, completed_at, reflection, extracurricular(name, category)").eq("student_id", studentId.trim()).order("created_at", { ascending: false }),
+        supabase.from("core_competencies").select("id, name, color_code").order("id"),
+        supabase.from("major_competencies").select("id, name").order("id"),
       ]);
 
       if (studentRes.data?.name) setUserName(studentRes.data.name);
@@ -77,6 +83,8 @@ export default function MyPage() {
       setDiagnosisResults((diagRes.data ?? []) as DiagnosisResult[]);
       setCourseRecords((courseRes.data ?? []) as unknown as CourseRecord[]);
       setExtraRecords((extraRes.data ?? []) as unknown as ExtraRecord[]);
+      setCoreComps((coreRes.data ?? []) as CoreComp[]);
+      setMajorComps((majorRes.data ?? []) as MajorComp[]);
     })();
   }, []);
 
@@ -196,6 +204,7 @@ export default function MyPage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">과목명</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">역량 태그</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">교수</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학기</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">성적</th>
@@ -204,11 +213,23 @@ export default function MyPage() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {courseRecords.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">수강 이력이 없습니다.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">수강 이력이 없습니다.</td></tr>
                 ) : (
                   courseRecords.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-sm font-medium text-slate-900">{c.courses?.name ?? "-"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {(c.courses?.core_competency_tags ?? []).map((tagId) => {
+                            const comp = coreComps.find((cc) => cc.id === tagId);
+                            return comp ? <span key={`c-${tagId}`} className="rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: comp.color_code + "15", color: comp.color_code }}>{comp.name}</span> : null;
+                          })}
+                          {(c.courses?.major_competency_tags ?? []).map((tagId) => {
+                            const comp = majorComps.find((mc) => mc.id === tagId);
+                            return comp ? <span key={`m-${tagId}`} className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">{comp.name}</span> : null;
+                          })}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm text-slate-600">{c.courses?.professor ?? "-"}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">{c.grade ?? "-"}</td>

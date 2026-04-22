@@ -232,13 +232,21 @@ export default function AdminImportPage() {
           let courseId = Number(row.course_id) || 0;
           if (!courseId && row.course_name) courseId = courseNameMap[row.course_name.toLowerCase()] ?? 0;
           if (!courseId) { errors.push(`${row.student_id}: 과목 못 찾음`); continue; }
-          const { error } = await supabase.from("student_courses").upsert({
+          const payload = {
             student_id: row.student_id,
             course_id: courseId,
             semester: row.semester || null,
             year: Number(row.year) || new Date().getFullYear(),
             status: row.status || "수강중",
-          }, { onConflict: "student_id,course_id,year,semester" });
+          };
+          // 같은 학생+과목 존재하면 덮어쓰기
+          const { data: existingEnroll } = await supabase.from("student_courses").select("id").eq("student_id", row.student_id).eq("course_id", courseId).maybeSingle();
+          let error;
+          if (existingEnroll) {
+            ({ error } = await supabase.from("student_courses").update(payload).eq("id", existingEnroll.id));
+          } else {
+            ({ error } = await supabase.from("student_courses").insert(payload));
+          }
           ok = !error;
           if (error) errors.push(`${row.student_id}: ${error.message}`);
         }
