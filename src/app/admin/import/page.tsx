@@ -59,12 +59,12 @@ CTL001,ctl123,박센터,ctl,,,,,`,
   {
     key: "mentoring",
     label: "멘토링 배정",
-    description: "멘토링교수에게 학생을 일괄 배정합니다.",
-    headers: "mentor_id, student_id",
-    example: `mentor_id,student_id
-PROF001,22501001
-PROF001,22501002
-PROF001,22501003`,
+    description: "멘토링교수에게 학생을 일괄 배정합니다. 멘토가 미등록이면 자동 생성됩니다.",
+    headers: "mentor_id, student_id, mentor_name (선택)",
+    example: `mentor_id,student_id,mentor_name
+2021664,22501007,김교수
+2021664,22401010,
+305,22501031,박교수`,
   },
   {
     key: "graduate",
@@ -269,6 +269,31 @@ export default function AdminImportPage() {
 
         else if (activeTab === "mentoring") {
           if (!row.mentor_id || !row.student_id) { errors.push(`행${i + 2}: mentor_id/student_id 필수`); continue; }
+          // 멘토가 students 테이블에 없으면 자동 생성
+          const { data: mentorExists } = await supabase.from("students").select("student_id").eq("student_id", row.mentor_id).maybeSingle();
+          if (!mentorExists) {
+            const mentorRes = await fetch("/api/admin/create-user", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                student_id: row.mentor_id,
+                password: row.mentor_id,
+                name: row.mentor_name || null,
+                role: "mentor_professor",
+              }),
+            });
+            if (!mentorRes.ok) {
+              const d = await mentorRes.json().catch(() => ({}));
+              errors.push(`멘토 ${row.mentor_id} 자동생성 실패: ${d.error ?? "실패"}`);
+              continue;
+            }
+          }
+          // 학생이 students 테이블에 없으면 스킵
+          const { data: studentExists } = await supabase.from("students").select("student_id").eq("student_id", row.student_id).maybeSingle();
+          if (!studentExists) {
+            errors.push(`${row.mentor_id}→${row.student_id}: 학생 ${row.student_id}가 등록되어 있지 않음`);
+            continue;
+          }
           const { error } = await supabase.from("mentoring_groups").upsert(
             { mentor_id: row.mentor_id, student_id: row.student_id },
             { onConflict: "mentor_id,student_id" }

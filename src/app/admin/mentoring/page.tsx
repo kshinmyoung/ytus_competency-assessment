@@ -114,6 +114,17 @@ export default function AdminMentoringPage() {
       const studentId = (row.student_id ?? "").trim();
       if (!mentorId || !studentId) { errors.push("mentor_id 또는 student_id 누락"); continue; }
 
+      // 멘토가 students에 없으면 자동 생성
+      const { data: mentorExists } = await supabase.from("students").select("student_id").eq("student_id", mentorId).maybeSingle();
+      if (!mentorExists) {
+        const res = await fetch("/api/admin/create-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_id: mentorId, password: mentorId, name: (row.mentor_name ?? "").trim() || null, role: "mentor_professor" }),
+        });
+        if (!res.ok) { errors.push(`멘토 ${mentorId} 자동생성 실패`); continue; }
+      }
+
       const { error } = await supabase.from("mentoring_groups").upsert(
         { mentor_id: mentorId, student_id: studentId },
         { onConflict: "mentor_id,student_id" }
