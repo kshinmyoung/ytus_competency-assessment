@@ -1,72 +1,73 @@
 "use client";
 
-import { BookOpen, Filter, Plus, Tag } from "lucide-react";
+import { BookOpen, GraduationCap, Map, Tag, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
+import { CERTIFICATIONS, CAREER_PATHS, DEPTS } from "@/app/roadmap/data";
 
 type CoreComp = { id: number; name: string; color_code: string };
 type MajorComp = { id: number; name: string; department_id: number };
 type Department = { id: number; name: string };
-type Course = {
+type MyCourse = {
   id: number;
-  name: string;
-  professor: string | null;
-  department_id: number | null;
-  credit: number;
+  course_id: number;
   semester: string | null;
   year: number | null;
-  description: string | null;
-  core_competency_tags: number[];
-  major_competency_tags: number[];
+  grade: string | null;
+  status: string;
+  courses: {
+    name: string;
+    professor: string | null;
+    credit: number;
+    department_id: number | null;
+    core_competency_tags: number[];
+    major_competency_tags: number[];
+  } | null;
+};
+
+const DEPT_KEY_MAP: Record<number, string> = {
+  1: "theology", 2: "christianEdu", 3: "counseling", 4: "socialWelfare", 5: "multiCulture",
 };
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [myCourses, setMyCourses] = useState<MyCourse[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [coreComps, setCoreComps] = useState<CoreComp[]>([]);
   const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
-  const [myCourseIds, setMyCourseIds] = useState<Set<number>>(new Set());
-  const [studentId, setStudentId] = useState("");
-  const [filterDept, setFilterDept] = useState<number | "all">("all");
-  const [filterCore, setFilterCore] = useState<number | "all">("all");
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [enrolling, setEnrolling] = useState(false);
+  const [myDeptId, setMyDeptId] = useState<number | null>(null);
+  const [selectedCert, setSelectedCert] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const sid = await getCurrentStudentId();
-      if (sid) setStudentId(sid.trim());
+      if (!sid?.trim()) return;
 
-      const [deptRes, coreRes, majorRes, courseRes] = await Promise.all([
+      const [studentRes, deptRes, coreRes, majorRes, courseRes] = await Promise.all([
+        supabase.from("students").select("department_id").eq("student_id", sid.trim()).maybeSingle(),
         supabase.from("departments").select("*").order("id"),
         supabase.from("core_competencies").select("*").order("id"),
         supabase.from("major_competencies").select("*").order("id"),
-        supabase.from("courses").select("*").eq("is_active", true).order("name"),
+        supabase.from("student_courses")
+          .select("id, course_id, semester, year, grade, status, courses(name, professor, credit, department_id, core_competency_tags, major_competency_tags)")
+          .eq("student_id", sid.trim())
+          .order("year")
+          .order("semester"),
       ]);
 
+      setMyDeptId(studentRes.data?.department_id ?? null);
       setDepartments(deptRes.data ?? []);
       setCoreComps(coreRes.data ?? []);
       setMajorComps(majorRes.data ?? []);
-      setCourses(courseRes.data ?? []);
-
-      if (sid) {
-        const { data: myC } = await supabase
-          .from("student_courses")
-          .select("course_id")
-          .eq("student_id", sid.trim());
-        setMyCourseIds(new Set((myC ?? []).map((c: any) => c.course_id)));
-      }
+      setMyCourses((courseRes.data ?? []) as unknown as MyCourse[]);
     })();
   }, []);
 
-  const filteredCourses = useMemo(() => {
-    return courses.filter((c) => {
-      if (filterDept !== "all" && c.department_id !== filterDept) return false;
-      if (filterCore !== "all" && !c.core_competency_tags.includes(filterCore)) return false;
-      return true;
-    });
-  }, [courses, filterDept, filterCore]);
+  const deptMap = useMemo(() => {
+    const m: Record<number, string> = {};
+    departments.forEach((d) => (m[d.id] = d.name));
+    return m;
+  }, [departments]);
 
   const coreCompMap = useMemo(() => {
     const m: Record<number, CoreComp> = {};
@@ -80,257 +81,252 @@ export default function CoursesPage() {
     return m;
   }, [majorComps]);
 
-  const deptMap = useMemo(() => {
-    const m: Record<number, string> = {};
-    departments.forEach((d) => (m[d.id] = d.name));
-    return m;
-  }, [departments]);
-
-  const handleEnroll = async (courseId: number) => {
-    if (!studentId) return;
-    setEnrolling(true);
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    const semester = currentMonth <= 6 ? "1학기" : "2학기";
-
-    const { error } = await supabase.from("student_courses").insert({
-      student_id: studentId,
-      course_id: courseId,
-      year: currentYear,
-      semester,
-      status: "수강중",
+  // 학기별 그룹핑
+  const semesterGroups = useMemo(() => {
+    const groups: Record<string, MyCourse[]> = {};
+    myCourses.forEach((mc) => {
+      const key = mc.year && mc.semester ? `${mc.year}년 ${mc.semester}` : mc.year ? `${mc.year}년` : "미정";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(mc);
     });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [myCourses]);
 
-    if (!error) {
-      setMyCourseIds((prev) => new Set([...prev, courseId]));
-    } else {
-      alert(error.message);
+  // 내 과목명 Set
+  const myCourseName = useMemo(() => {
+    return new Set(myCourses.map((mc) => mc.courses?.name).filter(Boolean) as string[]);
+  }, [myCourses]);
+
+  // 내 학과 자격증
+  const deptKey = myDeptId ? DEPT_KEY_MAP[myDeptId] : null;
+  const myCerts = useMemo(() => {
+    if (!deptKey) return [];
+    return Object.entries(CERTIFICATIONS).filter(([, c]) => c.dept === deptKey);
+  }, [deptKey]);
+
+  const myCareerPath = deptKey ? CAREER_PATHS[deptKey] : null;
+
+  const cert = selectedCert ? CERTIFICATIONS[selectedCert] : null;
+  const certReqSet = cert ? new Set(cert.required) : null;
+  const certElecSet = cert && cert.elective.length > 0 ? new Set(cert.elective) : null;
+
+  // 자격증 이수 현황
+  const certProgress = useMemo(() => {
+    if (!cert) return null;
+    const reqDone = cert.required.filter((c) => myCourseName.has(c));
+    const elecDone = cert.elective.filter((c) => myCourseName.has(c));
+    return {
+      reqTotal: cert.required.length,
+      reqDone: reqDone.length,
+      elecTotal: cert.elective.length,
+      elecDone: elecDone.length,
+    };
+  }, [cert, myCourseName]);
+
+  // 총 학점
+  const totalCredits = useMemo(() => {
+    return myCourses.reduce((sum, mc) => sum + (mc.courses?.credit ?? 0), 0);
+  }, [myCourses]);
+
+  const getCourseStyle = (name: string) => {
+    if (cert) {
+      if (certReqSet?.has(name)) return "border-2 border-orange-500 bg-orange-50";
+      if (certElecSet?.has(name)) return "border-2 border-orange-400 border-dashed bg-amber-50";
+      return "border border-slate-200 bg-slate-50 opacity-50";
     }
-    setEnrolling(false);
+    return "border border-slate-200 bg-white";
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Navigation />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">교과목</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              교과목을 탐색하고 수강 등록할 수 있습니다.
-            </p>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">내 교과목 로드맵</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            수강 중인 과목을 학기별로 확인하고, 자격증 이수 현황을 파악하세요.
+          </p>
+        </div>
+
+        {/* 요약 카드 */}
+        <div className="mb-6 grid gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs text-slate-500">수강 과목</p>
+            <p className="mt-1 text-xl font-bold text-slate-900">{myCourses.length}개</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs text-slate-500">총 학점</p>
+            <p className="mt-1 text-xl font-bold text-blue-600">{totalCredits}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs text-slate-500">학기 수</p>
+            <p className="mt-1 text-xl font-bold text-slate-900">{semesterGroups.length}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs text-slate-500">취득 가능 자격증</p>
+            <p className="mt-1 text-xl font-bold text-violet-600">{myCerts.length}개</p>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-slate-400" />
-            <select
-              value={filterDept === "all" ? "all" : filterDept}
-              onChange={(e) =>
-                setFilterDept(e.target.value === "all" ? "all" : Number(e.target.value))
-              }
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            >
-              <option value="all">전체 학과</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-          </div>
-          <select
-            value={filterCore === "all" ? "all" : filterCore}
-            onChange={(e) =>
-              setFilterCore(e.target.value === "all" ? "all" : Number(e.target.value))
-            }
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-          >
-            <option value="all">전체 역량</option>
-            {coreComps.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Course grid */}
-        {filteredCourses.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-            <BookOpen className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500">등록된 교과목이 없습니다.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <div
-                key={course.id}
-                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-              >
-                <div className="mb-2 flex items-start justify-between">
-                  <h3 className="text-sm font-semibold text-slate-900">{course.name}</h3>
-                  {course.credit && (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                      {course.credit}학점
-                    </span>
-                  )}
-                </div>
-                {course.professor && (
-                  <p className="text-xs text-slate-500">담당: {course.professor}</p>
-                )}
-                {course.department_id && (
-                  <p className="text-xs text-slate-500">{deptMap[course.department_id]}</p>
-                )}
-                {course.description && (
-                  <p className="mt-2 flex-1 text-xs text-slate-600 line-clamp-2">
-                    {course.description}
-                  </p>
-                )}
-
-                {/* Tags */}
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {course.core_competency_tags.map((tagId) => {
-                    const comp = coreCompMap[tagId];
-                    if (!comp) return null;
-                    return (
-                      <span
-                        key={`core-${tagId}`}
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={{
-                          backgroundColor: comp.color_code + "15",
-                          color: comp.color_code,
-                        }}
-                      >
-                        <Tag className="h-2.5 w-2.5" />
-                        {comp.name}
-                      </span>
-                    );
-                  })}
-                  {course.major_competency_tags.map((tagId) => {
-                    const comp = majorCompMap[tagId];
-                    if (!comp) return null;
-                    return (
-                      <span
-                        key={`major-${tagId}`}
-                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600"
-                      >
-                        <Tag className="h-2.5 w-2.5" />
-                        {comp.name}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-4">
-                  {myCourseIds.has(course.id) ? (
-                    <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700">
-                      수강 등록됨
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleEnroll(course.id)}
-                      disabled={enrolling || !studentId}
-                      className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      <Plus className="h-3 w-3" />
-                      수강 등록
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCourse(course)}
-                    className="ml-2 text-xs font-medium text-blue-600 hover:underline"
-                  >
-                    상세보기
+        {/* 자격증 필터 */}
+        {myCerts.length > 0 && (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-slate-500" />
+              <p className="text-sm font-semibold text-slate-700">자격증 이수 현황</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setSelectedCert(null)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${!selectedCert ? "bg-slate-800 text-white" : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"}`}>
+                전체 보기
+              </button>
+              {myCerts.map(([key, c]) => {
+                const reqDone = c.required.filter((n) => myCourseName.has(n)).length;
+                return (
+                  <button key={key} type="button" onClick={() => setSelectedCert(selectedCert === key ? null : key)}
+                    className="rounded-full px-3 py-1.5 text-xs font-medium transition"
+                    style={selectedCert === key ? { backgroundColor: c.color, color: "#fff" } : { border: "1px solid #ddd", background: "white", color: c.color }}>
+                    {c.name} ({reqDone}/{c.required.length})
                   </button>
+                );
+              })}
+            </div>
+
+            {/* 선택된 자격증 상세 */}
+            {cert && certProgress && (
+              <div className="mt-4 rounded-lg bg-slate-50 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold" style={{ color: cert.color }}>{cert.name}</h4>
+                  <span className="text-xs text-slate-500">{cert.type}</span>
                 </div>
+                {/* 프로그레스 바 */}
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>필수 이수 {certProgress.reqDone}/{certProgress.reqTotal}</span>
+                    <span>{Math.round((certProgress.reqDone / certProgress.reqTotal) * 100)}%</span>
+                  </div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${(certProgress.reqDone / certProgress.reqTotal) * 100}%`, backgroundColor: cert.color }} />
+                  </div>
+                </div>
+                {/* 미이수 과목 */}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-slate-500">미이수 필수 과목</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {cert.required.filter((c) => !myCourseName.has(c)).map((c) => (
+                      <span key={c} className="rounded bg-red-50 px-2 py-0.5 text-[11px] text-red-700 border border-red-200">{c.replace(" [SDU]", "")}</span>
+                    ))}
+                    {cert.required.every((c) => myCourseName.has(c)) && (
+                      <span className="text-xs text-green-600 font-medium">모든 필수 과목 이수 완료!</span>
+                    )}
+                  </div>
+                </div>
+                {cert.note && <p className="mt-2 text-[10px] text-slate-500">{cert.note}</p>}
               </div>
-            ))}
+            )}
           </div>
         )}
 
-        {/* Detail modal */}
-        {selectedCourse && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={() => setSelectedCourse(null)}
-          >
-            <div
-              className="max-h-[80vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold text-slate-900">{selectedCourse.name}</h3>
-              <div className="mt-3 space-y-2 text-sm text-slate-600">
-                {selectedCourse.professor && <p>담당교수: {selectedCourse.professor}</p>}
-                {selectedCourse.department_id && (
-                  <p>학과: {deptMap[selectedCourse.department_id]}</p>
-                )}
-                <p>학점: {selectedCourse.credit}</p>
-                {selectedCourse.semester && selectedCourse.year && (
-                  <p>개설: {selectedCourse.year}년 {selectedCourse.semester}</p>
-                )}
-                {selectedCourse.description && (
-                  <p className="mt-3 whitespace-pre-wrap">{selectedCourse.description}</p>
-                )}
-              </div>
-
-              <div className="mt-4">
-                <p className="mb-2 text-xs font-medium text-slate-500">역량 태그</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedCourse.core_competency_tags.map((tagId) => {
-                    const comp = coreCompMap[tagId];
-                    if (!comp) return null;
-                    return (
-                      <span
-                        key={`core-${tagId}`}
-                        className="rounded-full px-2.5 py-1 text-xs font-medium"
-                        style={{
-                          backgroundColor: comp.color_code + "15",
-                          color: comp.color_code,
-                        }}
-                      >
-                        {comp.name}
-                      </span>
-                    );
-                  })}
-                  {selectedCourse.major_competency_tags.map((tagId) => {
-                    const comp = majorCompMap[tagId];
-                    if (!comp) return null;
-                    return (
-                      <span
-                        key={`major-${tagId}`}
-                        className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600"
-                      >
-                        {comp.name}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-2">
-                {!myCourseIds.has(selectedCourse.id) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleEnroll(selectedCourse.id);
-                      setSelectedCourse(null);
-                    }}
-                    disabled={enrolling || !studentId}
-                    className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                  >
-                    수강 등록
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSelectedCourse(null)}
-                  className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  닫기
-                </button>
-              </div>
+        {/* 학기별 로드맵 */}
+        {myCourses.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <BookOpen className="mx-auto h-10 w-10 text-slate-300" />
+            <p className="mt-3 text-sm text-slate-500">수강 중인 과목이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="mb-8">
+            <div className="mb-4 flex items-center gap-2">
+              <Map className="h-4 w-4 text-slate-500" />
+              <h2 className="text-base font-semibold text-slate-800">학기별 수강 로드맵</h2>
             </div>
+
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(semesterGroups.length, 4)}, minmax(0, 1fr))` }}>
+              {semesterGroups.map(([semLabel, courses]) => (
+                <div key={semLabel} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-700">{semLabel}</p>
+                  <div className="space-y-2">
+                    {courses.map((mc) => {
+                      const name = mc.courses?.name ?? "";
+                      const style = getCourseStyle(name);
+                      return (
+                        <div key={mc.id} className={`rounded-lg p-2.5 transition ${style}`}>
+                          <div className="flex items-start justify-between gap-1">
+                            <p className="text-xs font-medium text-slate-900">{name}</p>
+                            <span className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${mc.status === "완료" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
+                              {mc.status}
+                            </span>
+                          </div>
+                          {mc.courses?.professor && (
+                            <p className="mt-0.5 text-[10px] text-slate-500">{mc.courses.professor} · {mc.courses.credit}학점</p>
+                          )}
+                          {/* 역량 태그 */}
+                          <div className="mt-1 flex flex-wrap gap-0.5">
+                            {(mc.courses?.core_competency_tags ?? []).map((tagId) => {
+                              const comp = coreCompMap[tagId];
+                              return comp ? (
+                                <span key={`c-${tagId}`} className="rounded px-1 py-0.5 text-[8px] font-medium" style={{ backgroundColor: comp.color_code + "15", color: comp.color_code }}>
+                                  {comp.name}
+                                </span>
+                              ) : null;
+                            })}
+                            {(mc.courses?.major_competency_tags ?? []).map((tagId) => {
+                              const comp = majorCompMap[tagId];
+                              return comp ? (
+                                <span key={`m-${tagId}`} className="rounded bg-indigo-50 px-1 py-0.5 text-[8px] font-medium text-indigo-600">
+                                  {comp.name}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 범례 */}
+            {cert && (
+              <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-2 border-orange-500 bg-orange-50" /> 자격증 필수</span>
+                {certElecSet && <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-2 border-dashed border-orange-400 bg-amber-50" /> 자격증 선택</span>}
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border border-slate-200 bg-slate-50 opacity-50" /> 해당 없음</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 진로 안내 */}
+        {myCareerPath && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-amber-500" />
+              <h2 className="text-base font-semibold text-slate-800">졸업 후 진로</h2>
+              {myDeptId && <span className="text-xs text-slate-500">{deptMap[myDeptId]}</span>}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {myCareerPath.careers.map((c) => (
+                <span key={c} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700">{c}</span>
+              ))}
+            </div>
+            {myCareerPath.note && <p className="mt-3 text-xs italic text-slate-500">{myCareerPath.note}</p>}
+
+            {/* 자격증별 진로 */}
+            {myCerts.length > 0 && (
+              <div className="mt-5 space-y-3">
+                {myCerts.map(([key, c]) => (
+                  <div key={key} className="rounded-lg border border-slate-100 p-3">
+                    <p className="text-xs font-semibold" style={{ color: c.color }}>{c.name} 취득 시</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {c.careers.map((career) => (
+                        <span key={career} className="rounded bg-slate-50 px-2 py-0.5 text-[11px] text-slate-700 border border-slate-200">{career}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
