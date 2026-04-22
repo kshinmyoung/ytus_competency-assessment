@@ -19,7 +19,9 @@ type Subcategory = {
   diagnosis_type_key: string;
   name: string;
   sort_order: number;
+  department_id: number | null;
 };
+type Department = { id: number; name: string };
 type Question = {
   id: number;
   competency_type: string;
@@ -27,6 +29,7 @@ type Question = {
   question_text: string;
   question_order: number;
   is_active: boolean;
+  department_id: number | null;
 };
 type Option = {
   id: number;
@@ -61,7 +64,8 @@ export default function AdminAssessmentPage() {
   // 하위 카테고리 관리
   const [showSubForm, setShowSubForm] = useState(false);
   const [editingSub, setEditingSub] = useState<Subcategory | null>(null);
-  const [subForm, setSubForm] = useState({ diagnosis_type_key: "", name: "", sort_order: 0 });
+  const [subForm, setSubForm] = useState({ diagnosis_type_key: "", name: "", sort_order: 0, department_id: null as number | null });
+  const [deptList, setDeptList] = useState<Department[]>([]);
 
   // 문항 관리
   const [showQForm, setShowQForm] = useState(false);
@@ -72,20 +76,23 @@ export default function AdminAssessmentPage() {
     question_text: "",
     question_order: 0,
     is_active: true,
+    department_id: null as number | null,
     options: [...defaultOptions],
   });
 
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [typesRes, subRes, qRes, optRes] = await Promise.all([
+    const [typesRes, subRes, qRes, optRes, deptRes] = await Promise.all([
       supabase.from("diagnosis_types").select("*").order("sort_order"),
-      supabase.from("diagnosis_subcategories").select("*").order("sort_order"),
-      supabase.from("assessment_questions").select("*").order("competency_type").order("competency_id").order("question_order"),
+      supabase.from("diagnosis_subcategories").select("*").order("department_id").order("sort_order"),
+      supabase.from("assessment_questions").select("*").order("competency_type").order("department_id").order("competency_id").order("question_order"),
       supabase.from("assessment_options").select("*").order("option_order"),
+      supabase.from("departments").select("id, name").order("id"),
     ]);
     setDiagTypes(typesRes.data ?? []);
     setSubcategories(subRes.data ?? []);
+    setDeptList(deptRes.data ?? []);
     setQuestions(qRes.data ?? []);
 
     const map = new Map<number, Option[]>();
@@ -132,6 +139,18 @@ export default function AdminAssessmentPage() {
     });
     return m;
   }, [questions]);
+
+  const deptNameMap = useMemo(() => {
+    const m: Record<number, string> = {};
+    deptList.forEach((d) => (m[d.id] = d.name));
+    return m;
+  }, [deptList]);
+
+  // 전공역량진단 같은 학과별 유형인지 판단
+  const hasDeptSubs = (typeKey: string) => {
+    const subs = subsByType[typeKey] ?? [];
+    return subs.some((s) => s.department_id !== null);
+  };
 
   const filteredTypes = useMemo(() => {
     if (filterType === "all") return diagTypes;
@@ -190,12 +209,13 @@ export default function AdminAssessmentPage() {
     if (!subForm.name.trim() || !subForm.diagnosis_type_key) return;
     setSaving(true);
     if (editingSub) {
-      await supabase.from("diagnosis_subcategories").update({ name: subForm.name.trim(), sort_order: subForm.sort_order }).eq("id", editingSub.id);
+      await supabase.from("diagnosis_subcategories").update({ name: subForm.name.trim(), sort_order: subForm.sort_order, department_id: subForm.department_id }).eq("id", editingSub.id);
     } else {
       await supabase.from("diagnosis_subcategories").insert({
         diagnosis_type_key: subForm.diagnosis_type_key,
         name: subForm.name.trim(),
         sort_order: subForm.sort_order,
+        department_id: subForm.department_id,
       });
     }
     setSaving(false);
@@ -222,6 +242,7 @@ export default function AdminAssessmentPage() {
       question_text: qForm.question_text.trim(),
       question_order: qForm.question_order,
       is_active: qForm.is_active,
+      department_id: qForm.department_id,
     };
 
     let questionId: number;
@@ -258,7 +279,7 @@ export default function AdminAssessmentPage() {
     await load();
   };
 
-  const openAddQuestion = (typeKey: string, catSortOrder: number) => {
+  const openAddQuestion = (typeKey: string, catSortOrder: number, deptId?: number | null) => {
     const typeQuestions = questionsByTypeAndCat[typeKey]?.[catSortOrder] ?? [];
     setEditingQ(null);
     setQForm({
@@ -267,6 +288,7 @@ export default function AdminAssessmentPage() {
       question_text: "",
       question_order: typeQuestions.length + 1,
       is_active: true,
+      department_id: deptId ?? null,
       options: [...defaultOptions],
     });
     setShowQForm(true);
@@ -281,6 +303,7 @@ export default function AdminAssessmentPage() {
       question_text: q.question_text,
       question_order: q.question_order,
       is_active: q.is_active,
+      department_id: q.department_id,
       options: qOpts.length > 0
         ? qOpts.map((o) => ({ option_text: o.option_text, option_value: o.option_value, option_order: o.option_order }))
         : [...defaultOptions],
@@ -294,6 +317,67 @@ export default function AdminAssessmentPage() {
       opts[index] = { ...opts[index], [field]: value };
       return { ...prev, options: opts };
     });
+  };
+
+  const renderSubcategory = (dt: DiagnosisType, sub: Subcategory) => {
+    const catQuestions = (questionsByTypeAndCat[dt.key]?.[sub.sort_order] ?? []).filter(
+      (q) => !sub.department_id || q.department_id === sub.department_id || q.department_id === null
+    );
+    return (
+      <div key={sub.id} className="rounded-xl border border-slate-200 bg-slate-50/50">
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700">{sub.name}</span>
+            {sub.department_id && <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] text-slate-600">{deptNameMap[sub.department_id]}</span>}
+            <span className="text-xs text-slate-400">{catQuestions.length}문항</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => openAddQuestion(dt.key, sub.sort_order, sub.department_id)} className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50">
+              <Plus className="h-3 w-3" /> 문항
+            </button>
+            <button type="button" onClick={() => {
+              setEditingSub(sub);
+              setSubForm({ diagnosis_type_key: dt.key, name: sub.name, sort_order: sub.sort_order, department_id: sub.department_id });
+              setShowSubForm(true);
+            }} className="rounded p-1 text-slate-400 hover:text-slate-600">
+              <Edit3 className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => handleDeleteSub(sub)} className="rounded p-1 text-slate-400 hover:text-red-500">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+        {catQuestions.length > 0 && (
+          <div className="border-t border-slate-200">
+            <table className="min-w-full">
+              <tbody className="divide-y divide-slate-100">
+                {catQuestions.map((q) => (
+                  <tr key={q.id} className="hover:bg-white">
+                    <td className="w-8 px-3 py-2 text-center text-xs text-slate-400">{q.question_order}</td>
+                    <td className="px-3 py-2">
+                      <p className="text-sm text-slate-800">{q.question_text}</p>
+                      <div className="mt-0.5 flex gap-1">
+                        {(options.get(q.id) ?? []).map((opt) => (
+                          <span key={opt.id} className="rounded bg-white px-1 py-0.5 text-[9px] text-slate-400 ring-1 ring-slate-200">{opt.option_value}점</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="w-12 px-2 py-2 text-center">
+                      <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${q.is_active ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-400"}`}>{q.is_active ? "ON" : "OFF"}</span>
+                    </td>
+                    <td className="w-20 whitespace-nowrap px-2 py-2 text-right">
+                      <button type="button" onClick={() => openEditQuestion(q)} className="mr-1 text-blue-500 hover:text-blue-700"><Edit3 className="inline h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => handleToggleQ(q)} className="mr-1 text-xs text-slate-400 hover:text-slate-600">{q.is_active ? "끄기" : "켜기"}</button>
+                      <button type="button" onClick={() => handleDeleteQ(q)} className="text-red-400 hover:text-red-600"><Trash2 className="inline h-3.5 w-3.5" /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -381,7 +465,7 @@ export default function AdminAssessmentPage() {
                         type="button"
                         onClick={() => {
                           setEditingSub(null);
-                          setSubForm({ diagnosis_type_key: dt.key, name: "", sort_order: subs.length + 1 });
+                          setSubForm({ diagnosis_type_key: dt.key, name: "", sort_order: subs.length + 1, department_id: null });
                           setShowSubForm(true);
                         }}
                         className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-600"
@@ -394,69 +478,22 @@ export default function AdminAssessmentPage() {
                       <p className="py-4 text-center text-sm text-slate-400">하위 카테고리가 없습니다.</p>
                     ) : (
                       <div className="space-y-4">
-                        {subs.map((sub) => {
-                          const catQuestions = questionsByTypeAndCat[dt.key]?.[sub.sort_order] ?? [];
-                          return (
-                            <div key={sub.id} className="rounded-xl border border-slate-200 bg-slate-50/50">
-                              {/* 카테고리 헤더 */}
-                              <div className="flex items-center justify-between px-4 py-2.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-slate-700">{sub.name}</span>
-                                  <span className="text-xs text-slate-400">{catQuestions.length}문항</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <button type="button" onClick={() => openAddQuestion(dt.key, sub.sort_order)} className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50">
-                                    <Plus className="h-3 w-3" /> 문항
-                                  </button>
-                                  <button type="button" onClick={() => {
-                                    setEditingSub(sub);
-                                    setSubForm({ diagnosis_type_key: dt.key, name: sub.name, sort_order: sub.sort_order });
-                                    setShowSubForm(true);
-                                  }} className="rounded p-1 text-slate-400 hover:text-slate-600">
-                                    <Edit3 className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button type="button" onClick={() => handleDeleteSub(sub)} className="rounded p-1 text-slate-400 hover:text-red-500">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
+                        {/* 학과별 그룹핑이 필요한 유형 */}
+                        {hasDeptSubs(dt.key) && (() => {
+                          const deptIds = Array.from(new Set(subs.filter((s) => s.department_id).map((s) => s.department_id!)));
+                          return deptIds.map((dId) => (
+                            <div key={`dept-${dId}`} className="mb-2">
+                              <p className="mb-2 rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">{deptNameMap[dId] ?? `학과 ${dId}`}</p>
+                              <div className="space-y-2 pl-2">
+                                {subs.filter((s) => s.department_id === dId).map((sub) => renderSubcategory(dt, sub))}
                               </div>
-
-                              {/* 문항 목록 */}
-                              {catQuestions.length > 0 && (
-                                <div className="border-t border-slate-200">
-                                  <table className="min-w-full">
-                                    <tbody className="divide-y divide-slate-100">
-                                      {catQuestions.map((q) => (
-                                        <tr key={q.id} className="hover:bg-white">
-                                          <td className="w-8 px-3 py-2 text-center text-xs text-slate-400">{q.question_order}</td>
-                                          <td className="px-3 py-2">
-                                            <p className="text-sm text-slate-800">{q.question_text}</p>
-                                            <div className="mt-0.5 flex gap-1">
-                                              {(options.get(q.id) ?? []).map((opt) => (
-                                                <span key={opt.id} className="rounded bg-white px-1 py-0.5 text-[9px] text-slate-400 ring-1 ring-slate-200">
-                                                  {opt.option_value}점
-                                                </span>
-                                              ))}
-                                            </div>
-                                          </td>
-                                          <td className="w-12 px-2 py-2 text-center">
-                                            <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${q.is_active ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-400"}`}>
-                                              {q.is_active ? "ON" : "OFF"}
-                                            </span>
-                                          </td>
-                                          <td className="w-20 whitespace-nowrap px-2 py-2 text-right">
-                                            <button type="button" onClick={() => openEditQuestion(q)} className="mr-1 text-blue-500 hover:text-blue-700"><Edit3 className="inline h-3.5 w-3.5" /></button>
-                                            <button type="button" onClick={() => handleToggleQ(q)} className="mr-1 text-xs text-slate-400 hover:text-slate-600">{q.is_active ? "끄기" : "켜기"}</button>
-                                            <button type="button" onClick={() => handleDeleteQ(q)} className="text-red-400 hover:text-red-600"><Trash2 className="inline h-3.5 w-3.5" /></button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
                             </div>
-                          );
+                          ));
+                        })()}
+                        {/* 학과 구분 없는 카테고리 */}
+                        {subs.filter((s) => !s.department_id || !hasDeptSubs(dt.key)).map((sub) => {
+                          if (hasDeptSubs(dt.key) && sub.department_id) return null;
+                          return renderSubcategory(dt, sub);
                         })}
                       </div>
                     )}
@@ -518,6 +555,13 @@ export default function AdminAssessmentPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700">카테고리명</label>
                 <input type="text" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} required placeholder="예: 리더십역량" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">소속 학과 (선택)</label>
+                <select value={subForm.department_id ?? ""} onChange={(e) => setSubForm({ ...subForm, department_id: e.target.value ? Number(e.target.value) : null })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  <option value="">전체 (학과 구분 없음)</option>
+                  {deptList.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">순서</label>

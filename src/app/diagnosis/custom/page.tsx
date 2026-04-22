@@ -45,6 +45,10 @@ export default function CustomDiagnosisPage() {
       }
       setStudentId(sid.trim());
 
+      // 학생 학과 확인
+      const { data: studentData } = await supabase.from("students").select("department_id").eq("student_id", sid.trim()).maybeSingle();
+      const myDeptId = studentData?.department_id ?? null;
+
       const [qRes, optRes, coreRes, majorRes] = await Promise.all([
         supabase
           .from("assessment_questions")
@@ -58,7 +62,9 @@ export default function CustomDiagnosisPage() {
         supabase.from("major_competencies").select("id, name"),
       ]);
 
-      setQuestions(qRes.data ?? []);
+      // 학과별 문항 필터링: department_id가 NULL(전체 공통)이거나 내 학과와 일치하는 것만
+      const filteredQ = (qRes.data ?? []).filter((q: any) => q.department_id === null || q.department_id === myDeptId);
+      setQuestions(filteredQ);
 
       const map = new Map<number, Option[]>();
       (optRes.data ?? []).forEach((o: Option) => {
