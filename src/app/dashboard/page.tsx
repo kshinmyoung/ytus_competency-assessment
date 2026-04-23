@@ -104,8 +104,7 @@ export default function DashboardPage() {
           const { data: myCourses } = await supabase
             .from("student_courses")
             .select("course_id, courses(major_competency_tags)")
-            .eq("student_id", studentId.trim())
-            .eq("status", "완료");
+            .eq("student_id", studentId.trim());
 
           const tagCounts: Record<number, number> = {};
           (myCourses ?? []).forEach((sc: any) => {
