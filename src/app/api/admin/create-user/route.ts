@@ -42,7 +42,8 @@ export async function POST(request: Request) {
 
     const email = `${student_id}@temp.com`;
 
-    // 1단계: 실제 로그인 계정 생성 (Authentication > Users에 계정 생성)
+    // 1단계: Auth 계정 생성 또는 기존 계정 업데이트
+    let authUserId: string | undefined;
     const { data: authUser, error: authError } = await admin.auth.admin.createUser({
       email,
       password,
@@ -50,34 +51,43 @@ export async function POST(request: Request) {
     });
 
     if (authError) {
-      console.error("[create-user] Auth 생성 실패:", authError.message, { student_id, email });
-      return NextResponse.json(
-        { error: "Auth 계정 생성 실패: " + authError.message, step: "auth" },
-        { status: 400 }
-      );
+      // 이미 등록된 경우 기존 계정 찾아서 비밀번호 업데이트
+      if (authError.message.includes("already been registered")) {
+        const { data: { users } } = await admin.auth.admin.listUsers();
+        const existing = users.find((u) => u.email === email);
+        if (existing) {
+          await admin.auth.admin.updateUserById(existing.id, { password });
+          authUserId = existing.id;
+        } else {
+          return NextResponse.json({ error: "기존 Auth 계정을 찾을 수 없습니다.", step: "auth" }, { status: 400 });
+        }
+      } else {
+        console.error("[create-user] Auth 생성 실패:", authError.message, { student_id, email });
+        return NextResponse.json({ error: "Auth 계정 생성 실패: " + authError.message, step: "auth" }, { status: 400 });
+      }
+    } else {
+      authUserId = authUser.user?.id;
     }
 
-    // 2단계: 보안 — Auth 계정 생성이 성공했을 때만 students 테이블에 저장
-    const { error: insertError } = await admin.from("students").insert({
+    // 2단계: students 테이블에 upsert (기존이면 업데이트)
+    const payload: Record<string, unknown> = {
       student_id,
       password,
       name: name || null,
       role: role || "student",
-      department_id,
-      grade_year,
-      admission_year,
-      phone: phone || null,
-      email: email_field || null,
-    });
+    };
+    if (department_id !== null) payload.department_id = department_id;
+    if (grade_year !== null) payload.grade_year = grade_year;
+    if (admission_year !== null) payload.admission_year = admission_year;
+    if (phone) payload.phone = phone;
+    if (email_field) payload.email = email_field;
 
-    if (insertError) {
-      console.error("[create-user] DB 저장 실패:", insertError.message, { student_id });
-      if (authUser.user?.id) {
-        await admin.auth.admin.deleteUser(authUser.user.id);
-        console.error("[create-user] Auth 사용자 롤백 삭제 완료:", authUser.user.id);
-      }
+    const { error: upsertError } = await admin.from("students").upsert(payload, { onConflict: "student_id" });
+
+    if (upsertError) {
+      console.error("[create-user] DB 저장 실패:", upsertError.message, { student_id });
       return NextResponse.json(
-        { error: "students 테이블 저장 실패: " + insertError.message, step: "db" },
+        { error: "students 테이블 저장 실패: " + upsertError.message, step: "db" },
         { status: 400 }
       );
     }
@@ -85,7 +95,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       student_id,
-      email: authUser.user?.email ?? email,
+      email,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "알 수 없는 오류";
