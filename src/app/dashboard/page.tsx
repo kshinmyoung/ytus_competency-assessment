@@ -108,7 +108,9 @@ export default function DashboardPage() {
 
           const tagCounts: Record<number, number> = {};
           (myCourses ?? []).forEach((sc: any) => {
-            const tags = sc.courses?.major_competency_tags ?? [];
+            // courses가 배열 또는 객체일 수 있음
+            const c = Array.isArray(sc.courses) ? sc.courses[0] : sc.courses;
+            const tags = c?.major_competency_tags ?? [];
             tags.forEach((t: number) => {
               tagCounts[t] = (tagCounts[t] ?? 0) + 1;
             });

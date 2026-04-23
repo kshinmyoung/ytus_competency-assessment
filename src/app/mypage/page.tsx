@@ -6,14 +6,10 @@ import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import { formatDateTimeKorea } from "@/lib/date";
 import {
-  Legend,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
+  Bar, BarChart, CartesianGrid, Legend,
+  PolarAngleAxis, PolarGrid, PolarRadiusAxis,
+  Radar, RadarChart, ResponsiveContainer, Tooltip,
+  XAxis, YAxis,
 } from "recharts";
 
 const CORE_LABELS: Record<string, string> = {
@@ -59,6 +55,7 @@ export default function MyPage() {
   const [extraRecords, setExtraRecords] = useState<ExtraRecord[]>([]);
   const [coreComps, setCoreComps] = useState<CoreComp[]>([]);
   const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
+  const [majorCompScores, setMajorCompScores] = useState<{ id: number; name: string; score: number }[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "extra" | "diagnosis">("overview");
 
   useEffect(() => {
@@ -85,6 +82,20 @@ export default function MyPage() {
       setExtraRecords((extraRes.data ?? []) as unknown as ExtraRecord[]);
       setCoreComps((coreRes.data ?? []) as CoreComp[]);
       setMajorComps((majorRes.data ?? []) as MajorComp[]);
+
+      // 전공역량 집계 (수강 과목 태그 기반)
+      const myDeptId = studentRes.data?.department_id;
+      if (myDeptId) {
+        const { data: majorList } = await supabase.from("major_competencies").select("id, name").eq("department_id", myDeptId);
+        if (majorList) {
+          const tagCounts: Record<number, number> = {};
+          ((courseRes.data ?? []) as any[]).forEach((sc) => {
+            const c = Array.isArray(sc.courses) ? sc.courses[0] : sc.courses;
+            (c?.major_competency_tags ?? []).forEach((t: number) => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; });
+          });
+          setMajorCompScores(majorList.map((mc) => ({ id: mc.id, name: mc.name, score: tagCounts[mc.id] ?? 0 })));
+        }
+      }
     })();
   }, []);
 
@@ -163,6 +174,28 @@ export default function MyPage() {
                 <p className="py-8 text-center text-sm text-slate-500">핵심역량 진단 결과가 없습니다.</p>
               )}
             </div>
+
+            {/* 전공역량 현황 */}
+            {majorCompScores.length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-base font-semibold text-slate-800">
+                  전공역량 현황
+                  {departmentName && <span className="ml-2 text-xs font-normal text-slate-500">({departmentName})</span>}
+                </h2>
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={majorCompScores.map((mc) => ({ name: mc.name, 이수: mc.score }))} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip />
+                      <Bar dataKey="이수" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="mt-2 text-center text-[10px] text-slate-400">수강 과목의 전공역량 태그 기준 집계</p>
+              </div>
+            )}
 
             {/* Summary cards */}
             <div className="grid gap-4 sm:grid-cols-3">
