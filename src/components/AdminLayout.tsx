@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Calendar,
   ClipboardCheck,
   FileBarChart,
   LayoutDashboard,
@@ -24,6 +25,7 @@ const tabs = [
   { label: "진단 문항 관리", href: "/admin/assessment", icon: ClipboardCheck },
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "멘토링 관리", href: "/admin/mentoring", icon: UserCheck },
+  { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "통합 등록", href: "/admin/import", icon: Upload },
 ];
 
