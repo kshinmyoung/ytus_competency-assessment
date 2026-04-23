@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Calendar,
   ClipboardCheck,
   Home,
   LayoutDashboard,
@@ -26,6 +27,7 @@ const studentNav = [
   { label: "교과목 로드맵", href: "/roadmap", icon: Map },
   { label: "비교과", href: "/extracurricular", icon: Trophy },
   { label: "AI진로가이드", href: "/ai-guide", icon: Sparkles },
+  { label: "예약/신청", href: "/reservation", icon: Calendar },
   { label: "마이페이지", href: "/mypage", icon: User },
 ];
 
