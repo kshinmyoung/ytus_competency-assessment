@@ -55,7 +55,9 @@ export default function LoginPage() {
         console.log("현재 유저의 역할:", studentRow?.role ?? "(없음)", "→ 판단:", userRole || "(student)");
         if (userRole === "admin") {
           router.push("/admin");
-        } else if (["department_head", "mentor_professor", "ctl", "career_center", "counseling_center"].includes(userRole)) {
+        } else if (["ctl", "career_center", "counseling_center"].includes(userRole)) {
+          router.push("/admin");
+        } else if (["department_head", "mentor_professor"].includes(userRole)) {
           router.push("/professor");
         } else {
           router.push("/dashboard");
