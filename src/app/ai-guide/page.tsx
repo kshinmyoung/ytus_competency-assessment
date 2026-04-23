@@ -50,6 +50,7 @@ export default function CareerGuidePage() {
   const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
   const [myCourses, setMyCourses] = useState<MyCourse[]>([]);
   const [myExtras, setMyExtras] = useState<MyExtra[]>([]);
+  const [majorDiagScores, setMajorDiagScores] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function CareerGuidePage() {
       const sid = await getCurrentStudentId();
       if (!sid?.trim()) return;
 
-      const [studentRes, coreRes, majorRes, coreCompRes, majorCompRes, courseRes, extraRes, learningRes, callingRes] = await Promise.all([
+      const [studentRes, coreRes, majorRes, coreCompRes, majorCompRes, courseRes, extraRes, learningRes, callingRes, majorDiagRes] = await Promise.all([
         supabase.from("students").select("name, department_id").eq("student_id", sid.trim()).maybeSingle(),
         supabase.from("diagnosis_results").select("scores, total_score").eq("student_id", sid.trim()).eq("diagnosis_type", "core").order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("departments").select("*"),
@@ -67,6 +68,7 @@ export default function CareerGuidePage() {
         supabase.from("student_extracurricular").select("status, extracurricular(name, core_competency_tags, major_competency_tags)").eq("student_id", sid.trim()),
         supabase.from("diagnosis_results").select("total_score").eq("student_id", sid.trim()).eq("diagnosis_type", "learning").order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("diagnosis_results").select("total_score").eq("student_id", sid.trim()).eq("diagnosis_type", "calling").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("assessment_sessions").select("competency_scores").eq("student_id", sid.trim()).not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
 
       setUserName(studentRes.data?.name ?? "");
@@ -80,6 +82,7 @@ export default function CareerGuidePage() {
       setMajorComps(majorCompRes.data ?? []);
       setMyCourses((courseRes.data ?? []) as unknown as MyCourse[]);
       setMyExtras((extraRes.data ?? []) as unknown as MyExtra[]);
+      setMajorDiagScores(majorDiagRes.data?.competency_scores as Record<string, number> | null);
       setLoading(false);
     })();
   }, []);
@@ -306,6 +309,122 @@ export default function CareerGuidePage() {
           </div>
           <p className="mt-3 text-[10px] text-slate-400">* 수강 완료·비교과 참여 과목에 태그된 역량을 기준으로 집계합니다</p>
         </div>
+
+        {/* 전공역량진단 분석 */}
+        {majorDiagScores && (
+          <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-800">
+              <Target className="h-5 w-5 text-orange-500" /> 전공역량진단 분석
+              {deptName && <span className="text-xs font-normal text-slate-500">({deptName})</span>}
+            </h2>
+
+            {/* 점수 바 차트 */}
+            <div className="mb-5 space-y-3">
+              {Object.entries(majorDiagScores).map(([name, score]) => {
+                const maxScore = 25;
+                const pct = Math.min(Math.round((score / maxScore) * 100), 100);
+                const level = pct >= 80 ? "우수" : pct >= 60 ? "보통" : "보완 필요";
+                const barColor = pct >= 80 ? "#10B981" : pct >= 60 ? "#F59E0B" : "#EF4444";
+                const bgColor = pct >= 80 ? "bg-green-50 text-green-700" : pct >= 60 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700";
+                return (
+                  <div key={name}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-800">{name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${bgColor}`}>{level}</span>
+                        <span className="text-xs text-slate-500">{score}점</span>
+                      </div>
+                    </div>
+                    <div className="mt-1 h-2.5 rounded-full bg-slate-100">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 강점/약점 분석 */}
+            {(() => {
+              const entries = Object.entries(majorDiagScores).sort((a, b) => b[1] - a[1]);
+              const strongest = entries[0];
+              const weakest = entries[entries.length - 1];
+              if (!strongest || !weakest) return null;
+
+              const MAJOR_TIPS: Record<number, Record<string, { tip: string; courses: string[] }>> = {
+                1: { // 신학과
+                  "공통문항": { tip: "전공 기초 소양을 더 쌓아보세요.", courses: ["조직신학개론", "신약개론", "구약개론"] },
+                  "전공지식문항": { tip: "심화 전공 과목을 통해 신학적 깊이를 더하세요.", courses: ["세계교회사", "선교학", "기독교윤리학"] },
+                  "SJT문항": { tip: "현장 실천 역량을 키워보세요.", courses: ["실천신학개론", "기독교교육개론", "선교현장 연구와 실습"] },
+                },
+                2: { // 기독교교육학과
+                  "공통문항": { tip: "교육학 기초를 탄탄히 다져보세요.", courses: ["교육학개론", "기독교교육개론", "인간발달의 이해"] },
+                  "전공지식문항": { tip: "교육 이론과 방법론을 심화 학습하세요.", courses: ["기독교교육사상사", "교육신학", "교육방법 및 교육공학"] },
+                  "SJT문항": { tip: "교육 현장 실습 경험을 늘려보세요.", courses: ["기독교교육현장과 실습", "교육실습", "성서교수법"] },
+                },
+                3: { // 상담심리학과
+                  "공통문항": { tip: "상담 기초 역량을 더 다져보세요.", courses: ["상담심리학", "성격심리", "발달심리학"] },
+                  "전공지식문항": { tip: "상담 이론과 진단 역량을 강화하세요.", courses: ["이상심리학", "심리측정 및 평가", "임상심리학"] },
+                  "SJT문항": { tip: "실제 상담 실습 경험을 쌓아보세요.", courses: ["개인상담", "집단상담", "상담현장실습"] },
+                },
+                4: { // 사회복지학과
+                  "공통문항": { tip: "사회복지 기초 이해를 넓혀보세요.", courses: ["사회복지학개론", "인간행동과 사회환경", "기독교사회복지"] },
+                  "전공지식문항": { tip: "실천 기술과 정책 이해를 심화하세요.", courses: ["사회복지실천기술론", "사회복지정책론", "사회복지조사론"] },
+                  "SJT문항": { tip: "현장실습으로 실무 감각을 키워보세요.", courses: ["사회복지현장실습 1", "지역사회복지론", "사례관리론"] },
+                },
+                5: { // 국제언어다문화학과
+                  "공통문항": { tip: "다문화 이해의 기초를 넓혀보세요.", courses: ["다문화개론", "언어학개론", "외국어습득론"] },
+                  "전공지식문항": { tip: "언어교육과 이민정책 지식을 심화하세요.", courses: ["다문화 커뮤니케이션", "이민정책론", "이민법제론"] },
+                  "SJT문항": { tip: "현장 실습과 문화 중재 경험을 쌓아보세요.", courses: ["이민다문화현장실습", "다문화가족상담의 실제", "국제협력과 세계시민교육"] },
+                },
+              };
+
+              const weakTip = deptId ? MAJOR_TIPS[deptId]?.[weakest[0]] : null;
+
+              return (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+                    <p className="text-xs font-semibold text-green-800">전공 강점</p>
+                    <p className="mt-1 text-sm font-medium text-green-900">{strongest[0]}</p>
+                    <p className="mt-1 text-xs text-green-700">이 영역의 역량이 가장 뛰어납니다. 관련 심화 과목과 자격증을 도전해보세요!</p>
+                  </div>
+                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+                    <p className="text-xs font-semibold text-orange-800">보완 추천</p>
+                    <p className="mt-1 text-sm font-medium text-orange-900">{weakest[0]}</p>
+                    {weakTip ? (
+                      <>
+                        <p className="mt-1 text-xs text-orange-700">{weakTip.tip}</p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {weakTip.courses.map((c) => (
+                            <span key={c} className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] text-orange-800">{c}</span>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-xs text-orange-700">관련 과목을 추가 수강하여 역량을 보완해보세요.</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {!deptName && <p className="mt-3 text-xs text-slate-400">학과 설정 후 더 구체적인 추천을 받을 수 있습니다.</p>}
+          </div>
+        )}
+
+        {/* 전공역량진단 미완료 안내 */}
+        {!majorDiagScores && deptName && (
+          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">전공역량진단</p>
+                <p className="mt-0.5 text-xs text-slate-500">전공역량진단을 완료하면 학과 맞춤 진로 분석을 받을 수 있습니다.</p>
+              </div>
+              <Link href="/diagnosis/major" className="rounded-full bg-orange-600 px-4 py-2 text-xs font-medium text-white hover:bg-orange-700">
+                진단하기
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* 자격증 이수 현황 + 진로 */}
         {myCerts.length > 0 && (
