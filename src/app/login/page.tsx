@@ -44,15 +44,30 @@ export default function LoginPage() {
 
       if (typeof window !== "undefined") {
         sessionStorage.setItem("student_id", studentId);
-        // 로그인 성공 시점에 students 테이블에서 role을 다시 조회해 정확히 판단
-        const { data: studentRow } = await supabase
-          .from("students")
-          .select("student_id, name, role")
-          .eq("student_id", studentId)
-          .maybeSingle();
-        sessionStorage.setItem("student_name", studentRow?.name ?? "");
-        const userRole = (studentRow?.role ?? "").trim().toLowerCase();
-        console.log("현재 유저의 역할:", studentRow?.role ?? "(없음)", "→ 판단:", userRole || "(student)");
+
+        // Auth 로그인 직후 토큰이 적용될 때까지 잠시 대기
+        await new Promise((r) => setTimeout(r, 300));
+
+        // role 조회 (여러 번 시도)
+        let userRole = "";
+        let studentName = "";
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const { data: studentRow } = await supabase
+            .from("students")
+            .select("student_id, name, role")
+            .eq("student_id", studentId)
+            .maybeSingle();
+          if (studentRow) {
+            studentName = studentRow.name ?? "";
+            userRole = (studentRow.role ?? "").trim().toLowerCase();
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 500));
+        }
+
+        sessionStorage.setItem("student_name", studentName);
+        console.log("현재 유저의 역할:", userRole || "(student)");
+
         if (userRole === "admin") {
           router.push("/admin");
         } else if (["ctl", "career_center", "counseling_center"].includes(userRole)) {
