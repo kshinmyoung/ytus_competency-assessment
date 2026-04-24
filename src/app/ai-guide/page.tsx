@@ -26,7 +26,7 @@ const DEPT_KEY_MAP: Record<number, string> = {
 };
 
 const CENTERS = [
-  { name: "취창업지원센터", desc: "진로상담, 취업역량 강화, 자격증 이수 상담", when: "진로 방향이 불확실하거나 자격증 취득 계획이 필요할 때", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { name: "취창업진로지원센터", desc: "진로상담, 취업역량 강화, 자격증 이수 상담", when: "진로 방향이 불확실하거나 자격증 취득 계획이 필요할 때", color: "bg-blue-50 text-blue-700 border-blue-200" },
   { name: "교수학습지원센터", desc: "학습 코칭, 튜터링, 학습역량 향상 프로그램", when: "학습역량 점수가 낮거나 학습 방법 개선이 필요할 때", color: "bg-green-50 text-green-700 border-green-200" },
   { name: "학생생활상담센터", desc: "심리상담, 진로상담, 위기상담, 적응상담", when: "소명진단 점수가 낮거나 진로 고민이 깊을 때", color: "bg-violet-50 text-violet-700 border-violet-200" },
 ];
@@ -143,10 +143,10 @@ export default function CareerGuidePage() {
       recs.push({ name: "교수학습지원센터", reason: "학습역량 향상을 위한 코칭 프로그램을 추천합니다" });
     }
     if (myCerts.length > 0) {
-      recs.push({ name: "취창업지원센터", reason: "자격증 취득 계획과 취업 전략 상담을 추천합니다" });
+      recs.push({ name: "취창업진로지원센터", reason: "자격증 취득 계획과 취업 전략 상담을 추천합니다" });
     }
     if (recs.length === 0) {
-      recs.push({ name: "취창업지원센터", reason: "졸업 후 진로 설계를 위한 상담을 추천합니다" });
+      recs.push({ name: "취창업진로지원센터", reason: "졸업 후 진로 설계를 위한 상담을 추천합니다" });
     }
     return recs;
   }, [callingScore, learningScore, myCerts]);
