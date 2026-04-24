@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
   const [recentCourses, setRecentCourses] = useState<{ name: string }[]>([]);
   const [recentExtra, setRecentExtra] = useState<{ name: string }[]>([]);
+  const [mileage, setMileage] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -161,6 +162,13 @@ export default function DashboardPage() {
       setRecentExtra(
         (extraData ?? []).map((e: any) => ({ name: e.extracurricular?.name ?? "" }))
       );
+
+      // 마일리지 합산
+      const { data: mileageData } = await supabase
+        .from("mileage_records")
+        .select("points")
+        .eq("student_id", studentId.trim());
+      setMileage((mileageData ?? []).reduce((sum: number, m: any) => sum + (m.points ?? 0), 0));
     })();
   }, []);
 
@@ -175,14 +183,20 @@ export default function DashboardPage() {
       <Navigation />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-            환영합니다, {userName}님!
-          </h1>
-          <p className="mt-1 text-slate-600">
-            {departmentName ? `${departmentName} · ` : ""}오늘도 빛나는 내일을 위해 진단을 시작해보세요.
-          </p>
+        {/* Welcome + Mileage */}
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+              환영합니다, {userName}님!
+            </h1>
+            <p className="mt-1 text-slate-600">
+              {departmentName ? `${departmentName} · ` : ""}오늘도 빛나는 내일을 위해 진단을 시작해보세요.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-6 py-3 shadow-sm">
+            <p className="text-xs text-amber-600">내 마일리지</p>
+            <p className="text-2xl font-bold text-amber-700">{mileage}<span className="ml-1 text-sm font-normal">점</span></p>
+          </div>
         </div>
 
         {/* Charts row */}

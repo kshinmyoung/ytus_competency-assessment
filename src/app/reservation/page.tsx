@@ -107,6 +107,8 @@ export default function ReservationPage() {
       purpose: purpose.trim() || null,
     });
     if (error) { alert(error.message); setSubmitting(false); return; }
+    // 마일리지 5점 부여
+    await supabase.from("mileage_records").insert({ student_id: studentId, points: 5, reason: `센터 상담 예약: ${centerInfo.name}`, source_type: "center_reservation" });
     setSubmitting(false);
     setSubmitted(true);
     setTimeSlot("");
@@ -131,6 +133,9 @@ export default function ReservationPage() {
     });
     if (!error) {
       setMyExtras((prev) => new Map(prev).set(extraId, { extracurricular_id: extraId, status: "신청" }));
+      // 마일리지 10점 부여
+      const extraName = extras.find((e) => e.id === extraId)?.name ?? "";
+      await supabase.from("mileage_records").insert({ student_id: studentId, points: 10, reason: `비교과 신청: ${extraName}`, source_type: "extracurricular", source_id: extraId });
     } else { alert(error.message); }
     setExtraSubmitting(false);
   };

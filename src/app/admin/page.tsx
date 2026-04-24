@@ -823,6 +823,7 @@ export default function AdminPage() {
                     <option value="ctl">교수학습지원센터</option>
                     <option value="career_center">취창업진로지원센터</option>
                     <option value="counseling_center">학생생활상담센터</option>
+                    <option value="staff">직원</option>
                   </select>
                 </div>
                 <div>
@@ -905,6 +906,7 @@ export default function AdminPage() {
                     <option value="ctl">교수학습지원센터</option>
                     <option value="career_center">취창업진로지원센터</option>
                     <option value="counseling_center">학생생활상담센터</option>
+                    <option value="staff">직원</option>
                   </select>
                 </div>
                 <div>
