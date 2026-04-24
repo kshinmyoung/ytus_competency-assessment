@@ -84,14 +84,15 @@ export default function AdminReservationsPage() {
     return list;
   }, [reservations, filterCenter, filterStatus, filterDate]);
 
-  // 통계
+  // 통계 (선택된 센터 기준)
   const stats = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
+    const base = filterCenter === "all" ? reservations : reservations.filter((r) => r.center_type === filterCenter);
     return {
-      total: reservations.length,
-      pending: reservations.filter((r) => r.status === "신청").length,
-      today: reservations.filter((r) => r.reservation_date === today && r.status !== "취소").length,
-      completed: reservations.filter((r) => r.status === "완료").length,
+      total: base.length,
+      pending: base.filter((r) => r.status === "신청").length,
+      today: base.filter((r) => r.reservation_date === today && r.status !== "취소").length,
+      completed: base.filter((r) => r.status === "완료").length,
     };
   }, [reservations]);
 
@@ -154,21 +155,28 @@ export default function AdminReservationsPage() {
         </button>
       </div>
 
+      {/* 센터명 표시 */}
+      {filterCenter !== "all" && (
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-slate-800">{CENTERS.find((c) => c.key === filterCenter)?.name} 예약 현황</h3>
+        </div>
+      )}
+
       {/* 통계 */}
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs text-slate-500">전체 예약</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-slate-300" onClick={() => setFilterStatus("all")}>
+          <p className="text-xs text-slate-500">{filterCenter === "all" ? "전체" : CENTERS.find((c) => c.key === filterCenter)?.name} 예약</p>
           <p className="mt-1 text-xl font-bold text-slate-900">{stats.total}건</p>
         </div>
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 shadow-sm">
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-yellow-300" onClick={() => setFilterStatus("신청")}>
           <p className="text-xs text-yellow-700">대기 중 (신청)</p>
           <p className="mt-1 text-xl font-bold text-yellow-700">{stats.pending}건</p>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300" onClick={() => { setFilterStatus("all"); setFilterDate(new Date().toISOString().split("T")[0]); }}>
           <p className="text-xs text-blue-700">오늘 예약</p>
           <p className="mt-1 text-xl font-bold text-blue-700">{stats.today}건</p>
         </div>
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-green-300" onClick={() => setFilterStatus("완료")}>
           <p className="text-xs text-green-700">완료</p>
           <p className="mt-1 text-xl font-bold text-green-700">{stats.completed}건</p>
         </div>
