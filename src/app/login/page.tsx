@@ -71,7 +71,7 @@ export default function LoginPage() {
         if (userRole === "admin") {
           router.push("/admin");
         } else if (["ctl", "career_center", "counseling_center"].includes(userRole)) {
-          router.push("/admin");
+          router.push("/admin/reservations");
         } else if (["department_head", "mentor_professor"].includes(userRole)) {
           router.push("/professor");
         } else {
