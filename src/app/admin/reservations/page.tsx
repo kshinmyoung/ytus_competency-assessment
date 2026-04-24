@@ -31,6 +31,7 @@ export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const [deptMap, setDeptMap] = useState<Record<string, string>>({});
+  const [myRole, setMyRole] = useState("");
   const [filterCenter, setFilterCenter] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterDate, setFilterDate] = useState("");
@@ -38,6 +39,18 @@ export default function AdminReservationsPage() {
   const [noteText, setNoteText] = useState("");
 
   const load = async () => {
+    // 본인 역할 확인
+    const sid = (await import("@/lib/supabase")).getCurrentStudentId;
+    const mySid = await sid();
+    if (mySid) {
+      const { data: me } = await supabase.from("students").select("role").eq("student_id", mySid.trim()).maybeSingle();
+      const role = (me?.role ?? "").trim().toLowerCase();
+      setMyRole(role);
+      // 센터 역할이면 본인 센터만 기본 필터
+      if (["ctl", "career_center", "counseling_center"].includes(role) && filterCenter === "all") {
+        setFilterCenter(role);
+      }
+    }
     const [resRes, studentsRes, deptRes] = await Promise.all([
       supabase.from("center_reservations").select("*").order("reservation_date", { ascending: true }).order("time_slot"),
       supabase.from("students").select("student_id, name, department_id, phone"),
