@@ -69,13 +69,13 @@ export default function LoginPage() {
         console.log("현재 유저의 역할:", userRole || "(student)");
 
         if (userRole === "admin") {
-          router.push("/admin");
+          window.location.href = "/admin";
         } else if (["ctl", "career_center", "counseling_center"].includes(userRole)) {
-          router.push("/admin/reservations");
+          window.location.href = "/admin/reservations";
         } else if (["department_head", "mentor_professor"].includes(userRole)) {
-          router.push("/professor");
+          window.location.href = "/professor";
         } else {
-          router.push("/dashboard");
+          window.location.href = "/dashboard";
         }
       }
     } catch (err) {
