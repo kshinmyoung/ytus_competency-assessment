@@ -229,7 +229,7 @@ export default function AdminPage() {
         .maybeSingle();
       const userRole = (data?.role ?? "").trim().toLowerCase();
       console.log("현재 유저의 역할:", data?.role ?? "(없음)", "→ 판단:", userRole || "(student)");
-      if (userRole !== "admin") {
+      if (!["admin", "ctl", "career_center", "counseling_center", "department_head", "mentor_professor"].includes(userRole)) {
         router.replace("/");
         return;
       }
