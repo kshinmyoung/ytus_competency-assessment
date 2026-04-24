@@ -7,6 +7,7 @@ import {
   FileBarChart,
   LayoutDashboard,
   LogOut,
+  Send,
   Trophy,
   Upload,
   UserCheck,
@@ -26,6 +27,7 @@ const ADMIN_TABS = [
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "멘토링 관리", href: "/admin/mentoring", icon: UserCheck },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
+  { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "통합 등록", href: "/admin/import", icon: Upload },
 ];
 
@@ -36,6 +38,7 @@ const CENTER_TABS = [
   { label: "진단 문항", href: "/admin/assessment", icon: ClipboardCheck },
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
+  { label: "리퍼럴", href: "/admin/referrals", icon: Send },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -64,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .eq("student_id", studentId.trim())
         .maybeSingle();
       const role = (data?.role ?? "").trim().toLowerCase();
-      if (!["admin", "ctl", "career_center", "counseling_center"].includes(role)) {
+      if (!["admin", "ctl", "career_center", "counseling_center", "mentor_professor", "department_head"].includes(role)) {
         router.replace("/");
         return;
       }
@@ -77,7 +80,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })();
   }, [router]);
 
-  const tabs = userRole === "admin" ? ADMIN_TABS : CENTER_TABS;
+  const PROFESSOR_TABS = [
+    { label: "리퍼럴", href: "/admin/referrals", icon: Send },
+  ];
+
+  const tabs = userRole === "admin" ? ADMIN_TABS : ["mentor_professor", "department_head"].includes(userRole) ? PROFESSOR_TABS : CENTER_TABS;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
