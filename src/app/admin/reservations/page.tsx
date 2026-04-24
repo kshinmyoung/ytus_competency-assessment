@@ -1,10 +1,12 @@
 "use client";
 
-import { Calendar, Check, Clock, Download, Filter, MessageSquare, X } from "lucide-react";
+import { Calendar, Check, Clock, Download, FileText, Filter, MessageSquare, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import { formatDateTimeKorea } from "@/lib/date";
 import AdminLayout from "@/components/AdminLayout";
+
+const COUNSEL_CATEGORIES = ["일반", "학업", "진로", "심리", "신앙", "생활", "기타"];
 
 type Reservation = {
   id: number;
@@ -37,16 +39,18 @@ export default function AdminReservationsPage() {
   const [filterDate, setFilterDate] = useState("");
   const [editingNote, setEditingNote] = useState<number | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [myStaffId, setMyStaffId] = useState("");
+  const [showCounselForm, setShowCounselForm] = useState<string | null>(null);
+  const [counselForm, setCounselForm] = useState({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "" });
+  const [counselSaving, setCounselSaving] = useState(false);
 
   const load = async () => {
-    // 본인 역할 확인
-    const sid = (await import("@/lib/supabase")).getCurrentStudentId;
-    const mySid = await sid();
+    const mySid = await getCurrentStudentId();
     if (mySid) {
+      setMyStaffId(mySid.trim());
       const { data: me } = await supabase.from("students").select("role").eq("student_id", mySid.trim()).maybeSingle();
       const role = (me?.role ?? "").trim().toLowerCase();
       setMyRole(role);
-      // 센터 역할이면 본인 센터만 기본 필터
       if (["ctl", "career_center", "counseling_center"].includes(role) && filterCenter === "all") {
         setFilterCenter(role);
       }
@@ -94,6 +98,27 @@ export default function AdminReservationsPage() {
   const handleStatusChange = async (id: number, newStatus: string) => {
     await supabase.from("center_reservations").update({ status: newStatus }).eq("id", id);
     await load();
+  };
+
+  const handleSaveCounsel = async () => {
+    if (!showCounselForm || !counselForm.content.trim()) return;
+    setCounselSaving(true);
+    await supabase.from("counseling_records").insert({
+      student_id: showCounselForm,
+      counselor_id: myStaffId,
+      counselor_role: myRole,
+      counseling_date: new Date().toISOString().split("T")[0],
+      category: counselForm.category,
+      content: counselForm.content.trim(),
+      action_plan: counselForm.action_plan.trim() || null,
+      follow_up_needed: counselForm.follow_up_needed,
+      follow_up_date: counselForm.follow_up_date || null,
+      is_private: false,
+    });
+    setCounselSaving(false);
+    setShowCounselForm(null);
+    setCounselForm({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "" });
+    alert("상담기록이 저장되었습니다.");
   };
 
   const handleSaveNote = async (id: number) => {
@@ -213,6 +238,10 @@ export default function AdminReservationsPage() {
                       </select>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <button type="button" onClick={() => { setShowCounselForm(r.student_id); setCounselForm({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "" }); }}
+                        className="mr-1 text-emerald-500 hover:text-emerald-700" title="상담기록">
+                        <FileText className="inline h-4 w-4" />
+                      </button>
                       <button type="button" onClick={() => { setEditingNote(r.id); setNoteText(r.admin_note ?? ""); }}
                         className="text-slate-400 hover:text-blue-600" title="메모">
                         <MessageSquare className="inline h-4 w-4" />
@@ -237,6 +266,56 @@ export default function AdminReservationsPage() {
             <div className="mt-4 flex gap-2">
               <button type="button" onClick={() => setEditingNote(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
               <button type="button" onClick={() => handleSaveNote(editingNote)} className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 상담기록 작성 모달 */}
+      {showCounselForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCounselForm(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-900">상담기록 작성</h3>
+            <p className="mt-1 text-sm text-slate-500">학생: {showCounselForm} - {nameMap[showCounselForm] ?? ""}</p>
+            <div className="mt-4 space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">분류</label>
+                  <select value={counselForm.category} onChange={(e) => setCounselForm({ ...counselForm, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    {COUNSEL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-end gap-3">
+                  <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                    <input type="checkbox" checked={counselForm.follow_up_needed} onChange={(e) => setCounselForm({ ...counselForm, follow_up_needed: e.target.checked })} className="rounded" />
+                    후속 상담 필요
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">상담 내용 *</label>
+                <textarea value={counselForm.content} onChange={(e) => setCounselForm({ ...counselForm, content: e.target.value })} rows={4}
+                  placeholder="상담 내용을 기록하세요." className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">조치 계획 (선택)</label>
+                <input type="text" value={counselForm.action_plan} onChange={(e) => setCounselForm({ ...counselForm, action_plan: e.target.value })}
+                  placeholder="향후 조치 사항" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              {counselForm.follow_up_needed && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">후속 상담일</label>
+                  <input type="date" value={counselForm.follow_up_date} onChange={(e) => setCounselForm({ ...counselForm, follow_up_date: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowCounselForm(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="button" onClick={handleSaveCounsel} disabled={counselSaving || !counselForm.content.trim()}
+                  className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                  {counselSaving ? "저장 중..." : "상담기록 저장"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
