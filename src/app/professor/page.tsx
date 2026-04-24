@@ -16,6 +16,9 @@ type Student = { student_id: string; name: string | null; department_id: number 
 type DiagnosisResult = { id: number; student_id: string; diagnosis_type: string; total_score: number; scores: Record<string, number> | null; created_at: string };
 type CourseRecord = { course_id: number; status: string; courses: { name: string } | null };
 type ExtraRecord = { extracurricular_id: number; status: string; extracurricular: { name: string } | null };
+type CounselingRecord = { id: number; student_id: string; counselor_id: string; counselor_role: string; counseling_date: string; category: string; content: string; action_plan: string | null; follow_up_needed: boolean; follow_up_date: string | null; is_private: boolean; created_at: string };
+const COUNSEL_CATEGORIES = ["일반", "학업", "진로", "심리", "신앙", "생활", "기타"];
+const CATEGORY_COLORS: Record<string, string> = { "일반": "bg-slate-100 text-slate-700", "학업": "bg-blue-50 text-blue-700", "진로": "bg-indigo-50 text-indigo-700", "심리": "bg-violet-50 text-violet-700", "신앙": "bg-amber-50 text-amber-700", "생활": "bg-green-50 text-green-700", "기타": "bg-slate-100 text-slate-600" };
 
 const ROLE_LABELS: Record<string, string> = {
   department_head: "학과장", mentor_professor: "멘토링교수",
@@ -41,6 +44,10 @@ export default function ProfessorPage() {
   const [studentDiag, setStudentDiag] = useState<DiagnosisResult[]>([]);
   const [studentCourses, setStudentCourses] = useState<CourseRecord[]>([]);
   const [studentExtra, setStudentExtra] = useState<ExtraRecord[]>([]);
+  const [counselRecords, setCounselRecords] = useState<CounselingRecord[]>([]);
+  const [showCounselForm, setShowCounselForm] = useState(false);
+  const [counselForm, setCounselForm] = useState({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "", is_private: false });
+  const [counselSaving, setCounselSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("students");
 
   useEffect(() => {
@@ -106,14 +113,40 @@ export default function ProfessorPage() {
 
   const viewStudent = async (student: Student) => {
     setSelectedStudent(student);
-    const [diagRes, courseRes, extraRes] = await Promise.all([
+    setShowCounselForm(false);
+    const [diagRes, courseRes, extraRes, counselRes] = await Promise.all([
       supabase.from("diagnosis_results").select("*").eq("student_id", student.student_id).order("created_at", { ascending: false }),
       supabase.from("student_courses").select("course_id, status, courses(name)").eq("student_id", student.student_id),
       supabase.from("student_extracurricular").select("extracurricular_id, status, extracurricular(name)").eq("student_id", student.student_id),
+      supabase.from("counseling_records").select("*").eq("student_id", student.student_id).order("counseling_date", { ascending: false }),
     ]);
     setStudentDiag((diagRes.data ?? []) as DiagnosisResult[]);
     setStudentCourses((courseRes.data ?? []) as unknown as CourseRecord[]);
     setStudentExtra((extraRes.data ?? []) as unknown as ExtraRecord[]);
+    setCounselRecords((counselRes.data ?? []) as CounselingRecord[]);
+  };
+
+  const handleSaveCounsel = async () => {
+    if (!selectedStudent || !counselForm.content.trim()) return;
+    setCounselSaving(true);
+    await supabase.from("counseling_records").insert({
+      student_id: selectedStudent.student_id,
+      counselor_id: myId,
+      counselor_role: myRole,
+      counseling_date: new Date().toISOString().split("T")[0],
+      category: counselForm.category,
+      content: counselForm.content.trim(),
+      action_plan: counselForm.action_plan.trim() || null,
+      follow_up_needed: counselForm.follow_up_needed,
+      follow_up_date: counselForm.follow_up_date || null,
+      is_private: counselForm.is_private,
+    });
+    setCounselSaving(false);
+    setShowCounselForm(false);
+    setCounselForm({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "", is_private: false });
+    // 새로고침
+    const { data } = await supabase.from("counseling_records").select("*").eq("student_id", selectedStudent.student_id).order("counseling_date", { ascending: false });
+    setCounselRecords((data ?? []) as CounselingRecord[]);
   };
 
   const latestCore = useMemo(() => studentDiag.find((d) => d.diagnosis_type === "core"), [studentDiag]);
@@ -391,8 +424,88 @@ export default function ProfessorPage() {
               </div>
             </div>
 
-            {/* 리퍼럴 보내기 링크 */}
+            {/* 상담기록 */}
             <div className="mt-6 border-t border-slate-200 pt-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700">상담기록 ({counselRecords.length}건)</h4>
+                <button type="button" onClick={() => setShowCounselForm(!showCounselForm)}
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
+                  + 상담기록 추가
+                </button>
+              </div>
+
+              {/* 상담기록 입력 폼 */}
+              {showCounselForm && (
+                <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700">분류</label>
+                      <select value={counselForm.category} onChange={(e) => setCounselForm({ ...counselForm, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                        {COUNSEL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-end gap-3">
+                      <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                        <input type="checkbox" checked={counselForm.follow_up_needed} onChange={(e) => setCounselForm({ ...counselForm, follow_up_needed: e.target.checked })} className="rounded" />
+                        후속 상담 필요
+                      </label>
+                      <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                        <input type="checkbox" checked={counselForm.is_private} onChange={(e) => setCounselForm({ ...counselForm, is_private: e.target.checked })} className="rounded" />
+                        비공개
+                      </label>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-medium text-slate-700">상담 내용 *</label>
+                    <textarea value={counselForm.content} onChange={(e) => setCounselForm({ ...counselForm, content: e.target.value })} rows={3}
+                      placeholder="상담 내용을 기록하세요." className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-medium text-slate-700">조치 계획 (선택)</label>
+                    <input type="text" value={counselForm.action_plan} onChange={(e) => setCounselForm({ ...counselForm, action_plan: e.target.value })}
+                      placeholder="향후 조치 사항" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  </div>
+                  {counselForm.follow_up_needed && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-slate-700">후속 상담일</label>
+                      <input type="date" value={counselForm.follow_up_date} onChange={(e) => setCounselForm({ ...counselForm, follow_up_date: e.target.value })}
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                    </div>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <button type="button" onClick={() => setShowCounselForm(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                    <button type="button" onClick={handleSaveCounsel} disabled={counselSaving || !counselForm.content.trim()}
+                      className="flex-1 rounded-lg bg-emerald-600 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                      {counselSaving ? "저장 중..." : "저장"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 상담기록 목록 */}
+              {counselRecords.length === 0 ? (
+                <p className="text-sm text-slate-500">상담기록이 없습니다.</p>
+              ) : (
+                <div className="space-y-2">
+                  {counselRecords.map((cr) => (
+                    <div key={cr.id} className="rounded-lg border border-slate-200 p-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[cr.category] ?? "bg-slate-100 text-slate-600"}`}>{cr.category}</span>
+                        <span className="text-xs text-slate-500">{cr.counseling_date}</span>
+                        {cr.follow_up_needed && <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
+                        {cr.is_private && <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500">비공개</span>}
+                      </div>
+                      <p className="mt-1.5 text-sm text-slate-800">{cr.content}</p>
+                      {cr.action_plan && <p className="mt-1 text-xs text-blue-700">조치: {cr.action_plan}</p>}
+                      {cr.follow_up_date && <p className="mt-0.5 text-[10px] text-slate-500">후속 상담: {cr.follow_up_date}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 리퍼럴 보내기 링크 */}
+            <div className="mt-4 border-t border-slate-200 pt-4">
               <Link href="/admin/referrals" className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
                 <Send className="h-4 w-4" /> 이 학생을 센터에 리퍼럴 보내기
               </Link>

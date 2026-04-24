@@ -5,6 +5,7 @@ import {
   Calendar,
   ClipboardCheck,
   FileBarChart,
+  FileText,
   LayoutDashboard,
   LogOut,
   Send,
@@ -28,6 +29,7 @@ const ADMIN_TABS = [
   { label: "멘토링 관리", href: "/admin/mentoring", icon: UserCheck },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
+  { label: "상담기록", href: "/admin/counseling", icon: FileText },
   { label: "통합 등록", href: "/admin/import", icon: Upload },
 ];
 
@@ -39,6 +41,7 @@ const CENTER_TABS = [
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
+  { label: "상담기록", href: "/admin/counseling", icon: FileText },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
