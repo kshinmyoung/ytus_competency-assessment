@@ -14,7 +14,7 @@ import {
 
 type Student = { student_id: string; name: string | null; department_id: number | null; phone: string | null; email: string | null };
 type DiagnosisResult = { id: number; student_id: string; diagnosis_type: string; total_score: number; scores: Record<string, number> | null; created_at: string };
-type CourseRecord = { course_id: number; status: string; courses: { name: string } | null };
+type CourseRecord = { course_id: number; semester: string | null; year: number | null; grade: string | null; status: string; courses: { name: string; professor: string | null; credit: number } | null };
 type ExtraRecord = { extracurricular_id: number; status: string; extracurricular: { name: string } | null };
 type CounselingRecord = { id: number; student_id: string; counselor_id: string; counselor_role: string; counseling_date: string; category: string; content: string; action_plan: string | null; follow_up_needed: boolean; follow_up_date: string | null; is_private: boolean; created_at: string };
 const COUNSEL_CATEGORIES = ["일반", "학업", "진로", "심리", "신앙", "생활", "기타"];
@@ -116,7 +116,7 @@ export default function ProfessorPage() {
     setShowCounselForm(false);
     const [diagRes, courseRes, extraRes, counselRes] = await Promise.all([
       supabase.from("diagnosis_results").select("*").eq("student_id", student.student_id).order("created_at", { ascending: false }),
-      supabase.from("student_courses").select("course_id, status, courses(name)").eq("student_id", student.student_id),
+      supabase.from("student_courses").select("course_id, semester, year, grade, status, courses(name, professor, credit)").eq("student_id", student.student_id).order("year").order("semester"),
       supabase.from("student_extracurricular").select("extracurricular_id, status, extracurricular(name)").eq("student_id", student.student_id),
       supabase.from("counseling_records").select("*").eq("student_id", student.student_id).order("counseling_date", { ascending: false }),
     ]);
@@ -396,32 +396,56 @@ export default function ProfessorPage() {
               )}
             </div>
 
-            {/* 수강 / 비교과 */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><BookOpen className="h-4 w-4" /> 수강 과목 ({studentCourses.length})</h4>
-                {studentCourses.length === 0 ? <p className="text-sm text-slate-500">없음</p> : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {studentCourses.map((c, i) => (
-                      <span key={i} className={`rounded-full px-2.5 py-1 text-xs font-medium ${c.status === "완료" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
-                        {c.courses?.name ?? `#${c.course_id}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div>
-                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><Trophy className="h-4 w-4" /> 비교과 ({studentExtra.length})</h4>
-                {studentExtra.length === 0 ? <p className="text-sm text-slate-500">없음</p> : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {studentExtra.map((e, i) => (
-                      <span key={i} className={`rounded-full px-2.5 py-1 text-xs font-medium ${e.status === "완료" ? "bg-green-50 text-green-700" : e.status === "참여중" ? "bg-blue-50 text-blue-700" : "bg-yellow-50 text-yellow-700"}`}>
-                        {e.extracurricular?.name ?? `#${e.extracurricular_id}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* 수강 과목 */}
+            <div className="mb-4">
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><BookOpen className="h-4 w-4" /> 수강 과목 ({studentCourses.length})</h4>
+              {studentCourses.length === 0 ? <p className="text-sm text-slate-500">수강 이력이 없습니다.</p> : (
+                <div className="overflow-hidden rounded-lg border border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">과목명</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">교수</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">학점</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">학기</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">성적</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {studentCourses.map((c, i) => {
+                        const course = Array.isArray(c.courses) ? (c.courses as any)[0] : c.courses;
+                        return (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="px-3 py-2 text-xs font-medium text-slate-900">{course?.name ?? "-"}</td>
+                            <td className="px-3 py-2 text-xs text-slate-600">{course?.professor ?? "-"}</td>
+                            <td className="px-3 py-2 text-xs text-slate-600">{course?.credit ?? "-"}</td>
+                            <td className="px-3 py-2 text-xs text-slate-600">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
+                            <td className="px-3 py-2 text-xs text-slate-600">{c.grade ?? "-"}</td>
+                            <td className="px-3 py-2">
+                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${c.status === "완료" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>{c.status}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* 비교과 */}
+            <div>
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><Trophy className="h-4 w-4" /> 비교과 ({studentExtra.length})</h4>
+              {studentExtra.length === 0 ? <p className="text-sm text-slate-500">없음</p> : (
+                <div className="flex flex-wrap gap-1.5">
+                  {studentExtra.map((e, i) => (
+                    <span key={i} className={`rounded-full px-2.5 py-1 text-xs font-medium ${e.status === "완료" ? "bg-green-50 text-green-700" : e.status === "참여중" ? "bg-blue-50 text-blue-700" : "bg-yellow-50 text-yellow-700"}`}>
+                      {(Array.isArray(e.extracurricular) ? (e.extracurricular as any)[0] : e.extracurricular)?.name ?? `#${e.extracurricular_id}`}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 상담기록 */}
