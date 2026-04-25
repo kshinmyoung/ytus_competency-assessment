@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, ClipboardCheck, Trophy } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
@@ -128,11 +129,16 @@ export default function MyPage() {
       <Navigation />
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         {/* Profile header */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-bold text-slate-900">{userName || "학우"}님의 마이페이지</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {departmentName && `${departmentName} · `}역량 현황과 활동 이력을 확인하세요.
-          </p>
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">{userName || "학우"}님의 마이페이지</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              {departmentName && `${departmentName} · `}역량 현황과 활동 이력을 확인하세요.
+            </p>
+          </div>
+          <Link href="/mypage/portfolio" className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
+            포트폴리오
+          </Link>
         </div>
 
         {/* Tabs */}
