@@ -269,7 +269,8 @@ export default function CallingDiagnosisPage() {
       alert("결과 저장 실패: " + (error.message ?? "알 수 없는 오류"));
       return;
     }
-    await supabase.from("mileage_records").insert({ student_id: studentId.trim(), points: 5, reason: "소명진단 완료", source_type: "manual" });
+    const { data: existMile } = await supabase.from("mileage_records").select("id").eq("student_id", studentId.trim()).eq("reason", "소명진단 완료").maybeSingle();
+    if (!existMile) await supabase.from("mileage_records").insert({ student_id: studentId.trim(), points: 5, reason: "소명진단 완료", source_type: "manual" });
     setResultScores(scoresArr);
     setIsSubmitted(true);
   };
