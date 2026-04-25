@@ -140,6 +140,12 @@ export default function AdminReferralsPage() {
     await load();
   };
 
+  const handleDeleteReferral = async (id: number) => {
+    if (!confirm("이 리퍼럴을 삭제하시겠습니까?")) return;
+    await supabase.from("referrals").delete().eq("id", id);
+    await load();
+  };
+
   const handleResponseNote = async () => {
     if (!respondingId) return;
     await supabase.from("referrals").update({ response_note: responseNote.trim() || null, updated_at: new Date().toISOString() }).eq("id", respondingId);
@@ -237,6 +243,8 @@ export default function AdminReferralsPage() {
                   </select>
                   <button type="button" onClick={() => { setRespondingId(r.id); setResponseNote(r.response_note ?? ""); }}
                     className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50">응답메모</button>
+                  <button type="button" onClick={() => handleDeleteReferral(r.id)}
+                    className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50">삭제</button>
                 </div>
               </div>
             </div>

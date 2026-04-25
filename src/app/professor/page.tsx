@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ClipboardCheck, LogOut, Search, Send, Sparkles, Trophy, Users } from "lucide-react";
+import { BookOpen, ClipboardCheck, LogOut, Search, Send, Sparkles, Trash2, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -513,11 +513,20 @@ export default function ProfessorPage() {
                 <div className="space-y-2">
                   {counselRecords.map((cr) => (
                     <div key={cr.id} className="rounded-lg border border-slate-200 p-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[cr.category] ?? "bg-slate-100 text-slate-600"}`}>{cr.category}</span>
-                        <span className="text-xs text-slate-500">{cr.counseling_date}</span>
-                        {cr.follow_up_needed && <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
-                        {cr.is_private && <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500">비공개</span>}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[cr.category] ?? "bg-slate-100 text-slate-600"}`}>{cr.category}</span>
+                          <span className="text-xs text-slate-500">{cr.counseling_date}</span>
+                          {cr.follow_up_needed && <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
+                          {cr.is_private && <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500">비공개</span>}
+                        </div>
+                        {cr.counselor_id === myId && (
+                          <button type="button" onClick={async () => {
+                            if (!confirm("이 상담기록을 삭제하시겠습니까?")) return;
+                            await supabase.from("counseling_records").delete().eq("id", cr.id);
+                            if (selectedStudent) { const { data } = await supabase.from("counseling_records").select("*").eq("student_id", selectedStudent.student_id).order("counseling_date", { ascending: false }); setCounselRecords((data ?? []) as CounselingRecord[]); }
+                          }} className="text-red-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                        )}
                       </div>
                       <p className="mt-1.5 text-sm text-slate-800">{cr.content}</p>
                       {cr.action_plan && <p className="mt-1 text-xs text-blue-700">조치: {cr.action_plan}</p>}

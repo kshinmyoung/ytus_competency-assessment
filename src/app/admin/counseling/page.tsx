@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Filter, Search } from "lucide-react";
+import { Download, Filter, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import AdminLayout from "@/components/AdminLayout";
@@ -54,6 +54,13 @@ export default function AdminCounselingPage() {
     followUp: records.filter((r) => r.follow_up_needed).length,
     thisMonth: records.filter((r) => r.counseling_date.startsWith(new Date().toISOString().slice(0, 7))).length,
   }), [records]);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("이 상담기록을 삭제하시겠습니까?")) return;
+    await supabase.from("counseling_records").delete().eq("id", id);
+    const { data } = await supabase.from("counseling_records").select("*").order("counseling_date", { ascending: false });
+    setRecords((data ?? []) as CounselRecord[]);
+  };
 
   const downloadCSV = () => {
     let csv = "학생학번,학생이름,상담자,상담자역할,날짜,분류,내용,조치계획,후속필요,후속상담일,비공개\n";
@@ -119,6 +126,9 @@ export default function AdminCounselingPage() {
                     {r.follow_up_date && <span>후속: {r.follow_up_date}</span>}
                   </div>
                 </div>
+                <button type="button" onClick={() => handleDelete(r.id)} className="ml-3 flex-shrink-0 text-red-400 hover:text-red-600" title="삭제">
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
           ))}
