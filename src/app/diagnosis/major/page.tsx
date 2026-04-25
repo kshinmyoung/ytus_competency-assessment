@@ -146,6 +146,7 @@ export default function MajorDiagnosisPage() {
       competency_scores: scores,
     }).eq("id", session.id);
 
+    await supabase.from("mileage_records").insert({ student_id: studentId, points: 5, reason: "전공역량진단 완료", source_type: "manual" });
     setIsSubmitting(false);
     setIsSubmitted(true);
   };

@@ -248,6 +248,8 @@ export default function CoreDiagnosisPage() {
       alert("결과 저장 실패: " + (error.message ?? "알 수 없는 오류"));
       return;
     }
+    // 마일리지 5점
+    await supabase.from("mileage_records").insert({ student_id: studentId.trim(), points: 5, reason: "핵심역량진단 완료", source_type: "manual" });
     setResultScores(scoresArr);
     setIsSubmitted(true);
   };

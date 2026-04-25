@@ -57,6 +57,7 @@ export default function MyPage() {
   const [coreComps, setCoreComps] = useState<CoreComp[]>([]);
   const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
   const [majorCompScores, setMajorCompScores] = useState<{ id: number; name: string; score: number }[]>([]);
+  const [mileage, setMileage] = useState(0);
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "extra" | "diagnosis">("overview");
 
   useEffect(() => {
@@ -97,6 +98,10 @@ export default function MyPage() {
           setMajorCompScores(majorList.map((mc) => ({ id: mc.id, name: mc.name, score: tagCounts[mc.id] ?? 0 })));
         }
       }
+
+      // 마일리지 합산
+      const { data: mileData } = await supabase.from("mileage_records").select("points").eq("student_id", studentId.trim());
+      setMileage((mileData ?? []).reduce((s: number, m: any) => s + (m.points ?? 0), 0));
     })();
   }, []);
 
@@ -204,7 +209,7 @@ export default function MyPage() {
             )}
 
             {/* Summary cards */}
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-blue-500" />
@@ -231,6 +236,13 @@ export default function MyPage() {
                   <p className="text-sm font-medium text-slate-700">진단 완료</p>
                 </div>
                 <p className="mt-2 text-2xl font-bold text-slate-900">{diagnosisResults.length}회</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-600" />
+                  <p className="text-sm font-medium text-amber-700">마일리지</p>
+                </div>
+                <p className="mt-2 text-2xl font-bold text-amber-700">{mileage}점</p>
               </div>
             </div>
           </div>
