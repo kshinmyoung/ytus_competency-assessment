@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Check, Clock, Download, FileText, Filter, MessageSquare, X } from "lucide-react";
+import { Calendar, Check, Clock, Download, FileText, Filter, MessageSquare, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import { formatDateTimeKorea } from "@/lib/date";
@@ -120,6 +120,12 @@ export default function AdminReservationsPage() {
     setShowCounselForm(null);
     setCounselForm({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "" });
     alert("상담기록이 저장되었습니다.");
+  };
+
+  const handleDeleteReservation = async (id: number) => {
+    if (!confirm("이 예약을 삭제하시겠습니까?")) return;
+    await supabase.from("center_reservations").delete().eq("id", id);
+    await load();
   };
 
   const handleSaveNote = async (id: number) => {
@@ -251,8 +257,12 @@ export default function AdminReservationsPage() {
                         <FileText className="inline h-4 w-4" />
                       </button>
                       <button type="button" onClick={() => { setEditingNote(r.id); setNoteText(r.admin_note ?? ""); }}
-                        className="text-slate-400 hover:text-blue-600" title="메모">
+                        className="mr-1 text-slate-400 hover:text-blue-600" title="메모">
                         <MessageSquare className="inline h-4 w-4" />
+                      </button>
+                      <button type="button" onClick={() => handleDeleteReservation(r.id)}
+                        className="text-red-400 hover:text-red-600" title="삭제">
+                        <Trash2 className="inline h-4 w-4" />
                       </button>
                     </td>
                   </tr>
