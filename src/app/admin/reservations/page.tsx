@@ -380,21 +380,12 @@ export default function AdminReservationsPage() {
             <div className="mt-4 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-slate-700">학생 검색 *</label>
-                <input type="text" placeholder="학번 또는 이름 입력 후 선택..." value={addResSearch}
-                  onChange={(e) => { setAddResSearch(e.target.value); if (!e.target.value.trim()) setAddResForm({ ...addResForm, student_id: "" }); }}
-                  onFocus={() => { if (addResForm.student_id) { setAddResSearch(""); setAddResForm({ ...addResForm, student_id: "" }); } }}
+                <input type="text" placeholder="학번 입력 (예: 22403020)" value={addResForm.student_id}
+                  onChange={(e) => setAddResForm({ ...addResForm, student_id: e.target.value.trim() })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                {addResSearch.trim() && !addResForm.student_id && (
-                  <div className="mt-1 max-h-40 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-                    {filteredAddStudents.length > 0 ? filteredAddStudents.map((s) => (
-                      <button key={s.student_id} type="button" onClick={() => { setAddResForm({ ...addResForm, student_id: s.student_id }); setAddResSearch(`${s.student_id} - ${s.name ?? ""}`); }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 border-b border-slate-100 last:border-0">
-                        <span className="font-medium">{s.student_id}</span> <span className="text-slate-500">{s.name ?? ""}</span>
-                      </button>
-                    )) : <p className="px-3 py-2 text-sm text-slate-400">검색 결과 없음</p>}
-                  </div>
+                {addResForm.student_id && nameMap[addResForm.student_id] && (
+                  <p className="mt-1 text-xs text-green-600">학생: {nameMap[addResForm.student_id]}</p>
                 )}
-                {addResForm.student_id && <p className="mt-1 text-xs text-green-600">선택됨: {addResForm.student_id} - {allStudents.find((s) => s.student_id === addResForm.student_id)?.name ?? ""}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">날짜 *</label>
@@ -435,21 +426,12 @@ export default function AdminReservationsPage() {
             <div className="mt-4 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-slate-700">학생 검색 *</label>
-                <input type="text" placeholder="학번 또는 이름 입력 후 선택..." value={addExtraSearch}
-                  onChange={(e) => { setAddExtraSearch(e.target.value); if (!e.target.value.trim()) setAddExtraForm({ ...addExtraForm, student_id: "" }); }}
-                  onFocus={() => { if (addExtraForm.student_id) { setAddExtraSearch(""); setAddExtraForm({ ...addExtraForm, student_id: "" }); } }}
+                <input type="text" placeholder="학번 입력 (예: 22403020)" value={addExtraForm.student_id}
+                  onChange={(e) => setAddExtraForm({ ...addExtraForm, student_id: e.target.value.trim() })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                {addExtraSearch.trim() && !addExtraForm.student_id && (
-                  <div className="mt-1 max-h-40 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-                    {filteredExtraStudents.length > 0 ? filteredExtraStudents.map((s) => (
-                      <button key={s.student_id} type="button" onClick={() => { setAddExtraForm({ ...addExtraForm, student_id: s.student_id }); setAddExtraSearch(`${s.student_id} - ${s.name ?? ""}`); }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-green-50 border-b border-slate-100 last:border-0">
-                        <span className="font-medium">{s.student_id}</span> <span className="text-slate-500">{s.name ?? ""}</span>
-                      </button>
-                    )) : <p className="px-3 py-2 text-sm text-slate-400">검색 결과 없음</p>}
-                  </div>
+                {addExtraForm.student_id && nameMap[addExtraForm.student_id] && (
+                  <p className="mt-1 text-xs text-green-600">학생: {nameMap[addExtraForm.student_id]}</p>
                 )}
-                {addExtraForm.student_id && <p className="mt-1 text-xs text-green-600">선택됨: {addExtraForm.student_id} - {allStudents.find((s) => s.student_id === addExtraForm.student_id)?.name ?? ""}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">비교과 프로그램 *</label>
