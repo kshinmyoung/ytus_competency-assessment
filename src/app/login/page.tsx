@@ -30,7 +30,9 @@ export default function LoginPage() {
     }
 
     try {
-      // 비밀번호는 Auth 시스템(signInWithPassword)으로 검증 (students 테이블이 아닌 Supabase Auth)
+      // 이전 세션 강제 로그아웃
+      await supabase.auth.signOut();
+
       const email = `${studentId}@temp.com`;
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
