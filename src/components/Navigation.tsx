@@ -43,6 +43,8 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  const [myRole, setMyRole] = useState("");
+
   useEffect(() => {
     (async () => {
       const studentId = await getCurrentStudentId();
@@ -55,7 +57,9 @@ export default function Navigation() {
         .maybeSingle();
       if (data) {
         setUserName(data.name ?? "");
-        if ((data.role ?? "").trim().toLowerCase() === "admin") {
+        const role = (data.role ?? "").trim().toLowerCase();
+        setMyRole(role);
+        if (role === "admin") {
           setIsAdmin(true);
         }
       }
@@ -71,7 +75,9 @@ export default function Navigation() {
     router.push("/login");
   };
 
+  // 학생이 아닌 역할은 각자 전용 페이지 헤더를 사용하므로 Navigation 숨김
   if (!isLoggedIn) return null;
+  if (["admin", "ctl", "career_center", "counseling_center", "mentor_professor", "department_head", "staff"].includes(myRole)) return null;
 
   const navItems = [...studentNav, ...(isAdmin ? adminNav : [])];
 
