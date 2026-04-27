@@ -43,6 +43,8 @@ export default function LoginPage() {
       }
 
       if (typeof window !== "undefined") {
+        // 이전 사용자 데이터 완전 초기화
+        sessionStorage.clear();
         sessionStorage.setItem("student_id", studentId);
 
         // Auth 로그인 직후 토큰이 적용될 때까지 잠시 대기
