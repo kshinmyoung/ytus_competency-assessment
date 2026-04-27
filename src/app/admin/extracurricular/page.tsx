@@ -218,6 +218,52 @@ export default function AdminExtracurricularPage() {
     await load();
   };
 
+  // 참여자 CSV 일괄 등록
+  const participantCsvRef = useRef<HTMLInputElement>(null);
+  const [participantCsvResult, setParticipantCsvResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [participantCsvProcessing, setParticipantCsvProcessing] = useState(false);
+
+  const handleParticipantCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !showParticipants) return;
+    const text = await file.text();
+    const rows = parseCsv(text);
+    if (rows.length === 0) { alert("유효한 데이터가 없습니다. 헤더: student_id, status"); e.target.value = ""; return; }
+
+    setParticipantCsvProcessing(true);
+    setParticipantCsvResult(null);
+    let success = 0;
+    const errors: string[] = [];
+
+    for (const row of rows) {
+      const sid = (row.student_id ?? "").trim();
+      if (!sid) { errors.push("학번 없음"); continue; }
+      const status = (row.status ?? "신청").trim() || "신청";
+      const { error } = await supabase.from("student_extracurricular").upsert({
+        student_id: sid,
+        extracurricular_id: showParticipants.id,
+        status,
+        completed_at: status === "완료" ? new Date().toISOString() : null,
+      }, { onConflict: "student_id,extracurricular_id" });
+      if (error) { errors.push(`${sid}: ${error.message}`); }
+      else {
+        // 마일리지 10점 (중복 방지)
+        const { data: existMile } = await supabase.from("mileage_records").select("id").eq("student_id", sid).eq("source_type", "extracurricular").eq("source_id", showParticipants.id).maybeSingle();
+        if (!existMile) {
+          await supabase.from("mileage_records").insert({ student_id: sid, points: 10, reason: `비교과 신청: ${showParticipants.name}`, source_type: "extracurricular", source_id: showParticipants.id });
+        }
+        success++;
+      }
+    }
+
+    setParticipantCsvResult({ success, failed: errors.length, errors });
+    setParticipantCsvProcessing(false);
+    // 목록 새로고침
+    const { data } = await supabase.from("student_extracurricular").select("student_id, status, reflection, students(name)").eq("extracurricular_id", showParticipants.id).order("created_at", { ascending: false });
+    setParticipants((data ?? []) as unknown as Participant[]);
+    e.target.value = "";
+  };
+
   const viewParticipants = async (item: Extra) => {
     const { data } = await supabase
       .from("student_extracurricular")
@@ -314,8 +360,27 @@ export default function AdminExtracurricularPage() {
       {showParticipants && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowParticipants(null)}>
           <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-900">참여 학생 현황</h3>
-            <p className="mt-1 text-sm text-slate-500">{showParticipants.name}</p>
+            <input ref={participantCsvRef} type="file" accept=".csv" className="hidden" onChange={handleParticipantCsv} />
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">참여 학생 현황</h3>
+                <p className="mt-1 text-sm text-slate-500">{showParticipants.name} · {participants.length}명</p>
+              </div>
+              <button type="button" onClick={() => { setParticipantCsvResult(null); participantCsvRef.current?.click(); }}
+                disabled={participantCsvProcessing}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                <Upload className="h-3 w-3" /> {participantCsvProcessing ? "처리 중..." : "인원 CSV 등록"}
+              </button>
+            </div>
+            {participantCsvResult && (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-sm">성공: <strong className="text-green-600">{participantCsvResult.success}명</strong>, 실패: <strong className="text-red-600">{participantCsvResult.failed}명</strong></p>
+                {participantCsvResult.errors.length > 0 && (
+                  <div className="mt-1 max-h-20 overflow-auto text-xs text-red-600">{participantCsvResult.errors.map((err, i) => <p key={i}>{err}</p>)}</div>
+                )}
+              </div>
+            )}
+            <p className="mt-2 text-[10px] text-slate-400">CSV 헤더: student_id, status (신청/참여중/완료)</p>
             {participants.length === 0 ? (
               <p className="mt-4 text-sm text-slate-500">참여 학생이 없습니다.</p>
             ) : (
