@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Check, Clock, Download, FileText, Filter, MessageSquare, Trash2, X } from "lucide-react";
+import { Calendar, Check, Clock, Download, FileText, Filter, MessageSquare, Plus, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import { formatDateTimeKorea } from "@/lib/date";
@@ -43,6 +43,17 @@ export default function AdminReservationsPage() {
   const [showCounselForm, setShowCounselForm] = useState<string | null>(null);
   const [counselForm, setCounselForm] = useState({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "" });
   const [counselSaving, setCounselSaving] = useState(false);
+  // 직접 예약 추가
+  const [showAddReservation, setShowAddReservation] = useState(false);
+  const [addResForm, setAddResForm] = useState({ student_id: "", reservation_date: "", time_slot: "", purpose: "" });
+  const [addResSearch, setAddResSearch] = useState("");
+  const [allStudents, setAllStudents] = useState<{ student_id: string; name: string | null }[]>([]);
+  // 비교과 대리 신청
+  const [showAddExtra, setShowAddExtra] = useState(false);
+  const [addExtraForm, setAddExtraForm] = useState({ student_id: "", extracurricular_id: 0 });
+  const [addExtraSearch, setAddExtraSearch] = useState("");
+  const [extraList, setExtraList] = useState<{ id: number; name: string }[]>([]);
+  const [addSaving, setAddSaving] = useState(false);
 
   const load = async () => {
     const mySid = await getCurrentStudentId();
@@ -72,6 +83,10 @@ export default function AdminReservationsPage() {
     });
     setNameMap(nMap);
     setDeptMap(dMap);
+    setAllStudents((studentsRes.data ?? []).filter((s: any) => (s.role ?? "").trim().toLowerCase() === "student").map((s: any) => ({ student_id: s.student_id, name: s.name })));
+
+    const { data: exData } = await supabase.from("extracurricular").select("id, name").eq("is_active", true).order("name");
+    setExtraList((exData ?? []) as { id: number; name: string }[]);
   };
 
   useEffect(() => { load(); }, []);
@@ -122,6 +137,63 @@ export default function AdminReservationsPage() {
     alert("상담기록이 저장되었습니다.");
   };
 
+  const TIME_SLOTS = ["09:00-09:30","09:30-10:00","10:00-10:30","10:30-11:00","11:00-11:30","11:30-12:00","13:00-13:30","13:30-14:00","14:00-14:30","14:30-15:00","15:00-15:30","15:30-16:00","16:00-16:30","16:30-17:00"];
+
+  const filteredAddStudents = addResSearch.trim()
+    ? allStudents.filter((s) => s.student_id.includes(addResSearch.trim()) || (s.name ?? "").toLowerCase().includes(addResSearch.trim().toLowerCase())).slice(0, 15)
+    : [];
+
+  const filteredExtraStudents = addExtraSearch.trim()
+    ? allStudents.filter((s) => s.student_id.includes(addExtraSearch.trim()) || (s.name ?? "").toLowerCase().includes(addExtraSearch.trim().toLowerCase())).slice(0, 15)
+    : [];
+
+  const handleAddReservation = async () => {
+    if (!addResForm.student_id || !addResForm.reservation_date || !addResForm.time_slot) return;
+    setAddSaving(true);
+    const centerType = filterCenter !== "all" ? filterCenter : myRole;
+    const { error } = await supabase.from("center_reservations").insert({
+      student_id: addResForm.student_id,
+      center_type: ["ctl", "career_center", "counseling_center"].includes(centerType) ? centerType : "ctl",
+      reservation_date: addResForm.reservation_date,
+      time_slot: addResForm.time_slot,
+      purpose: addResForm.purpose.trim() || "현장 방문 (담당자 입력)",
+      status: "확인",
+    });
+    if (error) { alert(error.message); } else {
+      // 마일리지 5점
+      const cName = CENTERS.find((c) => c.key === centerType)?.name ?? "";
+      await supabase.from("mileage_records").insert({ student_id: addResForm.student_id, points: 5, reason: `센터 상담 예약: ${cName}`, source_type: "center_reservation" });
+      setShowAddReservation(false);
+      setAddResForm({ student_id: "", reservation_date: "", time_slot: "", purpose: "" });
+      setAddResSearch("");
+      await load();
+    }
+    setAddSaving(false);
+  };
+
+  const handleAddExtraForStudent = async () => {
+    if (!addExtraForm.student_id || !addExtraForm.extracurricular_id) return;
+    setAddSaving(true);
+    const { error } = await supabase.from("student_extracurricular").upsert({
+      student_id: addExtraForm.student_id,
+      extracurricular_id: addExtraForm.extracurricular_id,
+      status: "신청",
+    }, { onConflict: "student_id,extracurricular_id" });
+    if (error) { alert(error.message); } else {
+      // 마일리지 10점 (중복 방지)
+      const { data: existMile } = await supabase.from("mileage_records").select("id").eq("student_id", addExtraForm.student_id).eq("source_type", "extracurricular").eq("source_id", addExtraForm.extracurricular_id).maybeSingle();
+      if (!existMile) {
+        const exName = extraList.find((e) => e.id === addExtraForm.extracurricular_id)?.name ?? "";
+        await supabase.from("mileage_records").insert({ student_id: addExtraForm.student_id, points: 10, reason: `비교과 신청: ${exName}`, source_type: "extracurricular", source_id: addExtraForm.extracurricular_id });
+      }
+      setShowAddExtra(false);
+      setAddExtraForm({ student_id: "", extracurricular_id: 0 });
+      setAddExtraSearch("");
+      alert("신청 완료되었습니다.");
+    }
+    setAddSaving(false);
+  };
+
   const handleDeleteReservation = async (id: number) => {
     if (!confirm("이 예약을 삭제하시겠습니까?")) return;
     await supabase.from("center_reservations").delete().eq("id", id);
@@ -156,9 +228,19 @@ export default function AdminReservationsPage() {
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-lg font-bold text-slate-900">예약 관리</h2>
-        <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-          <Download className="h-4 w-4" /> CSV 내보내기
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => { setShowAddReservation(true); setAddResForm({ student_id: "", reservation_date: "", time_slot: "", purpose: "" }); setAddResSearch(""); }}
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <Plus className="h-4 w-4" /> 예약 추가
+          </button>
+          <button type="button" onClick={() => { setShowAddExtra(true); setAddExtraForm({ student_id: "", extracurricular_id: 0 }); setAddExtraSearch(""); }}
+            className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            <Plus className="h-4 w-4" /> 비교과 대리신청
+          </button>
+          <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <Download className="h-4 w-4" /> CSV
+          </button>
+        </div>
       </div>
 
       {/* 센터명 표시 */}
@@ -284,6 +366,98 @@ export default function AdminReservationsPage() {
             <div className="mt-4 flex gap-2">
               <button type="button" onClick={() => setEditingNote(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
               <button type="button" onClick={() => handleSaveNote(editingNote)} className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700">저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 예약 직접 추가 모달 */}
+      {showAddReservation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddReservation(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-900">예약 직접 추가</h3>
+            <p className="mt-1 text-xs text-slate-500">현장 방문 학생의 예약을 담당자가 직접 입력합니다.</p>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700">학생 검색 *</label>
+                <input type="text" placeholder="학번 또는 이름..." value={addResSearch} onChange={(e) => { setAddResSearch(e.target.value); setAddResForm({ ...addResForm, student_id: "" }); }}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                {addResSearch && !addResForm.student_id && filteredAddStudents.length > 0 && (
+                  <div className="mt-1 max-h-32 overflow-auto rounded-lg border border-slate-200 bg-white">
+                    {filteredAddStudents.map((s) => (
+                      <button key={s.student_id} type="button" onClick={() => { setAddResForm({ ...addResForm, student_id: s.student_id }); setAddResSearch(`${s.student_id} - ${s.name ?? ""}`); }}
+                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50">{s.student_id} - {s.name ?? ""}</button>
+                    ))}
+                  </div>
+                )}
+                {addResForm.student_id && <p className="mt-1 text-xs text-green-600">선택: {addResForm.student_id}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">날짜 *</label>
+                <input type="date" value={addResForm.reservation_date} onChange={(e) => setAddResForm({ ...addResForm, reservation_date: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">시간대 *</label>
+                <select value={addResForm.time_slot} onChange={(e) => setAddResForm({ ...addResForm, time_slot: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  <option value="">선택</option>
+                  {TIME_SLOTS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">상담 목적</label>
+                <input type="text" value={addResForm.purpose} onChange={(e) => setAddResForm({ ...addResForm, purpose: e.target.value })}
+                  placeholder="현장 방문" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowAddReservation(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="button" onClick={handleAddReservation} disabled={addSaving || !addResForm.student_id || !addResForm.reservation_date || !addResForm.time_slot}
+                  className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                  {addSaving ? "등록 중..." : "예약 등록"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 비교과 대리 신청 모달 */}
+      {showAddExtra && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddExtra(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-900">비교과 대리 신청</h3>
+            <p className="mt-1 text-xs text-slate-500">현장 방문 학생의 비교과 프로그램을 담당자가 대리 신청합니다.</p>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700">학생 검색 *</label>
+                <input type="text" placeholder="학번 또는 이름..." value={addExtraSearch} onChange={(e) => { setAddExtraSearch(e.target.value); setAddExtraForm({ ...addExtraForm, student_id: "" }); }}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                {addExtraSearch && !addExtraForm.student_id && filteredExtraStudents.length > 0 && (
+                  <div className="mt-1 max-h-32 overflow-auto rounded-lg border border-slate-200 bg-white">
+                    {filteredExtraStudents.map((s) => (
+                      <button key={s.student_id} type="button" onClick={() => { setAddExtraForm({ ...addExtraForm, student_id: s.student_id }); setAddExtraSearch(`${s.student_id} - ${s.name ?? ""}`); }}
+                        className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50">{s.student_id} - {s.name ?? ""}</button>
+                    ))}
+                  </div>
+                )}
+                {addExtraForm.student_id && <p className="mt-1 text-xs text-green-600">선택: {addExtraForm.student_id}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">비교과 프로그램 *</label>
+                <select value={addExtraForm.extracurricular_id} onChange={(e) => setAddExtraForm({ ...addExtraForm, extracurricular_id: Number(e.target.value) })}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  <option value={0}>선택</option>
+                  {extraList.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowAddExtra(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="button" onClick={handleAddExtraForStudent} disabled={addSaving || !addExtraForm.student_id || !addExtraForm.extracurricular_id}
+                  className="flex-1 rounded-lg bg-green-600 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
+                  {addSaving ? "신청 중..." : "대리 신청"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
