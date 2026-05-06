@@ -30,6 +30,7 @@ const ADMIN_TABS = [
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "상담기록", href: "/admin/counseling", icon: FileText },
+  { label: "설문조사", href: "/admin/survey", icon: ClipboardCheck },
   { label: "마일리지", href: "/staff", icon: Trophy },
   { label: "통합 등록", href: "/admin/import", icon: Upload },
 ];
@@ -43,6 +44,7 @@ const CENTER_TABS = [
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "상담기록", href: "/admin/counseling", icon: FileText },
+  { label: "설문조사", href: "/admin/survey", icon: ClipboardCheck },
 ];
 
 const ROLE_LABELS: Record<string, string> = {

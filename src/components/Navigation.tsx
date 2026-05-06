@@ -28,6 +28,7 @@ const studentNav = [
   { label: "비교과", href: "/extracurricular", icon: Trophy },
   { label: "AI진로가이드", href: "/ai-guide", icon: Sparkles },
   { label: "예약/신청", href: "/reservation", icon: Calendar },
+  { label: "설문조사", href: "/survey", icon: ClipboardCheck },
   { label: "마이페이지", href: "/mypage", icon: User },
 ];
 
