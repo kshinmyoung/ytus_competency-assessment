@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .eq("student_id", studentId.trim())
         .maybeSingle();
       const role = (data?.role ?? "").trim().toLowerCase();
-      if (!["admin", "ctl", "career_center", "counseling_center", "mentor_professor", "department_head"].includes(role)) {
+      if (!["admin", "ctl", "career_center", "counseling_center", "mentor_professor", "department_head", "staff"].includes(role)) {
         router.replace("/");
         return;
       }

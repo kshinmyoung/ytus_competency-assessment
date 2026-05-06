@@ -2,6 +2,7 @@
 
 import { Download, Edit3, LogOut, Plus, Search, Trash2, Trophy } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
@@ -139,6 +140,7 @@ export default function StaffPage() {
             <Image src="/logo.png" alt="YOUNG SHINY" width={140} height={32} className="h-8 w-auto" />
             <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">직원</span>
           </div>
+          <Link href="/admin/survey" className="flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100">설문 결과</Link>
           <button type="button" onClick={handleLogout} className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900">
             <LogOut className="h-4 w-4" /> 로그아웃
           </button>
