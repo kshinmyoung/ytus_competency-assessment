@@ -36,9 +36,12 @@ export default function SurveyPage() {
       const sid = await getCurrentStudentId();
       if (!sid?.trim()) return;
       setStudentId(sid.trim());
-      const today = new Date().toISOString().split("T")[0];
-      const { data: surveyData } = await supabase.from("surveys").select("*").eq("is_active", true).or(`end_date.gte.${today},end_date.is.null`).order("created_at", { ascending: false });
-      setSurveys((surveyData ?? []) as Survey[]);
+      // 활성 설문 조회 (마감일이 아직 안 지났거나 마감일 없는 것)
+      const { data: surveyData } = await supabase.from("surveys").select("*").eq("is_active", true).order("created_at", { ascending: false });
+      // 마감일 체크는 한국시간 기준
+      const koreaToday = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0];
+      const activeSurveys = (surveyData ?? []).filter((s: any) => !s.end_date || s.end_date >= koreaToday);
+      setSurveys(activeSurveys as Survey[]);
       const { data: respData } = await supabase.from("survey_responses").select("survey_id").eq("student_id", sid.trim());
       setCompletedIds(new Set((respData ?? []).map((r: any) => r.survey_id)));
     })();
