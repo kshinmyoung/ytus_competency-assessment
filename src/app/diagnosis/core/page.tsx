@@ -248,6 +248,16 @@ export default function CoreDiagnosisPage() {
       alert("결과 저장 실패: " + (error.message ?? "알 수 없는 오류"));
       return;
     }
+
+    // 문항별 응답 저장 (assessment_responses)
+    const { data: coreQs } = await supabase.from("assessment_questions").select("id, question_order").eq("competency_type", "core_diagnosis").eq("is_active", true).order("question_order");
+    if (coreQs && coreQs.length === QUESTIONS.length) {
+      const rows = coreQs.map((q: any, i: number) => ({
+        student_id: studentId.trim(), question_id: q.id, answer_value: answers[i] ?? 0, answered_at: new Date().toISOString(),
+      }));
+      await supabase.from("assessment_responses").upsert(rows, { onConflict: "student_id,question_id" }).select();
+    }
+
     // 마일리지 5점 (최초 1회만)
     const { data: existMile } = await supabase.from("mileage_records").select("id").eq("student_id", studentId.trim()).eq("reason", "핵심역량진단 완료").maybeSingle();
     if (!existMile) await supabase.from("mileage_records").insert({ student_id: studentId.trim(), points: 5, reason: "핵심역량진단 완료", source_type: "manual" });
