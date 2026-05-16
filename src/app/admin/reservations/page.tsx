@@ -36,6 +36,8 @@ export default function AdminReservationsPage() {
   const [myRole, setMyRole] = useState("");
   const [filterCenter, setFilterCenter] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; });
   const [filterDate, setFilterDate] = useState("");
   const [editingNote, setEditingNote] = useState<number | null>(null);
   const [noteText, setNoteText] = useState("");
@@ -100,6 +102,21 @@ export default function AdminReservationsPage() {
   }, [reservations, filterCenter, filterStatus, filterDate]);
 
   // 통계 (선택된 센터 기준)
+  // 캘린더 데이터
+  const calendarData = useMemo(() => {
+    const [year, month] = calendarMonth.split("-").map(Number);
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const days: { date: string; day: number; reservations: typeof reservations }[] = [];
+    const base = filterCenter === "all" ? reservations : reservations.filter((r) => r.center_type === filterCenter);
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      days.push({ date: dateStr, day: d, reservations: base.filter((r) => r.reservation_date === dateStr && r.status !== "취소") });
+    }
+    return { year, month, firstDay, days };
+  }, [reservations, calendarMonth, filterCenter]);
+
   const stats = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
     const base = filterCenter === "all" ? reservations : reservations.filter((r) => r.center_type === filterCenter);
@@ -159,7 +176,10 @@ export default function AdminReservationsPage() {
       purpose: addResForm.purpose.trim() || "현장 방문 (담당자 입력)",
       status: "확인",
     });
-    if (error) { alert(error.message); } else {
+    if (error) {
+      alert(error.message.includes("duplicate") || error.message.includes("unique") ? "해당 시간대에 이미 예약이 있습니다. 다른 시간을 선택해주세요." : error.message);
+      setAddSaving(false); return;
+    } else {
       // 마일리지 5점
       const cName = CENTERS.find((c) => c.key === centerType)?.name ?? "";
       await supabase.from("mileage_records").insert({ student_id: addResForm.student_id, points: 5, reason: `센터 상담 예약: ${cName}`, source_type: "center_reservation" });
@@ -237,6 +257,10 @@ export default function AdminReservationsPage() {
             className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
             <Plus className="h-4 w-4" /> 비교과 대리신청
           </button>
+          <div className="flex rounded-lg border border-slate-300 bg-white">
+            <button type="button" onClick={() => setViewMode("list")} className={`px-3 py-2 text-xs font-medium ${viewMode === "list" ? "bg-slate-800 text-white rounded-l-lg" : "text-slate-600"}`}>목록</button>
+            <button type="button" onClick={() => setViewMode("calendar")} className={`px-3 py-2 text-xs font-medium ${viewMode === "calendar" ? "bg-slate-800 text-white rounded-r-lg" : "text-slate-600"}`}>캘린더</button>
+          </div>
           <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             <Download className="h-4 w-4" /> CSV
           </button>
@@ -284,8 +308,78 @@ export default function AdminReservationsPage() {
         {filterDate && <button type="button" onClick={() => setFilterDate("")} className="text-xs text-slate-500 hover:text-slate-700">날짜 초기화</button>}
       </div>
 
+      {/* 캘린더 뷰 */}
+      {viewMode === "calendar" && (
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <button type="button" onClick={() => {
+              const [y, m] = calendarMonth.split("-").map(Number);
+              const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+              setCalendarMonth(prev);
+            }} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">◀ 이전</button>
+            <h3 className="text-base font-semibold text-slate-900">{calendarData.year}년 {calendarData.month}월</h3>
+            <button type="button" onClick={() => {
+              const [y, m] = calendarMonth.split("-").map(Number);
+              const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+              setCalendarMonth(next);
+            }} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">다음 ▶</button>
+          </div>
+
+          {/* 요일 헤더 */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
+              <div key={d} className={`text-center text-xs font-semibold py-1 ${d === "일" ? "text-red-500" : d === "토" ? "text-blue-500" : "text-slate-500"}`}>{d}</div>
+            ))}
+          </div>
+
+          {/* 날짜 그리드 */}
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: calendarData.firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+            {calendarData.days.map((day) => {
+              const today = new Date().toISOString().split("T")[0];
+              const isToday = day.date === today;
+              const hasRes = day.reservations.length > 0;
+              const dayOfWeek = new Date(day.date).getDay();
+              return (
+                <div key={day.date}
+                  className={`min-h-[70px] rounded-lg border p-1.5 text-xs transition cursor-pointer hover:bg-slate-50 ${isToday ? "border-blue-500 bg-blue-50" : "border-slate-200"}`}
+                  onClick={() => { setFilterDate(day.date); setViewMode("list"); }}>
+                  <div className={`font-medium ${dayOfWeek === 0 ? "text-red-500" : dayOfWeek === 6 ? "text-blue-500" : "text-slate-700"}`}>{day.day}</div>
+                  {hasRes && (
+                    <div className="mt-0.5 space-y-0.5">
+                      {day.reservations.slice(0, 3).map((r, i) => {
+                        const center = CENTERS.find((c) => c.key === r.center_type);
+                        return (
+                          <div key={i} className={`truncate rounded px-1 py-0.5 text-[9px] ${
+                            r.status === "신청" ? "bg-yellow-100 text-yellow-800" :
+                            r.status === "확인" ? "bg-blue-100 text-blue-800" :
+                            "bg-green-100 text-green-800"
+                          }`}>
+                            {r.time_slot.split("-")[0]} {nameMap[r.student_id]?.substring(0, 3) ?? r.student_id}
+                          </div>
+                        );
+                      })}
+                      {day.reservations.length > 3 && (
+                        <div className="text-[9px] text-slate-400">+{day.reservations.length - 3}건</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 범례 */}
+          <div className="mt-3 flex gap-4 text-[10px] text-slate-500">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-yellow-200" /> 신청</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-blue-200" /> 확인</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-green-200" /> 완료</span>
+          </div>
+        </div>
+      )}
+
       {/* 예약 목록 */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
+      {viewMode === "list" && <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -353,7 +447,7 @@ export default function AdminReservationsPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </div>}
 
       {/* 메모 모달 */}
       {editingNote && (

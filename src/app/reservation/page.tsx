@@ -87,14 +87,22 @@ export default function ReservationPage() {
   // 오늘 이후 날짜만
   const today = new Date().toISOString().split("T")[0];
 
-  // 선택 날짜에 이미 예약된 시간대
+  // 선택 날짜+센터에 이미 예약된 시간대 (전체 조회)
+  const [allBookedSlots, setAllBookedSlots] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!reservationDate || !selectedCenter) { setAllBookedSlots(new Set()); return; }
+    (async () => {
+      const { data } = await supabase.from("center_reservations").select("time_slot").eq("center_type", selectedCenter).eq("reservation_date", reservationDate).neq("status", "취소");
+      setAllBookedSlots(new Set((data ?? []).map((r: any) => r.time_slot)));
+    })();
+  }, [reservationDate, selectedCenter]);
+
   const bookedSlots = useMemo(() => {
-    return new Set(
-      myReservations
-        .filter((r) => r.reservation_date === reservationDate && r.center_type === selectedCenter && r.status !== "취소")
-        .map((r) => r.time_slot)
-    );
-  }, [myReservations, reservationDate, selectedCenter]);
+    const mySlots = myReservations
+      .filter((r) => r.reservation_date === reservationDate && r.center_type === selectedCenter && r.status !== "취소")
+      .map((r) => r.time_slot);
+    return new Set([...allBookedSlots, ...mySlots]);
+  }, [myReservations, reservationDate, selectedCenter, allBookedSlots]);
 
   const handleReserve = async () => {
     if (!studentId || !reservationDate || !timeSlot) return;
