@@ -13,7 +13,7 @@ type CounselRecord = {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "관리자", ctl: "CTL", career_center: "취창업", counseling_center: "상담센터",
-  mentor_professor: "멘토링교수", department_head: "학과장",
+  professor: "교수", department_head: "학과장",
 };
 const CATEGORY_COLORS: Record<string, string> = {
   "일반": "bg-slate-100 text-slate-700", "학업": "bg-blue-50 text-blue-700", "진로": "bg-indigo-50 text-indigo-700",

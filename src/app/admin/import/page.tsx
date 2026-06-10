@@ -17,7 +17,7 @@ const TABS: { key: TabKey; label: string; description: string; headers: string; 
     example: `student_id,password,name,role,department_id,grade_year,admission_year,phone,email
 22501001,pass123,홍길동,student,1,2,2025,010-1234-5678,hong@email.com
 22501002,pass123,김철수,student,3,1,2026,010-5678-1234,
-PROF001,prof123,이교수,mentor_professor,1,,,,lee@ytus.ac.kr
+PROF001,prof123,이교수,professor,1,,,,lee@ytus.ac.kr
 CTL001,ctl123,박센터,ctl,,,,,`,
   },
   {
@@ -59,7 +59,7 @@ CTL001,ctl123,박센터,ctl,,,,,`,
   {
     key: "mentoring",
     label: "멘토링 배정",
-    description: "멘토링교수에게 학생을 일괄 배정합니다. 멘토가 미등록이면 자동 생성됩니다.",
+    description: "교수에게 학생을 일괄 배정합니다. 멘토가 미등록이면 자동 생성됩니다.",
     headers: "mentor_id, student_id, mentor_name (선택)",
     example: `mentor_id,student_id,mentor_name
 2021664,22501007,김교수
@@ -279,7 +279,7 @@ export default function AdminImportPage() {
                 student_id: row.mentor_id,
                 password: row.mentor_id,
                 name: row.mentor_name || null,
-                role: "mentor_professor",
+                role: "professor",
               }),
             });
             if (!mentorRes.ok) {

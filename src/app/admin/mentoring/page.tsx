@@ -14,7 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
   student: "학생",
   admin: "관리자",
   department_head: "학과장",
-  mentor_professor: "멘토링교수",
+  professor: "교수",
   ctl: "교수학습지원센터",
   career_center: "취창업진로지원센터",
   counseling_center: "학생생활상담센터",
@@ -47,7 +47,7 @@ export default function AdminMentoringPage() {
 
   const mentors = useMemo(() => {
     return students.filter((s) =>
-      ["mentor_professor", "department_head"].includes((s.role ?? "").trim().toLowerCase())
+      ["professor", "department_head"].includes((s.role ?? "").trim().toLowerCase())
     );
   }, [students]);
 
@@ -120,7 +120,7 @@ export default function AdminMentoringPage() {
         const res = await fetch("/api/admin/create-user", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ student_id: mentorId, password: mentorId, name: (row.mentor_name ?? "").trim() || null, role: "mentor_professor" }),
+          body: JSON.stringify({ student_id: mentorId, password: mentorId, name: (row.mentor_name ?? "").trim() || null, role: "professor" }),
         });
         if (!res.ok) { errors.push(`멘토 ${mentorId} 자동생성 실패`); continue; }
       }
@@ -149,7 +149,7 @@ export default function AdminMentoringPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">멘토링 그룹 관리</h2>
-          <p className="mt-1 text-sm text-slate-600">멘토링교수 또는 학과장에게 학생 그룹을 배정합니다.</p>
+          <p className="mt-1 text-sm text-slate-600">교수 또는 학과장에게 학생 그룹을 배정합니다.</p>
         </div>
         <button
           type="button"
@@ -177,7 +177,7 @@ export default function AdminMentoringPage() {
           ))}
         </select>
         {mentors.length === 0 && (
-          <p className="mt-2 text-xs text-amber-600">멘토링교수 또는 학과장 역할이 부여된 계정이 없습니다. 학생 관리에서 역할을 변경해주세요.</p>
+          <p className="mt-2 text-xs text-amber-600">교수 또는 학과장 역할이 부여된 계정이 없습니다. 학생 관리에서 역할을 변경해주세요.</p>
         )}
       </div>
 

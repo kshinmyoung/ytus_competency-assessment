@@ -25,13 +25,13 @@ const TO_LABELS: Record<string, string> = {
   ctl: "교수학습지원센터",
   career_center: "취창업진로지원센터",
   counseling_center: "학생생활상담센터",
-  mentor_professor: "멘토링교수",
+  professor: "교수",
   department_head: "학과장",
 };
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "관리자", ctl: "교수학습지원센터", career_center: "취창업진로지원센터",
-  counseling_center: "학생생활상담센터", mentor_professor: "멘토링교수", department_head: "학과장",
+  counseling_center: "학생생활상담센터", professor: "교수", department_head: "학과장",
 };
 
 const URGENCY_STYLES: Record<string, string> = {

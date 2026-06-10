@@ -78,7 +78,7 @@ export default function Navigation() {
 
   // 학생이 아닌 역할은 각자 전용 페이지 헤더를 사용하므로 Navigation 숨김
   if (!isLoggedIn) return null;
-  if (["admin", "ctl", "career_center", "counseling_center", "mentor_professor", "department_head", "staff"].includes(myRole)) return null;
+  if (["admin", "ctl", "career_center", "counseling_center", "professor", "department_head", "staff"].includes(myRole)) return null;
 
   const navItems = [...studentNav, ...(isAdmin ? adminNav : [])];
 

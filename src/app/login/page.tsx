@@ -76,7 +76,7 @@ export default function LoginPage() {
           window.location.href = "/admin";
         } else if (["ctl", "career_center", "counseling_center"].includes(userRole)) {
           window.location.href = "/admin/reservations";
-        } else if (["department_head", "mentor_professor"].includes(userRole)) {
+        } else if (["department_head", "professor"].includes(userRole)) {
           window.location.href = "/professor";
         } else if (userRole === "staff") {
           window.location.href = "/staff";

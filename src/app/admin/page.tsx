@@ -229,7 +229,7 @@ export default function AdminPage() {
         .maybeSingle();
       const userRole = (data?.role ?? "").trim().toLowerCase();
       console.log("현재 유저의 역할:", data?.role ?? "(없음)", "→ 판단:", userRole || "(student)");
-      if (!["admin", "ctl", "career_center", "counseling_center", "department_head", "mentor_professor"].includes(userRole)) {
+      if (!["admin", "ctl", "career_center", "counseling_center", "department_head", "professor"].includes(userRole)) {
         router.replace("/");
         return;
       }
@@ -819,7 +819,7 @@ export default function AdminPage() {
                     <option value="student">학생</option>
                     <option value="admin">관리자</option>
                     <option value="department_head">학과장</option>
-                    <option value="mentor_professor">멘토링교수</option>
+                    <option value="professor">교수</option>
                     <option value="ctl">교수학습지원센터</option>
                     <option value="career_center">취창업진로지원센터</option>
                     <option value="counseling_center">학생생활상담센터</option>
@@ -902,7 +902,7 @@ export default function AdminPage() {
                     <option value="student">학생</option>
                     <option value="admin">관리자</option>
                     <option value="department_head">학과장</option>
-                    <option value="mentor_professor">멘토링교수</option>
+                    <option value="professor">교수</option>
                     <option value="ctl">교수학습지원센터</option>
                     <option value="career_center">취창업진로지원센터</option>
                     <option value="counseling_center">학생생활상담센터</option>

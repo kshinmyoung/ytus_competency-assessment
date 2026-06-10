@@ -21,7 +21,7 @@ const COUNSEL_CATEGORIES = ["일반", "학업", "진로", "심리", "신앙", "�
 const CATEGORY_COLORS: Record<string, string> = { "일반": "bg-slate-100 text-slate-700", "학업": "bg-blue-50 text-blue-700", "진로": "bg-indigo-50 text-indigo-700", "심리": "bg-violet-50 text-violet-700", "신앙": "bg-amber-50 text-amber-700", "생활": "bg-green-50 text-green-700", "기타": "bg-slate-100 text-slate-600" };
 
 const ROLE_LABELS: Record<string, string> = {
-  department_head: "학과장", mentor_professor: "멘토링교수",
+  department_head: "학과장", professor: "교수",
 };
 const DIAGNOSIS_LABELS: Record<string, string> = { core: "핵심역량", learning: "학습역량", calling: "소명진단" };
 const CORE_LABELS: Record<string, string> = { spiritual: "영성", reflection: "기독교적 성찰", empathy: "공감소통", glocal: "글로컬", creative: "창의융합" };
@@ -59,7 +59,7 @@ export default function ProfessorPage() {
       const { data: me } = await supabase.from("students").select("name, role, department_id").eq("student_id", sid.trim()).maybeSingle();
       const role = (me?.role ?? "").trim().toLowerCase();
 
-      if (!["department_head", "mentor_professor"].includes(role)) { router.replace("/dashboard"); return; }
+      if (!["department_head", "professor"].includes(role)) { router.replace("/dashboard"); return; }
 
       setMyRole(role);
       setMyName(me?.name ?? "");
@@ -75,7 +75,7 @@ export default function ProfessorPage() {
       if (role === "department_head" && me?.department_id) {
         const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").eq("department_id", me.department_id).eq("role", "student").order("student_id");
         studentList = data ?? [];
-      } else if (role === "mentor_professor") {
+      } else if (role === "professor") {
         const { data: groups } = await supabase.from("mentoring_groups").select("student_id").eq("mentor_id", sid.trim());
         const ids = (groups ?? []).map((g: any) => g.student_id);
         if (ids.length > 0) {

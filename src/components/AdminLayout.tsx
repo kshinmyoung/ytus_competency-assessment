@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .eq("student_id", studentId.trim())
         .maybeSingle();
       const role = (data?.role ?? "").trim().toLowerCase();
-      if (!["admin", "ctl", "career_center", "counseling_center", "mentor_professor", "department_head", "staff"].includes(role)) {
+      if (!["admin", "ctl", "career_center", "counseling_center", "professor", "department_head", "staff"].includes(role)) {
         router.replace("/");
         return;
       }
@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   ];
 
-  const tabs = userRole === "admin" ? ADMIN_TABS : ["mentor_professor", "department_head"].includes(userRole) ? PROFESSOR_TABS : CENTER_TABS;
+  const tabs = userRole === "admin" ? ADMIN_TABS : ["professor", "department_head"].includes(userRole) ? PROFESSOR_TABS : CENTER_TABS;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
