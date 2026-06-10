@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ClipboardCheck, LogOut, Search, Send, Sparkles, Trash2, Trophy, Users } from "lucide-react";
+import { BookOpen, ClipboardCheck, Download, LogOut, Search, Send, Sparkles, Trash2, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
 const DIAGNOSIS_LABELS: Record<string, string> = { core: "핵심역량", learning: "학습역량", calling: "소명진단" };
 const CORE_LABELS: Record<string, string> = { spiritual: "영성", reflection: "기독교적 성찰", empathy: "공감소통", glocal: "글로컬", creative: "창의융합" };
 
-type TabKey = "students" | "courses" | "extra" | "assessment" | "referral";
+type TabKey = "students" | "courses" | "extra" | "assessment" | "referral" | "counseling";
 
 export default function ProfessorPage() {
   const router = useRouter();
@@ -49,6 +49,7 @@ export default function ProfessorPage() {
   const [counselForm, setCounselForm] = useState({ category: "일반", content: "", action_plan: "", follow_up_needed: false, follow_up_date: "", is_private: false });
   const [counselSaving, setCounselSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("students");
+  const [allCounselRecords, setAllCounselRecords] = useState<CounselingRecord[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -76,10 +77,16 @@ export default function ProfessorPage() {
         const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").eq("department_id", me.department_id).eq("role", "student").order("student_id");
         studentList = data ?? [];
       } else if (role === "professor") {
+        // 멘토링 그룹 학생 + 같은 학과 학생 합산
+        const allIds = new Set<string>();
         const { data: groups } = await supabase.from("mentoring_groups").select("student_id").eq("mentor_id", sid.trim());
-        const ids = (groups ?? []).map((g: any) => g.student_id);
-        if (ids.length > 0) {
-          const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").in("student_id", ids).order("student_id");
+        (groups ?? []).forEach((g: any) => allIds.add(g.student_id));
+        if (me?.department_id) {
+          const { data: deptStudents } = await supabase.from("students").select("student_id").eq("department_id", me.department_id).eq("role", "student");
+          (deptStudents ?? []).forEach((s: any) => allIds.add(s.student_id));
+        }
+        if (allIds.size > 0) {
+          const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").in("student_id", Array.from(allIds)).order("student_id");
           studentList = data ?? [];
         }
       }
@@ -90,6 +97,10 @@ export default function ProfessorPage() {
         const { data: diagData } = await supabase.from("diagnosis_results").select("*").in("student_id", ids).order("created_at", { ascending: false });
         setAllDiagnosis(diagData ?? []);
       }
+
+      // 본인 작성 상담기록 전체
+      const { data: myCounsel } = await supabase.from("counseling_records").select("*").eq("counselor_id", sid.trim()).order("counseling_date", { ascending: false });
+      setAllCounselRecords((myCounsel ?? []) as CounselingRecord[]);
     })();
   }, [router]);
 
@@ -167,10 +178,12 @@ export default function ProfessorPage() {
     ? [
         { key: "students", label: "학생 현황", icon: Users },
         { key: "assessment", label: "역량 데이터", icon: ClipboardCheck },
+        { key: "counseling", label: `상담기록 (${allCounselRecords.length})`, icon: ClipboardCheck },
         { key: "referral", label: "리퍼럴", icon: Send },
       ]
     : [
-        { key: "students", label: "멘토링 학생", icon: Users },
+        { key: "students", label: "학과 학생", icon: Users },
+        { key: "counseling", label: `상담기록 (${allCounselRecords.length})`, icon: ClipboardCheck },
         { key: "referral", label: "리퍼럴", icon: Send },
       ];
 
@@ -341,6 +354,64 @@ export default function ProfessorPage() {
               </Link>
             </div>
             <p className="text-sm text-slate-600">리퍼럴 관리 페이지에서 학생을 센터에 연결하거나, 받은 리퍼럴을 확인할 수 있습니다.</p>
+          </div>
+        )}
+
+        {/* === 상담기록 탭 === */}
+        {activeTab === "counseling" && (
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <h1 className="text-xl font-bold text-slate-900">내 상담기록</h1>
+              <button type="button" onClick={() => {
+                let csv = "학생학번,학생이름,날짜,분류,내용,조치계획,후속필요,후속상담일\n";
+                allCounselRecords.forEach((r) => {
+                  const sName = myStudents.find((s) => s.student_id === r.student_id)?.name ?? "";
+                  csv += `"${r.student_id}","${sName}","${r.counseling_date}","${r.category}","${(r.content ?? "").replace(/"/g, '""')}","${(r.action_plan ?? "").replace(/"/g, '""')}","${r.follow_up_needed ? "Y" : "N"}","${r.follow_up_date ?? ""}"\n`;
+                });
+                const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my_counseling_records.csv"; a.click();
+              }} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <Download className="h-4 w-4" /> CSV 다운로드
+              </button>
+            </div>
+
+            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">전체</p><p className="mt-1 text-xl font-bold text-slate-900">{allCounselRecords.length}건</p></div>
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4"><p className="text-xs text-red-700">후속 필요</p><p className="mt-1 text-xl font-bold text-red-700">{allCounselRecords.filter((r) => r.follow_up_needed).length}건</p></div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4"><p className="text-xs text-blue-700">이번 달</p><p className="mt-1 text-xl font-bold text-blue-700">{allCounselRecords.filter((r) => r.counseling_date?.startsWith(new Date().toISOString().slice(0, 7))).length}건</p></div>
+            </div>
+
+            {allCounselRecords.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"><p className="text-sm text-slate-500">상담기록이 없습니다. 학생 상세보기에서 상담기록을 작성할 수 있습니다.</p></div>
+            ) : (
+              <div className="space-y-3">
+                {allCounselRecords.map((r) => (
+                  <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-white">{r.student_id} {myStudents.find((s) => s.student_id === r.student_id)?.name ?? ""}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[r.category] ?? "bg-slate-100 text-slate-600"}`}>{r.category}</span>
+                          {r.follow_up_needed && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
+                        </div>
+                        <p className="mt-2 text-sm text-slate-800">{r.content}</p>
+                        {r.action_plan && <p className="mt-1 text-xs text-blue-700">조치: {r.action_plan}</p>}
+                        <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
+                          <span>상담일: {r.counseling_date}</span>
+                          {r.follow_up_date && <span>후속: {r.follow_up_date}</span>}
+                        </div>
+                      </div>
+                      <button type="button" onClick={async () => {
+                        if (!confirm("삭제하시겠습니까?")) return;
+                        await supabase.from("counseling_records").delete().eq("id", r.id);
+                        const { data } = await supabase.from("counseling_records").select("*").eq("counselor_id", myId).order("counseling_date", { ascending: false });
+                        setAllCounselRecords((data ?? []) as CounselingRecord[]);
+                      }} className="ml-3 text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
