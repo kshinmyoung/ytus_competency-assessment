@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 
 const ADMIN_TABS = [
+  { label: "통계 대시보드", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "학생 관리", href: "/admin", icon: Users },
   { label: "교과목 관리", href: "/admin/courses", icon: BookOpen },
   { label: "비교과 관리", href: "/admin/extracurricular", icon: Trophy },
