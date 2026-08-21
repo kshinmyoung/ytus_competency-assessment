@@ -4,9 +4,12 @@ import {
   ArrowRight,
   Award,
   BookOpen,
+  Brain,
   Compass,
+  Flame,
   PlayCircle,
-  Sparkles,
+  Radar,
+  Signpost,
   Trophy,
   Video,
 } from "lucide-react";
@@ -36,27 +39,32 @@ type RecommendedProgram = { id: number; name: string; description: string | null
 
 type Certificate = { certificateNo: string; programId: number; programName: string; completedAt: string; finalProgress: number };
 
+/**
+ * 아이콘은 서로 겹치지 않게 고른다.
+ * - 핵심역량진단: 결과가 6방위 나침반이라 레이더
+ * - 학습역량진단: 회복탄력성·메타인지 등 '능력'이라 책이 아니라 뇌
+ *   (BookOpen 은 네비게이션의 '교과목'이 이미 쓴다)
+ * - 소명진단: 학교 문장의 횃불. 부르심의 불
+ * - 나침반(Compass)은 사이트 시그니처라 특정 카드가 독점하지 않는다
+ */
 const diagnosisCards = [
   {
     title: "핵심역량진단",
     description: "나의 핵심 역량을 파악합니다",
     href: "/diagnosis/core",
-    icon: Sparkles,
-    iconBg: "bg-violet-50 text-violet-600",
+    icon: Radar,
   },
   {
     title: "학습역량진단",
     description: "학습 스타일과 능력을 점검합니다",
     href: "/diagnosis/learning",
-    icon: BookOpen,
-    iconBg: "bg-blue-50 text-blue-600",
+    icon: Brain,
   },
   {
     title: "소명진단",
     description: "나의 소명과 진로를 탐색합니다",
     href: "/diagnosis/calling",
-    icon: Compass,
-    iconBg: "bg-green-50 text-green-600",
+    icon: Flame,
   },
 ];
 
@@ -491,7 +499,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-ys-blue/10 text-ys-blue">
-              <Sparkles className="h-5 w-5" />
+              <Signpost className="h-5 w-5" />
             </span>
             <div>
               <h2 className="font-display text-base font-bold text-ys-ink">AI 진로가이드</h2>
