@@ -131,19 +131,19 @@ export default function CoursesPage() {
   const getCourseStyle = (name: string) => {
     if (cert) {
       if (certReqSet?.has(name)) return "border-2 border-orange-500 bg-orange-50";
-      if (certElecSet?.has(name)) return "border-2 border-orange-400 border-dashed bg-amber-50";
-      return "border border-slate-200 bg-slate-50 opacity-50";
+      if (certElecSet?.has(name)) return "border-2 border-orange-400 border-dashed bg-ys-gold/10";
+      return "border border-slate-200 bg-ys-paper opacity-50";
     }
     return "border border-slate-200 bg-white";
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <Navigation />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">내 교과목 로드맵</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="text-2xl font-bold text-ys-ink">내 교과목 로드맵</h1>
+          <p className="mt-1 text-sm text-ys-ink-soft">
             수강 중인 과목을 학기별로 확인하고, 자격증 이수 현황을 파악하세요.
           </p>
         </div>
@@ -151,20 +151,20 @@ export default function CoursesPage() {
         {/* 요약 카드 */}
         <div className="mb-6 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-slate-500">수강 과목</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{myCourses.length}개</p>
+            <p className="text-xs text-ys-ink-soft">수강 과목</p>
+            <p className="mt-1 text-xl font-bold text-ys-ink">{myCourses.length}개</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-slate-500">총 학점</p>
-            <p className="mt-1 text-xl font-bold text-blue-600">{totalCredits}</p>
+            <p className="text-xs text-ys-ink-soft">총 학점</p>
+            <p className="mt-1 text-xl font-bold text-ys-blue">{totalCredits}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-slate-500">학기 수</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{semesterGroups.length}</p>
+            <p className="text-xs text-ys-ink-soft">학기 수</p>
+            <p className="mt-1 text-xl font-bold text-ys-ink">{semesterGroups.length}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-slate-500">취득 가능 자격증</p>
-            <p className="mt-1 text-xl font-bold text-violet-600">{myCerts.length}개</p>
+            <p className="text-xs text-ys-ink-soft">취득 가능 자격증</p>
+            <p className="mt-1 text-xl font-bold text-ys-blue">{myCerts.length}개</p>
           </div>
         </div>
 
@@ -172,12 +172,12 @@ export default function CoursesPage() {
         {myCerts.length > 0 && (
           <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-slate-500" />
-              <p className="text-sm font-semibold text-slate-700">자격증 이수 현황</p>
+              <GraduationCap className="h-4 w-4 text-ys-ink-soft" />
+              <p className="text-sm font-semibold text-ys-ink">자격증 이수 현황</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => setSelectedCert(null)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${!selectedCert ? "bg-slate-800 text-white" : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"}`}>
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${!selectedCert ? "bg-slate-800 text-white" : "border border-slate-300 bg-white text-ys-ink-soft hover:bg-ys-paper"}`}>
                 전체 보기
               </button>
               {myCerts.map(([key, c]) => {
@@ -194,14 +194,14 @@ export default function CoursesPage() {
 
             {/* 선택된 자격증 상세 */}
             {cert && certProgress && (
-              <div className="mt-4 rounded-lg bg-slate-50 p-4">
+              <div className="mt-4 rounded-lg bg-ys-paper p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h4 className="text-sm font-semibold" style={{ color: cert.color }}>{cert.name}</h4>
-                  <span className="text-xs text-slate-500">{cert.type}</span>
+                  <span className="text-xs text-ys-ink-soft">{cert.type}</span>
                 </div>
                 {/* 프로그레스 바 */}
                 <div className="mb-3">
-                  <div className="flex justify-between text-xs text-slate-500">
+                  <div className="flex justify-between text-xs text-ys-ink-soft">
                     <span>필수 이수 {certProgress.reqDone}/{certProgress.reqTotal}</span>
                     <span>{Math.round((certProgress.reqDone / certProgress.reqTotal) * 100)}%</span>
                   </div>
@@ -211,17 +211,17 @@ export default function CoursesPage() {
                 </div>
                 {/* 미이수 과목 */}
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-slate-500">미이수 필수 과목</p>
+                  <p className="mb-1.5 text-xs font-medium text-ys-ink-soft">미이수 필수 과목</p>
                   <div className="flex flex-wrap gap-1.5">
                     {cert.required.filter((c) => !myCourseName.has(c)).map((c) => (
                       <span key={c} className="rounded bg-red-50 px-2 py-0.5 text-[11px] text-red-700 border border-red-200">{c.replace(" [SDU]", "")}</span>
                     ))}
                     {cert.required.every((c) => myCourseName.has(c)) && (
-                      <span className="text-xs text-green-600 font-medium">모든 필수 과목 이수 완료!</span>
+                      <span className="text-xs text-[#8A6212] font-medium">모든 필수 과목 이수 완료!</span>
                     )}
                   </div>
                 </div>
-                {cert.note && <p className="mt-2 text-[10px] text-slate-500">{cert.note}</p>}
+                {cert.note && <p className="mt-2 text-[10px] text-ys-ink-soft">{cert.note}</p>}
               </div>
             )}
           </div>
@@ -230,20 +230,20 @@ export default function CoursesPage() {
         {/* 학기별 로드맵 */}
         {myCourses.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-            <BookOpen className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500">수강 중인 과목이 없습니다.</p>
+            <BookOpen className="mx-auto h-10 w-10 text-ys-ink-soft/50" />
+            <p className="mt-3 text-sm text-ys-ink-soft">수강 중인 과목이 없습니다.</p>
           </div>
         ) : (
           <div className="mb-8">
             <div className="mb-4 flex items-center gap-2">
-              <Map className="h-4 w-4 text-slate-500" />
-              <h2 className="text-base font-semibold text-slate-800">학기별 수강 로드맵</h2>
+              <Map className="h-4 w-4 text-ys-ink-soft" />
+              <h2 className="text-base font-semibold text-ys-ink">학기별 수강 로드맵</h2>
             </div>
 
             <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(semesterGroups.length, 4)}, minmax(0, 1fr))` }}>
               {semesterGroups.map(([semLabel, courses]) => (
                 <div key={semLabel} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold text-slate-700">{semLabel}</p>
+                  <p className="mb-3 border-b border-slate-100 pb-2 text-sm font-semibold text-ys-ink">{semLabel}</p>
                   <div className="space-y-2">
                     {courses.map((mc) => {
                       const name = mc.courses?.name ?? "";
@@ -251,13 +251,13 @@ export default function CoursesPage() {
                       return (
                         <div key={mc.id} className={`rounded-lg p-2.5 transition ${style}`}>
                           <div className="flex items-start justify-between gap-1">
-                            <p className="text-xs font-medium text-slate-900">{name}</p>
-                            <span className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${mc.status === "완료" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
+                            <p className="text-xs font-medium text-ys-ink">{name}</p>
+                            <span className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${mc.status === "완료" ? "bg-ys-gold/15 text-[#8A6212]" : "bg-ys-blue/10 text-ys-blue"}`}>
                               {mc.status}
                             </span>
                           </div>
                           {mc.courses?.professor && (
-                            <p className="mt-0.5 text-[10px] text-slate-500">{mc.courses.professor} · {mc.courses.credit}학점</p>
+                            <p className="mt-0.5 text-[10px] text-ys-ink-soft">{mc.courses.professor} · {mc.courses.credit}학점</p>
                           )}
                           {/* 역량 태그 */}
                           <div className="mt-1 flex flex-wrap gap-0.5">
@@ -272,7 +272,7 @@ export default function CoursesPage() {
                             {(mc.courses?.major_competency_tags ?? []).map((tagId) => {
                               const comp = majorCompMap[tagId];
                               return comp ? (
-                                <span key={`m-${tagId}`} className="rounded bg-indigo-50 px-1 py-0.5 text-[8px] font-medium text-indigo-600">
+                                <span key={`m-${tagId}`} className="rounded bg-ys-blue/10 px-1 py-0.5 text-[8px] font-medium text-ys-blue">
                                   {comp.name}
                                 </span>
                               ) : null;
@@ -288,10 +288,10 @@ export default function CoursesPage() {
 
             {/* 범례 */}
             {cert && (
-              <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+              <div className="mt-3 flex flex-wrap gap-4 text-xs text-ys-ink-soft">
                 <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-2 border-orange-500 bg-orange-50" /> 자격증 필수</span>
-                {certElecSet && <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-2 border-dashed border-orange-400 bg-amber-50" /> 자격증 선택</span>}
-                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border border-slate-200 bg-slate-50 opacity-50" /> 해당 없음</span>
+                {certElecSet && <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border-2 border-dashed border-orange-400 bg-ys-gold/10" /> 자격증 선택</span>}
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded border border-slate-200 bg-ys-paper opacity-50" /> 해당 없음</span>
               </div>
             )}
           </div>
@@ -301,16 +301,16 @@ export default function CoursesPage() {
         {myCareerPath && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-amber-500" />
-              <h2 className="text-base font-semibold text-slate-800">졸업 후 진로</h2>
-              {myDeptId && <span className="text-xs text-slate-500">{deptMap[myDeptId]}</span>}
+              <Trophy className="h-5 w-5 text-ys-gold" />
+              <h2 className="text-base font-semibold text-ys-ink">졸업 후 진로</h2>
+              {myDeptId && <span className="text-xs text-ys-ink-soft">{deptMap[myDeptId]}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
               {myCareerPath.careers.map((c) => (
-                <span key={c} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700">{c}</span>
+                <span key={c} className="rounded-full border border-slate-200 bg-ys-paper px-3 py-1.5 text-xs text-ys-ink">{c}</span>
               ))}
             </div>
-            {myCareerPath.note && <p className="mt-3 text-xs italic text-slate-500">{myCareerPath.note}</p>}
+            {myCareerPath.note && <p className="mt-3 text-xs italic text-ys-ink-soft">{myCareerPath.note}</p>}
 
             {/* 자격증별 진로 */}
             {myCerts.length > 0 && (
@@ -320,7 +320,7 @@ export default function CoursesPage() {
                     <p className="text-xs font-semibold" style={{ color: c.color }}>{c.name} 취득 시</p>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {c.careers.map((career) => (
-                        <span key={career} className="rounded bg-slate-50 px-2 py-0.5 text-[11px] text-slate-700 border border-slate-200">{career}</span>
+                        <span key={career} className="rounded bg-ys-paper px-2 py-0.5 text-[11px] text-ys-ink border border-slate-200">{career}</span>
                       ))}
                     </div>
                   </div>

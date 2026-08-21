@@ -148,7 +148,7 @@ export default function PortfolioPage() {
     return lines;
   }, [latestCore, coreAnalysis, courses, extras, myCerts, mileage, totalCredits, myCourseName]);
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><p className="text-slate-500">포트폴리오 생성 중...</p></div>;
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-ys-paper"><p className="text-ys-ink-soft">포트폴리오 생성 중...</p></div>;
 
   const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 
@@ -165,10 +165,10 @@ export default function PortfolioPage() {
       {/* 헤더 (화면용) */}
       <header className="no-print border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/mypage" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
+          <Link href="/mypage" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink">
             <ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">마이페이지</span>
           </Link>
-          <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <button type="button" onClick={() => window.print()} className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
             <Printer className="h-4 w-4" /> 프린트 / PDF 저장
           </button>
         </div>
@@ -179,9 +179,9 @@ export default function PortfolioPage() {
         <div className="mb-8 border-b-2 border-slate-800 pb-6">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs text-slate-500">영남신학대학교 Young Shiny 역량 포트폴리오</p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900">{name}</h1>
-              <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-600">
+              <p className="text-xs text-ys-ink-soft">영남신학대학교 Young Shiny 역량 포트폴리오</p>
+              <h1 className="mt-1 text-3xl font-bold text-ys-ink">{name}</h1>
+              <div className="mt-2 flex flex-wrap gap-3 text-sm text-ys-ink-soft">
                 <span>학번: {studentId}</span>
                 {deptName && <span>학과: {deptName}</span>}
                 {gradeYear && <span>학년: {gradeYear}학년</span>}
@@ -189,17 +189,17 @@ export default function PortfolioPage() {
             </div>
             <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto" />
           </div>
-          <p className="mt-2 text-xs text-slate-400">발행일: {today}</p>
+          <p className="mt-2 text-xs text-ys-ink-soft/70">발행일: {today}</p>
         </div>
 
         {/* 1. 종합 평가 */}
         <section className="mb-8">
-          <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">1. 종합 평가</h2>
-          <div className="rounded-xl bg-slate-50 p-5">
+          <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">1. 종합 평가</h2>
+          <div className="rounded-xl bg-ys-paper p-5">
             <ul className="space-y-1.5">
               {commentary.map((line, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                  <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
+                <li key={i} className="flex items-start gap-2 text-sm text-ys-ink">
+                  <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-ys-blue" />
                   {line}
                 </li>
               ))}
@@ -207,31 +207,31 @@ export default function PortfolioPage() {
           </div>
           <div className="mt-4 grid grid-cols-4 gap-3">
             <div className="rounded-lg bg-slate-100 p-3 text-center">
-              <p className="text-[10px] text-slate-500">수강 과목</p>
-              <p className="text-xl font-bold text-slate-900">{courses.length}</p>
+              <p className="text-[10px] text-ys-ink-soft">수강 과목</p>
+              <p className="text-xl font-bold text-ys-ink">{courses.length}</p>
             </div>
             <div className="rounded-lg bg-slate-100 p-3 text-center">
-              <p className="text-[10px] text-slate-500">총 학점</p>
-              <p className="text-xl font-bold text-blue-600">{totalCredits}</p>
+              <p className="text-[10px] text-ys-ink-soft">총 학점</p>
+              <p className="text-xl font-bold text-ys-blue">{totalCredits}</p>
             </div>
             <div className="rounded-lg bg-slate-100 p-3 text-center">
-              <p className="text-[10px] text-slate-500">비교과</p>
-              <p className="text-xl font-bold text-green-600">{extras.length}</p>
+              <p className="text-[10px] text-ys-ink-soft">비교과</p>
+              <p className="text-xl font-bold text-[#8A6212]">{extras.length}</p>
             </div>
-            <div className="rounded-lg bg-amber-50 p-3 text-center">
-              <p className="text-[10px] text-amber-600">마일리지</p>
-              <p className="text-xl font-bold text-amber-700">{mileage}</p>
+            <div className="rounded-lg bg-ys-gold/10 p-3 text-center">
+              <p className="text-[10px] text-[#8A6212]">마일리지</p>
+              <p className="text-xl font-bold text-[#8A6212]">{mileage}</p>
             </div>
           </div>
         </section>
 
         {/* 2. 역량 분석 */}
         <section className="mb-8">
-          <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">2. 역량 분석</h2>
+          <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">2. 역량 분석</h2>
           <div className="grid gap-6 sm:grid-cols-2">
             {/* 핵심역량 레이더 */}
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">핵심역량 진단</h3>
+              <h3 className="mb-2 text-sm font-semibold text-ys-ink">핵심역량 진단</h3>
               {radarData.length > 0 ? (
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -243,12 +243,12 @@ export default function PortfolioPage() {
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
-              ) : <p className="py-8 text-center text-sm text-slate-400">진단 미완료</p>}
+              ) : <p className="py-8 text-center text-sm text-ys-ink-soft/70">진단 미완료</p>}
             </div>
 
             {/* 전공역량 바 */}
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">전공역량 현황 {deptName && `(${deptName})`}</h3>
+              <h3 className="mb-2 text-sm font-semibold text-ys-ink">전공역량 현황 {deptName && `(${deptName})`}</h3>
               {majorCompScores.length > 0 ? (
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -259,21 +259,21 @@ export default function PortfolioPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              ) : <p className="py-8 text-center text-sm text-slate-400">학과 미설정</p>}
+              ) : <p className="py-8 text-center text-sm text-ys-ink-soft/70">학과 미설정</p>}
             </div>
           </div>
 
           {/* 핵심역량 수강 누적 */}
           <div className="mt-4">
-            <h3 className="mb-2 text-sm font-semibold text-slate-700">핵심역량별 이수 현황 (수강 태그 기준)</h3>
+            <h3 className="mb-2 text-sm font-semibold text-ys-ink">핵심역량별 이수 현황 (수강 태그 기준)</h3>
             <div className="space-y-1.5">
               {coreCompCounts.map((cc) => (
                 <div key={cc.name} className="flex items-center gap-2">
-                  <span className="w-28 text-xs text-slate-600">{cc.name}</span>
+                  <span className="w-28 text-xs text-ys-ink-soft">{cc.name}</span>
                   <div className="flex-1 h-2 rounded-full bg-slate-100">
                     <div className="h-full rounded-full" style={{ width: `${Math.min(cc.count * 12, 100)}%`, backgroundColor: cc.color }} />
                   </div>
-                  <span className="w-8 text-right text-xs text-slate-500">{cc.count}</span>
+                  <span className="w-8 text-right text-xs text-ys-ink-soft">{cc.count}</span>
                 </div>
               ))}
             </div>
@@ -283,23 +283,23 @@ export default function PortfolioPage() {
         {/* 3. 진단 이력 */}
         {diagResults.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">3. 역량 진단 이력</h2>
+            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">3. 역량 진단 이력</h2>
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50"><tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">유형</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">총점</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">세부</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">일시</th>
+              <thead className="bg-ys-paper"><tr>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">유형</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">총점</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">세부</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">일시</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {diagResults.map((d, i) => (
                   <tr key={i}>
-                    <td className="px-3 py-2 text-xs font-medium text-slate-900">{DIAG_LABELS[d.diagnosis_type] ?? d.diagnosis_type}</td>
-                    <td className="px-3 py-2 text-xs text-slate-900">{d.total_score}점</td>
+                    <td className="px-3 py-2 text-xs font-medium text-ys-ink">{DIAG_LABELS[d.diagnosis_type] ?? d.diagnosis_type}</td>
+                    <td className="px-3 py-2 text-xs text-ys-ink">{d.total_score}점</td>
                     <td className="px-3 py-2"><div className="flex flex-wrap gap-1">{d.scores && Object.entries(d.scores).map(([k, v]) => (
-                      <span key={k} className="rounded bg-slate-100 px-1 py-0.5 text-[9px] text-slate-600">{CORE_LABELS[k] ?? k}:{v}</span>
+                      <span key={k} className="rounded bg-slate-100 px-1 py-0.5 text-[9px] text-ys-ink-soft">{CORE_LABELS[k] ?? k}:{v}</span>
                     ))}</div></td>
-                    <td className="px-3 py-2 text-[10px] text-slate-500">{new Date(d.created_at).toLocaleDateString("ko-KR")}</td>
+                    <td className="px-3 py-2 text-[10px] text-ys-ink-soft">{new Date(d.created_at).toLocaleDateString("ko-KR")}</td>
                   </tr>
                 ))}
               </tbody>
@@ -309,25 +309,25 @@ export default function PortfolioPage() {
 
         {/* 4. 수강 이력 */}
         <section className="mb-8">
-          <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">4. 수강 이력</h2>
-          {courses.length === 0 ? <p className="text-sm text-slate-400">수강 이력이 없습니다.</p> : (
+          <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">4. 수강 이력</h2>
+          {courses.length === 0 ? <p className="text-sm text-ys-ink-soft/70">수강 이력이 없습니다.</p> : (
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50"><tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">과목명</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">교수</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">학점</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">학기</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">상태</th>
+              <thead className="bg-ys-paper"><tr>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">과목명</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">교수</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">학점</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">학기</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">상태</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {courses.map((c, i) => {
                   const course = Array.isArray(c.courses) ? (c.courses as any)[0] : c.courses;
                   return (
                     <tr key={i}>
-                      <td className="px-3 py-2 text-xs font-medium text-slate-900">{course?.name ?? "-"}</td>
-                      <td className="px-3 py-2 text-xs text-slate-600">{course?.professor ?? "-"}</td>
-                      <td className="px-3 py-2 text-xs text-slate-600">{course?.credit ?? "-"}</td>
-                      <td className="px-3 py-2 text-xs text-slate-600">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
+                      <td className="px-3 py-2 text-xs font-medium text-ys-ink">{course?.name ?? "-"}</td>
+                      <td className="px-3 py-2 text-xs text-ys-ink-soft">{course?.professor ?? "-"}</td>
+                      <td className="px-3 py-2 text-xs text-ys-ink-soft">{course?.credit ?? "-"}</td>
+                      <td className="px-3 py-2 text-xs text-ys-ink-soft">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
                       <td className="px-3 py-2 text-xs">{c.status}</td>
                     </tr>
                   );
@@ -340,16 +340,16 @@ export default function PortfolioPage() {
         {/* 5. 비교과 활동 */}
         {extras.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">5. 비교과 활동</h2>
+            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">5. 비교과 활동</h2>
             <div className="flex flex-wrap gap-2">
               {extras.map((e, i) => {
                 const ex = Array.isArray(e.extracurricular) ? (e.extracurricular as any)[0] : e.extracurricular;
                 return (
                   <div key={i} className="rounded-lg border border-slate-200 px-3 py-2">
-                    <p className="text-xs font-medium text-slate-900">{ex?.name ?? "-"}</p>
+                    <p className="text-xs font-medium text-ys-ink">{ex?.name ?? "-"}</p>
                     <div className="mt-0.5 flex gap-1.5">
-                      {ex?.category && <span className="text-[10px] text-slate-500">{ex.category}</span>}
-                      <span className={`text-[10px] font-medium ${e.status === "완료" ? "text-green-600" : e.status === "참여중" ? "text-blue-600" : "text-yellow-600"}`}>{e.status}</span>
+                      {ex?.category && <span className="text-[10px] text-ys-ink-soft">{ex.category}</span>}
+                      <span className={`text-[10px] font-medium ${e.status === "완료" ? "text-[#8A6212]" : e.status === "참여중" ? "text-ys-blue" : "text-yellow-600"}`}>{e.status}</span>
                     </div>
                   </div>
                 );
@@ -361,7 +361,7 @@ export default function PortfolioPage() {
         {/* 6. 자격증 이수 현황 */}
         {myCerts.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">6. 자격증 이수 현황</h2>
+            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">6. 자격증 이수 현황</h2>
             {myCerts.map(([key, cert]) => {
               const done = cert.required.filter((c) => myCourseName.has(c)).length;
               const pct = Math.round((done / cert.required.length) * 100);
@@ -369,7 +369,7 @@ export default function PortfolioPage() {
                 <div key={key} className="mb-3 rounded-lg border border-slate-200 p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold" style={{ color: cert.color }}>{cert.name}</h3>
-                    <span className="text-xs text-slate-500">{done}/{cert.required.length} ({pct}%)</span>
+                    <span className="text-xs text-ys-ink-soft">{done}/{cert.required.length} ({pct}%)</span>
                   </div>
                   <div className="mt-2 h-2 rounded-full bg-slate-100">
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cert.color }} />
@@ -383,18 +383,18 @@ export default function PortfolioPage() {
         {/* 7. 진로 전망 */}
         {myCareerPath && (
           <section className="mb-8">
-            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-slate-900">7. 진로 전망</h2>
+            <h2 className="mb-3 border-b border-slate-200 pb-2 text-lg font-bold text-ys-ink">7. 진로 전망</h2>
             <div className="flex flex-wrap gap-2">
               {myCareerPath.careers.map((c) => (
-                <span key={c} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700">{c}</span>
+                <span key={c} className="rounded-full border border-slate-200 bg-ys-paper px-3 py-1.5 text-xs text-ys-ink">{c}</span>
               ))}
             </div>
-            {myCareerPath.note && <p className="mt-2 text-xs italic text-slate-500">{myCareerPath.note}</p>}
+            {myCareerPath.note && <p className="mt-2 text-xs italic text-ys-ink-soft">{myCareerPath.note}</p>}
           </section>
         )}
 
         {/* 푸터 */}
-        <div className="mt-12 border-t border-slate-200 pt-4 text-center text-[10px] text-slate-400">
+        <div className="mt-12 border-t border-slate-200 pt-4 text-center text-[10px] text-ys-ink-soft/70">
           <p>영남신학대학교 Young Shiny 역량 포트폴리오 · {today}</p>
           <p>본 포트폴리오는 학생의 역량진단, 수강, 비교과 활동 데이터를 기반으로 자동 생성되었습니다.</p>
         </div>

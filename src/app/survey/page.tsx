@@ -9,13 +9,13 @@ type Survey = { id: number; title: string; description: string | null; org_type:
 type Question = { id: number; survey_id: number; question_text: string; question_type: string; options: any; question_order: number; is_required: boolean };
 
 const ORG_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  교무처: { label: "교무처", color: "text-blue-700", bg: "bg-blue-50" },
-  기획처: { label: "기획처", color: "text-indigo-700", bg: "bg-indigo-50" },
-  사무처: { label: "사무처", color: "text-slate-700", bg: "bg-slate-100" },
-  학생실천처: { label: "학생실천처", color: "text-green-700", bg: "bg-green-50" },
+  교무처: { label: "교무처", color: "text-ys-blue", bg: "bg-ys-blue/10" },
+  기획처: { label: "기획처", color: "text-ys-blue", bg: "bg-ys-blue/10" },
+  사무처: { label: "사무처", color: "text-ys-ink", bg: "bg-slate-100" },
+  학생실천처: { label: "학생실천처", color: "text-[#8A6212]", bg: "bg-ys-gold/10" },
   교수학습지원센터: { label: "교수학습지원센터", color: "text-emerald-700", bg: "bg-emerald-50" },
-  취창업진로지원센터: { label: "취창업진로지원센터", color: "text-blue-700", bg: "bg-blue-50" },
-  학생생활상담센터: { label: "학생생활상담센터", color: "text-violet-700", bg: "bg-violet-50" },
+  취창업진로지원센터: { label: "취창업진로지원센터", color: "text-ys-blue", bg: "bg-ys-blue/10" },
+  학생생활상담센터: { label: "학생생활상담센터", color: "text-ys-blue", bg: "bg-ys-blue/10" },
 };
 
 const LIKERT = ["전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"];
@@ -90,23 +90,23 @@ export default function SurveyPage() {
 
   const renderSurveyCard = (s: Survey) => {
     const done = completedIds.has(s.id);
-    const org = ORG_LABELS[s.org_name] ?? { label: s.org_name, color: "text-slate-700", bg: "bg-slate-100" };
+    const org = ORG_LABELS[s.org_name] ?? { label: s.org_name, color: "text-ys-ink", bg: "bg-slate-100" };
     return (
       <div key={s.id} className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${done ? "opacity-60" : ""}`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${org.bg} ${org.color}`}>{org.label}</span>
-              {done && <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">완료</span>}
+              {done && <span className="rounded-full bg-ys-gold/10 px-2 py-0.5 text-[10px] font-medium text-[#8A6212]">완료</span>}
             </div>
-            <h3 className="mt-2 text-sm font-semibold text-slate-900">{s.title}</h3>
-            {s.description && <p className="mt-1 text-xs text-slate-500">{s.description}</p>}
-            {s.end_date && <p className="mt-1 text-[10px] text-slate-400">마감: {s.end_date}</p>}
+            <h3 className="mt-2 text-sm font-semibold text-ys-ink">{s.title}</h3>
+            {s.description && <p className="mt-1 text-xs text-ys-ink-soft">{s.description}</p>}
+            {s.end_date && <p className="mt-1 text-[10px] text-ys-ink-soft/70">마감: {s.end_date}</p>}
           </div>
           {!done ? (
-            <button type="button" onClick={() => openSurvey(s)} className="ml-3 rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700">참여하기</button>
+            <button type="button" onClick={() => openSurvey(s)} className="ml-3 rounded-lg bg-ys-blue px-4 py-2 text-xs font-medium text-white hover:bg-ys-blue/90">참여하기</button>
           ) : (
-            <CheckCircle className="ml-3 h-6 w-6 text-green-500" />
+            <CheckCircle className="ml-3 h-6 w-6 text-ys-gold" />
           )}
         </div>
       </div>
@@ -114,22 +114,22 @@ export default function SurveyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <Navigation />
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">설문조사</h1>
-          <p className="mt-1 text-sm text-slate-600">각 부처·센터의 설문에 참여해주세요. 참여 시 마일리지 5점이 부여됩니다.</p>
+          <h1 className="text-2xl font-bold text-ys-ink">설문조사</h1>
+          <p className="mt-1 text-sm text-ys-ink-soft">각 부처·센터의 설문에 참여해주세요. 참여 시 마일리지 5점이 부여됩니다.</p>
         </div>
 
         {/* 필터 */}
         <div className="mb-6 flex flex-wrap gap-2">
-          <button type="button" onClick={() => setFilterOrg("all")} className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${filterOrg === "all" ? "bg-slate-800 text-white" : "border border-slate-300 bg-white text-slate-600"}`}>전체</button>
+          <button type="button" onClick={() => setFilterOrg("all")} className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${filterOrg === "all" ? "bg-slate-800 text-white" : "border border-slate-300 bg-white text-ys-ink-soft"}`}>전체</button>
           {orgNames.map((name) => {
             const org = ORG_LABELS[name];
             return (
               <button key={name} type="button" onClick={() => setFilterOrg(name)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${filterOrg === name ? "bg-slate-800 text-white" : `border border-slate-300 bg-white ${org?.color ?? "text-slate-600"}`}`}>
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${filterOrg === name ? "bg-slate-800 text-white" : `border border-slate-300 bg-white ${org?.color ?? "text-ys-ink-soft"}`}`}>
                 {org?.label ?? name}
               </button>
             );
@@ -138,20 +138,20 @@ export default function SurveyPage() {
 
         {surveys.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-            <ClipboardList className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500">현재 진행 중인 설문이 없습니다.</p>
+            <ClipboardList className="mx-auto h-10 w-10 text-ys-ink-soft/50" />
+            <p className="mt-3 text-sm text-ys-ink-soft">현재 진행 중인 설문이 없습니다.</p>
           </div>
         ) : (
           <>
             {grouped.departments.length > 0 && (
               <div className="mb-6">
-                <h2 className="mb-3 text-base font-semibold text-slate-800">부처별 설문</h2>
+                <h2 className="mb-3 text-base font-semibold text-ys-ink">부처별 설문</h2>
                 <div className="space-y-3">{grouped.departments.map(renderSurveyCard)}</div>
               </div>
             )}
             {grouped.centers.length > 0 && (
               <div>
-                <h2 className="mb-3 text-base font-semibold text-slate-800">센터별 설문</h2>
+                <h2 className="mb-3 text-base font-semibold text-ys-ink">센터별 설문</h2>
                 <div className="space-y-3">{grouped.centers.map(renderSurveyCard)}</div>
               </div>
             )}
@@ -163,19 +163,19 @@ export default function SurveyPage() {
       {selectedSurvey && !submitted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedSurvey(null)}>
           <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-900">{selectedSurvey.title}</h3>
-            {selectedSurvey.description && <p className="mt-1 text-sm text-slate-500">{selectedSurvey.description}</p>}
+            <h3 className="text-lg font-semibold text-ys-ink">{selectedSurvey.title}</h3>
+            {selectedSurvey.description && <p className="mt-1 text-sm text-ys-ink-soft">{selectedSurvey.description}</p>}
 
             <div className="mt-6 space-y-6">
               {questions.map((q) => (
                 <div key={q.id}>
-                  <p className="mb-2 text-sm font-medium text-slate-900">
+                  <p className="mb-2 text-sm font-medium text-ys-ink">
                     {q.question_order}. {q.question_text} {q.is_required && <span className="text-red-500">*</span>}
                   </p>
                   {q.question_type === "likert" && (
                     <div className="flex flex-wrap gap-2">
                       {LIKERT.map((label, i) => (
-                        <label key={i} className={`flex cursor-pointer items-center rounded-xl border-2 px-3 py-2 text-xs font-medium transition ${answers[q.id] === i + 1 ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300"}`}>
+                        <label key={i} className={`flex cursor-pointer items-center rounded-xl border-2 px-3 py-2 text-xs font-medium transition ${answers[q.id] === i + 1 ? "border-blue-600 bg-ys-blue text-white" : "border-slate-200 bg-white text-ys-ink hover:border-ys-blue/40"}`}>
                           <input type="radio" className="sr-only" checked={answers[q.id] === i + 1} onChange={() => setAnswers({ ...answers, [q.id]: i + 1 })} />
                           {i + 1} ({label})
                         </label>
@@ -189,7 +189,7 @@ export default function SurveyPage() {
                   {q.question_type === "choice" && q.options && (
                     <div className="flex flex-wrap gap-2">
                       {(q.options as string[]).map((opt, i) => (
-                        <label key={i} className={`flex cursor-pointer items-center rounded-xl border-2 px-3 py-2 text-xs font-medium transition ${answers[q.id] === opt ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300"}`}>
+                        <label key={i} className={`flex cursor-pointer items-center rounded-xl border-2 px-3 py-2 text-xs font-medium transition ${answers[q.id] === opt ? "border-blue-600 bg-ys-blue text-white" : "border-slate-200 bg-white text-ys-ink hover:border-ys-blue/40"}`}>
                           <input type="radio" className="sr-only" checked={answers[q.id] === opt} onChange={() => setAnswers({ ...answers, [q.id]: opt })} />
                           {opt}
                         </label>
@@ -201,9 +201,9 @@ export default function SurveyPage() {
             </div>
 
             <div className="mt-6 flex gap-2">
-              <button type="button" onClick={() => setSelectedSurvey(null)} className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+              <button type="button" onClick={() => setSelectedSurvey(null)} className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-ys-ink hover:bg-ys-paper">취소</button>
               <button type="button" onClick={handleSubmit} disabled={submitting || !allRequired}
-                className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed">
+                className="flex-1 rounded-lg bg-ys-blue py-2.5 text-sm font-semibold text-white hover:bg-ys-blue/90 disabled:bg-slate-300 disabled:cursor-not-allowed">
                 {submitting ? "제출 중..." : "제출하기"}
               </button>
             </div>
@@ -215,11 +215,11 @@ export default function SurveyPage() {
       {submitted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { setSelectedSurvey(null); setSubmitted(false); }}>
           <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-            <h3 className="mt-4 text-lg font-bold text-slate-900">설문 완료!</h3>
-            <p className="mt-1 text-sm text-slate-600">참여해주셔서 감사합니다. 마일리지 5점이 부여되었습니다.</p>
+            <CheckCircle className="mx-auto h-16 w-16 text-ys-gold" />
+            <h3 className="mt-4 text-lg font-bold text-ys-ink">설문 완료!</h3>
+            <p className="mt-1 text-sm text-ys-ink-soft">참여해주셔서 감사합니다. 마일리지 5점이 부여되었습니다.</p>
             <button type="button" onClick={() => { setSelectedSurvey(null); setSubmitted(false); }}
-              className="mt-6 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700">확인</button>
+              className="mt-6 w-full rounded-lg bg-ys-blue py-2.5 text-sm font-medium text-white hover:bg-ys-blue/90">확인</button>
           </div>
         </div>
       )}

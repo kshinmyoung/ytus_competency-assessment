@@ -34,9 +34,9 @@ type Extra = {
 type MyExtra = { extracurricular_id: number; status: string };
 
 const CENTERS = [
-  { key: "ctl", name: "교수학습지원센터", desc: "학습 코칭, 튜터링, 교수법 지원", color: "#10B981", bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
-  { key: "career_center", name: "취창업진로지원센터", desc: "진로상담, 취업역량 강화, 자격증 상담", color: "#3B82F6", bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
-  { key: "counseling_center", name: "학생생활상담센터", desc: "심리상담, 진로상담, 위기상담", color: "#8B5CF6", bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700" },
+  { key: "ctl", name: "교수학습지원센터", desc: "학습 코칭, 튜터링, 교수법 지원", color: "#10B981", bg: "bg-ys-gold/10", border: "border-ys-gold/30", text: "text-[#8A6212]" },
+  { key: "career_center", name: "취창업진로지원센터", desc: "진로상담, 취업역량 강화, 자격증 상담", color: "#3B82F6", bg: "bg-ys-blue/10", border: "border-ys-blue/30", text: "text-ys-blue" },
+  { key: "counseling_center", name: "학생생활상담센터", desc: "심리상담, 진로상담, 위기상담", color: "#8B5CF6", bg: "bg-ys-blue/10", border: "border-violet-200", text: "text-ys-blue" },
 ];
 
 const TIME_SLOTS = [
@@ -151,8 +151,8 @@ export default function ReservationPage() {
   const centerInfo = CENTERS.find((c) => c.key === selectedCenter)!;
 
   const statusBadge = (status: string) => {
-    const s: Record<string, string> = { "신청": "bg-yellow-50 text-yellow-700", "확인": "bg-blue-50 text-blue-700", "완료": "bg-green-50 text-green-700", "취소": "bg-slate-100 text-slate-400" };
-    return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s[status] ?? "bg-slate-100 text-slate-600"}`}>{status}</span>;
+    const s: Record<string, string> = { "신청": "bg-ys-blue/10 text-ys-blue", "확인": "bg-ys-blue/10 text-ys-blue", "완료": "bg-ys-gold/15 text-[#8A6212]", "취소": "bg-slate-100 text-ys-ink-soft/70" };
+    return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s[status] ?? "bg-slate-100 text-ys-ink-soft"}`}>{status}</span>;
   };
 
   const tabs = [
@@ -162,19 +162,19 @@ export default function ReservationPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <Navigation />
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">예약 및 신청</h1>
-          <p className="mt-1 text-sm text-slate-600">센터 상담을 예약하거나 비교과 프로그램에 신청할 수 있습니다.</p>
+          <h1 className="text-2xl font-bold text-ys-ink">예약 및 신청</h1>
+          <p className="mt-1 text-sm text-ys-ink-soft">센터 상담을 예약하거나 비교과 프로그램에 신청할 수 있습니다.</p>
         </div>
 
         {/* 탭 */}
         <div className="mb-6 flex gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-white p-1">
           {tabs.map((tab) => (
             <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition ${activeTab === tab.key ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+              className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition ${activeTab === tab.key ? "bg-ys-blue text-white" : "text-ys-ink-soft hover:bg-slate-100"}`}>
               {tab.label}
             </button>
           ))}
@@ -188,16 +188,16 @@ export default function ReservationPage() {
               {CENTERS.map((c) => (
                 <button key={c.key} type="button" onClick={() => { setSelectedCenter(c.key); setTimeSlot(""); }}
                   className={`rounded-xl border-2 p-4 text-left transition ${selectedCenter === c.key ? `${c.bg} ${c.border}` : "border-transparent bg-white"}`}>
-                  <p className={`text-sm font-semibold ${selectedCenter === c.key ? c.text : "text-slate-800"}`}>{c.name}</p>
-                  <p className="mt-1 text-xs text-slate-500">{c.desc}</p>
+                  <p className={`text-sm font-semibold ${selectedCenter === c.key ? c.text : "text-ys-ink"}`}>{c.name}</p>
+                  <p className="mt-1 text-xs text-ys-ink-soft">{c.desc}</p>
                 </button>
               ))}
             </div>
 
             {submitted && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 p-4">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <p className="text-sm font-medium text-green-800">예약이 접수되었습니다!</p>
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-ys-gold/30 bg-ys-gold/10 p-4">
+                <CheckCircle className="h-5 w-5 text-[#8A6212]" />
+                <p className="text-sm font-medium text-[#8A6212]">예약이 접수되었습니다!</p>
               </div>
             )}
 
@@ -207,14 +207,14 @@ export default function ReservationPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">날짜 선택</label>
+                  <label className="block text-sm font-medium text-ys-ink">날짜 선택</label>
                   <input type="date" min={today} value={reservationDate} onChange={(e) => { setReservationDate(e.target.value); setTimeSlot(""); }}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
 
                 {reservationDate && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700">시간대 선택</label>
+                    <label className="block text-sm font-medium text-ys-ink">시간대 선택</label>
                     <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {TIME_SLOTS.map((slot) => {
                         const booked = bookedSlots.has(slot);
@@ -222,9 +222,9 @@ export default function ReservationPage() {
                         return (
                           <button key={slot} type="button" onClick={() => !booked && setTimeSlot(slot)} disabled={booked}
                             className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                              booked ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed" :
-                              selected ? "border-blue-500 bg-blue-50 text-blue-700" :
-                              "border-slate-200 bg-white text-slate-700 hover:border-blue-300"
+                              booked ? "border-slate-100 bg-ys-paper text-ys-ink-soft/50 cursor-not-allowed" :
+                              selected ? "border-blue-500 bg-ys-blue/10 text-ys-blue" :
+                              "border-slate-200 bg-white text-ys-ink hover:border-ys-blue/40"
                             }`}>
                             <Clock className="mx-auto mb-0.5 h-3 w-3" />
                             {slot}
@@ -236,13 +236,13 @@ export default function ReservationPage() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">상담 목적 (선택)</label>
+                  <label className="block text-sm font-medium text-ys-ink">상담 목적 (선택)</label>
                   <textarea value={purpose} onChange={(e) => setPurpose(e.target.value)} rows={3} placeholder="어떤 상담을 원하시나요? (선택사항)"
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
 
                 <button type="button" onClick={handleReserve} disabled={submitting || !reservationDate || !timeSlot}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed">
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-ys-blue py-3 text-sm font-semibold text-white hover:bg-ys-blue/90 disabled:bg-slate-300 disabled:cursor-not-allowed">
                   <Send className="h-4 w-4" />
                   {submitting ? "예약 중..." : "상담 예약하기"}
                 </button>
@@ -256,8 +256,8 @@ export default function ReservationPage() {
           <div>
             {extras.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-                <Trophy className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">현재 신청 가능한 비교과 프로그램이 없습니다.</p>
+                <Trophy className="mx-auto h-10 w-10 text-ys-ink-soft/50" />
+                <p className="mt-3 text-sm text-ys-ink-soft">현재 신청 가능한 비교과 프로그램이 없습니다.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -268,25 +268,25 @@ export default function ReservationPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold text-slate-900">{item.name}</h3>
-                            {item.category && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">{item.category}</span>}
+                            <h3 className="text-sm font-semibold text-ys-ink">{item.name}</h3>
+                            {item.category && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-ys-ink-soft">{item.category}</span>}
                           </div>
-                          {item.organizer && <p className="mt-0.5 text-xs text-slate-500">주관: {item.organizer}</p>}
+                          {item.organizer && <p className="mt-0.5 text-xs text-ys-ink-soft">주관: {item.organizer}</p>}
                           {item.start_date && (
-                            <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                            <p className="mt-0.5 flex items-center gap-1 text-xs text-ys-ink-soft">
                               <Calendar className="h-3 w-3" />
                               {item.start_date}{item.end_date ? ` ~ ${item.end_date}` : ""}
                             </p>
                           )}
-                          {item.description && <p className="mt-2 text-xs text-slate-600">{item.description}</p>}
-                          {item.max_participants && <p className="mt-1 text-[10px] text-slate-400">최대 {item.max_participants}명</p>}
+                          {item.description && <p className="mt-2 text-xs text-ys-ink-soft">{item.description}</p>}
+                          {item.max_participants && <p className="mt-1 text-[10px] text-ys-ink-soft/70">최대 {item.max_participants}명</p>}
                         </div>
                         <div className="ml-4 flex-shrink-0">
                           {myStatus ? (
                             statusBadge(myStatus.status)
                           ) : (
                             <button type="button" onClick={() => handleExtraApply(item.id)} disabled={extraSubmitting}
-                              className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                              className="rounded-full bg-ys-blue px-4 py-1.5 text-xs font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50">
                               신청하기
                             </button>
                           )}
@@ -305,8 +305,8 @@ export default function ReservationPage() {
           <div>
             {myReservations.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-                <Calendar className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-sm text-slate-500">예약 내역이 없습니다.</p>
+                <Calendar className="mx-auto h-10 w-10 text-ys-ink-soft/50" />
+                <p className="mt-3 text-sm text-ys-ink-soft">예약 내역이 없습니다.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -320,16 +320,16 @@ export default function ReservationPage() {
                             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${center?.bg} ${center?.text}`}>{center?.name}</span>
                             {statusBadge(r.status)}
                           </div>
-                          <div className="mt-2 flex items-center gap-3 text-sm text-slate-700">
-                            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-slate-400" />{r.reservation_date}</span>
-                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-slate-400" />{r.time_slot}</span>
+                          <div className="mt-2 flex items-center gap-3 text-sm text-ys-ink">
+                            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-ys-ink-soft/70" />{r.reservation_date}</span>
+                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-ys-ink-soft/70" />{r.time_slot}</span>
                           </div>
-                          {r.purpose && <p className="mt-2 text-xs text-slate-600">목적: {r.purpose}</p>}
-                          {r.admin_note && <p className="mt-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">센터 메모: {r.admin_note}</p>}
-                          <p className="mt-1 text-[10px] text-slate-400">신청: {formatDateTimeKorea(r.created_at)}</p>
+                          {r.purpose && <p className="mt-2 text-xs text-ys-ink-soft">목적: {r.purpose}</p>}
+                          {r.admin_note && <p className="mt-1 rounded bg-ys-blue/10 px-2 py-1 text-xs text-ys-blue">센터 메모: {r.admin_note}</p>}
+                          <p className="mt-1 text-[10px] text-ys-ink-soft/70">신청: {formatDateTimeKorea(r.created_at)}</p>
                         </div>
                         {r.status === "신청" && (
-                          <button type="button" onClick={() => handleCancel(r.id)} className="rounded p-1 text-slate-400 hover:text-red-500">
+                          <button type="button" onClick={() => handleCancel(r.id)} className="rounded p-1 text-ys-ink-soft/70 hover:text-red-500">
                             <X className="h-4 w-4" />
                           </button>
                         )}

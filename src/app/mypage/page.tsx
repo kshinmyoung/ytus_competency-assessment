@@ -3,15 +3,13 @@
 import { BookOpen, ClipboardCheck, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import CompetencyCompass from "@/components/CompetencyCompass";
 import { CORE_MAX, toSixAxes } from "@/lib/competencies";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import { formatDateTimeKorea } from "@/lib/date";
 import {
-  Bar, BarChart, CartesianGrid, Legend,
-  PolarAngleAxis, PolarGrid, PolarRadiusAxis,
-  Radar, RadarChart, ResponsiveContainer, Tooltip,
-  XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 
 const CORE_LABELS: Record<string, string> = {
@@ -109,11 +107,7 @@ export default function MyPage() {
   // Latest core diagnosis for radar
   const latestCore = diagnosisResults.find((d) => d.diagnosis_type === "core");
   // 진단은 5키로 측정하지만 학교 정식 역량은 6개다 (창의수행·융합사고는 같은 점수로 펼쳐짐)
-  const radarData = (toSixAxes(latestCore?.scores as Record<string, number> | undefined) ?? []).map((a) => ({
-    subject: a.short,
-    value: a.score,
-    fullMark: CORE_MAX,
-  }));
+  const sixAxes = toSixAxes(latestCore?.scores as Record<string, number> | undefined) ?? [];
 
   const diagTypeName = (type: string) => {
     if (type === "core") return "핵심역량";
@@ -130,18 +124,18 @@ export default function MyPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <Navigation />
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         {/* Profile header */}
         <div className="mb-6 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{userName || "학우"}님의 마이페이지</h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <h1 className="text-xl font-bold text-ys-ink">{userName || "학우"}님의 마이페이지</h1>
+            <p className="mt-1 text-sm text-ys-ink-soft">
               {departmentName && `${departmentName} · `}역량 현황과 활동 이력을 확인하세요.
             </p>
           </div>
-          <Link href="/mypage/portfolio" className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
+          <Link href="/mypage/portfolio" className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
             포트폴리오
           </Link>
         </div>
@@ -154,7 +148,7 @@ export default function MyPage() {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
-                activeTab === tab.key ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                activeTab === tab.key ? "bg-ys-blue text-white" : "text-ys-ink-soft hover:bg-slate-100"
               }`}
             >
               {tab.label}
@@ -167,44 +161,56 @@ export default function MyPage() {
           <div className="space-y-6">
             {/* Radar chart */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-base font-semibold text-slate-800">핵심역량 종합</h2>
-              {radarData.length > 0 ? (
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-                      <PolarGrid stroke="#e2e8f0" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} tickLine={false} />
-                      <PolarRadiusAxis angle={90} domain={[0, 25]} tick={{ fontSize: 10 }} />
-                      <Radar name="점수" dataKey="value" stroke="#6366f1" fill="#818cf8" fillOpacity={0.4} strokeWidth={2} />
-                      <Tooltip formatter={(v: any) => [`${v}점`, "점수"]} />
-                      <Legend />
-                    </RadarChart>
-                  </ResponsiveContainer>
+              <h2 className="mb-4 text-base font-semibold text-ys-ink">핵심역량 종합</h2>
+              {sixAxes.length > 0 ? (
+                <div className="overflow-hidden rounded-xl bg-ys-navy p-5 sm:p-6">
+                  <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8">
+                    <CompetencyCompass
+                      axes={sixAxes.map((a) => ({ label: a.short, score: a.score }))}
+                      max={CORE_MAX}
+                      className="h-auto w-full max-w-[300px] shrink-0"
+                    />
+                    <ul className="flex w-full min-w-0 flex-col gap-2">
+                      {sixAxes.map((a) => (
+                        <li key={a.id} className="flex items-center gap-3">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: a.color }} aria-hidden="true" />
+                          <span className="min-w-0 flex-1 truncate text-[13px] text-ys-mist">{a.name}</span>
+                          <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-white/10">
+                            <span
+                              className={`block h-full rounded-full ${a.lit ? "bg-ys-gold" : "bg-ys-sky/60"}`}
+                              style={{ width: `${Math.round((a.score / CORE_MAX) * 100)}%` }}
+                            />
+                          </span>
+                          <span className="font-data w-8 shrink-0 text-right text-[13px] text-white">{a.score}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-slate-500">핵심역량 진단 결과가 없습니다.</p>
+                <p className="py-8 text-center text-sm text-ys-ink-soft">핵심역량 진단 결과가 없습니다.</p>
               )}
             </div>
 
             {/* 전공역량 현황 */}
             {majorCompScores.length > 0 && (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-base font-semibold text-slate-800">
+                <h2 className="mb-4 text-base font-semibold text-ys-ink">
                   전공역량 현황
-                  {departmentName && <span className="ml-2 text-xs font-normal text-slate-500">({departmentName})</span>}
+                  {departmentName && <span className="ml-2 text-xs font-normal text-ys-ink-soft">({departmentName})</span>}
                 </h2>
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={majorCompScores.map((mc) => ({ name: mc.name, 이수: mc.score }))} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                       <Tooltip />
-                      <Bar dataKey="이수" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="이수" fill="#1E66A2" radius={[4, 4, 0, 0]} maxBarSize={54} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <p className="mt-2 text-center text-[10px] text-slate-400">수강 과목의 전공역량 태그 기준 집계</p>
+                <p className="mt-2 text-center text-[10px] text-ys-ink-soft/70">수강 과목의 전공역량 태그 기준 집계</p>
               </div>
             )}
 
@@ -212,37 +218,37 @@ export default function MyPage() {
             <div className="grid gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-blue-500" />
-                  <p className="text-sm font-medium text-slate-700">수강 과목</p>
+                  <BookOpen className="h-5 w-5 text-ys-blue" />
+                  <p className="text-sm font-medium text-ys-ink">수강 과목</p>
                 </div>
-                <p className="mt-2 text-2xl font-bold text-slate-900">{courseRecords.length}개</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-2xl font-bold text-ys-ink">{courseRecords.length}개</p>
+                <p className="mt-1 text-xs text-ys-ink-soft">
                   완료: {courseRecords.filter((c) => c.status === "완료").length}개
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-500" />
-                  <p className="text-sm font-medium text-slate-700">비교과 활동</p>
+                  <Trophy className="h-5 w-5 text-ys-gold" />
+                  <p className="text-sm font-medium text-ys-ink">비교과 활동</p>
                 </div>
-                <p className="mt-2 text-2xl font-bold text-slate-900">{extraRecords.length}개</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-2xl font-bold text-ys-ink">{extraRecords.length}개</p>
+                <p className="mt-1 text-xs text-ys-ink-soft">
                   완료: {extraRecords.filter((e) => e.status === "완료").length}개
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2">
                   <ClipboardCheck className="h-5 w-5 text-violet-500" />
-                  <p className="text-sm font-medium text-slate-700">진단 완료</p>
+                  <p className="text-sm font-medium text-ys-ink">진단 완료</p>
                 </div>
-                <p className="mt-2 text-2xl font-bold text-slate-900">{diagnosisResults.length}회</p>
+                <p className="mt-2 text-2xl font-bold text-ys-ink">{diagnosisResults.length}회</p>
               </div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+              <div className="rounded-xl border border-ys-gold/30 bg-ys-gold/10 p-5 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-600" />
-                  <p className="text-sm font-medium text-amber-700">마일리지</p>
+                  <Trophy className="h-5 w-5 text-[#8A6212]" />
+                  <p className="text-sm font-medium text-[#8A6212]">마일리지</p>
                 </div>
-                <p className="mt-2 text-2xl font-bold text-amber-700">{mileage}점</p>
+                <p className="mt-2 text-2xl font-bold text-[#8A6212]">{mileage}점</p>
               </div>
             </div>
           </div>
@@ -252,23 +258,23 @@ export default function MyPage() {
         {activeTab === "courses" && (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+              <thead className="bg-ys-paper">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">과목명</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">역량 태그</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">교수</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학기</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">성적</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">상태</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">과목명</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">역량 태그</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">교수</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">학기</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">성적</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">상태</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {courseRecords.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">수강 이력이 없습니다.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-ys-ink-soft">수강 이력이 없습니다.</td></tr>
                 ) : (
                   courseRecords.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900">{c.courses?.name ?? "-"}</td>
+                    <tr key={c.id} className="hover:bg-ys-paper">
+                      <td className="px-4 py-3 text-sm font-medium text-ys-ink">{c.courses?.name ?? "-"}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(c.courses?.core_competency_tags ?? []).map((tagId) => {
@@ -277,15 +283,15 @@ export default function MyPage() {
                           })}
                           {(c.courses?.major_competency_tags ?? []).map((tagId) => {
                             const comp = majorComps.find((mc) => mc.id === tagId);
-                            return comp ? <span key={`m-${tagId}`} className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">{comp.name}</span> : null;
+                            return comp ? <span key={`m-${tagId}`} className="rounded-full bg-ys-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-ys-blue">{comp.name}</span> : null;
                           })}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{c.courses?.professor ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{c.grade ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{c.courses?.professor ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{c.grade ?? "-"}</td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.status === "완료" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.status === "완료" ? "bg-ys-gold/15 text-[#8A6212]" : "bg-ys-blue/10 text-ys-blue"}`}>
                           {c.status}
                         </span>
                       </td>
@@ -301,30 +307,30 @@ export default function MyPage() {
         {activeTab === "extra" && (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+              <thead className="bg-ys-paper">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">프로그램명</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">카테고리</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">상태</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">완료일</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">소감</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">프로그램명</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">카테고리</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">상태</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">완료일</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">소감</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {extraRecords.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">비교과 활동 이력이 없습니다.</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-ys-ink-soft">비교과 활동 이력이 없습니다.</td></tr>
                 ) : (
                   extraRecords.map((e) => (
-                    <tr key={e.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900">{e.extracurricular?.name ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{e.extracurricular?.category ?? "-"}</td>
+                    <tr key={e.id} className="hover:bg-ys-paper">
+                      <td className="px-4 py-3 text-sm font-medium text-ys-ink">{e.extracurricular?.name ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{e.extracurricular?.category ?? "-"}</td>
                       <td className="px-4 py-3">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          e.status === "완료" ? "bg-green-50 text-green-700" : e.status === "참여중" ? "bg-blue-50 text-blue-700" : "bg-yellow-50 text-yellow-700"
+                          e.status === "완료" ? "bg-ys-gold/15 text-[#8A6212]" : e.status === "참여중" ? "bg-ys-blue/10 text-ys-blue" : "bg-ys-blue/10 text-ys-blue"
                         }`}>{e.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{e.completed_at ? formatDateTimeKorea(e.completed_at) : "-"}</td>
-                      <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-600">{e.reflection ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{e.completed_at ? formatDateTimeKorea(e.completed_at) : "-"}</td>
+                      <td className="max-w-xs truncate px-4 py-3 text-sm text-ys-ink-soft">{e.reflection ?? "-"}</td>
                     </tr>
                   ))
                 )}
@@ -337,38 +343,38 @@ export default function MyPage() {
         {activeTab === "diagnosis" && (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+              <thead className="bg-ys-paper">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">진단 유형</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">총점</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">세부 점수</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">진단일</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">진단 유형</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">총점</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">세부 점수</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">진단일</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {diagnosisResults.length === 0 ? (
-                  <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">진단 이력이 없습니다.</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-ys-ink-soft">진단 이력이 없습니다.</td></tr>
                 ) : (
                   diagnosisResults.map((d) => (
-                    <tr key={d.id} className="hover:bg-slate-50">
+                    <tr key={d.id} className="hover:bg-ys-paper">
                       <td className="px-4 py-3">
                         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                          d.diagnosis_type === "core" ? "bg-violet-50 text-violet-700" : d.diagnosis_type === "learning" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"
+                          d.diagnosis_type === "core" ? "bg-ys-blue/10 text-ys-blue" : d.diagnosis_type === "learning" ? "bg-ys-blue/10 text-ys-blue" : "bg-ys-gold/15 text-[#8A6212]"
                         }`}>
                           {diagTypeName(d.diagnosis_type)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900">{d.total_score}점</td>
+                      <td className="px-4 py-3 text-sm font-medium text-ys-ink">{d.total_score}점</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {d.scores && Object.entries(d.scores).map(([k, v]) => (
-                            <span key={k} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                            <span key={k} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-ys-ink-soft">
                               {CORE_LABELS[k] ?? k}: {v}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{formatDateTimeKorea(d.created_at)}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{formatDateTimeKorea(d.created_at)}</td>
                     </tr>
                   ))
                 )}
