@@ -3,6 +3,7 @@
 import { BookOpen, ClipboardCheck, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CORE_MAX, toSixAxes } from "@/lib/competencies";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import { formatDateTimeKorea } from "@/lib/date";
@@ -107,13 +108,12 @@ export default function MyPage() {
 
   // Latest core diagnosis for radar
   const latestCore = diagnosisResults.find((d) => d.diagnosis_type === "core");
-  const radarData = latestCore?.scores
-    ? Object.entries(latestCore.scores).map(([key, value]) => ({
-        subject: CORE_LABELS[key] ?? key,
-        value,
-        fullMark: 25,
-      }))
-    : [];
+  // 진단은 5키로 측정하지만 학교 정식 역량은 6개다 (창의수행·융합사고는 같은 점수로 펼쳐짐)
+  const radarData = (toSixAxes(latestCore?.scores as Record<string, number> | undefined) ?? []).map((a) => ({
+    subject: a.short,
+    value: a.score,
+    fullMark: CORE_MAX,
+  }));
 
   const diagTypeName = (type: string) => {
     if (type === "core") return "핵심역량";

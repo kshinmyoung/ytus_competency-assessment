@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { supabase, waitForStudentId } from "@/lib/supabase";
 import { lmsGet, formatClock, openCertificate } from "@/lib/lms-client";
 import CompetencyCompass from "@/components/CompetencyCompass";
+import { CORE_MAX, toSixAxes, weakestCompetencyIds } from "@/lib/competencies";
 import Navigation from "@/components/Navigation";
 import {
   Bar,
@@ -25,29 +26,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
-const CORE_COMPETENCIES = [
-  { key: "spiritual", label: "영성역량", short: "영성" },
-  { key: "reflection", label: "기독교적 성찰역량", short: "성찰" },
-  { key: "empathy", label: "공감소통역량", short: "공감소통" },
-  { key: "glocal", label: "글로컬역량", short: "글로컬" },
-  { key: "creative", label: "창의융합역량", short: "창의융합" },
-];
-
-/** 핵심역량 한 축의 만점 (5문항 × 5점) */
-const CORE_MAX = 25;
-
-/**
- * diagnosis_results.scores 의 키를 core_competencies.id 로 잇는다.
- * 진단은 창의/융합을 'creative' 하나로 묶어 측정하므로 두 역량(3,4) 모두에 대응시킨다.
- */
-const CORE_KEY_TO_IDS: Record<string, number[]> = {
-  spiritual: [1],   // 영성역량
-  reflection: [2],  // 기독교적 성찰역량
-  creative: [3, 4], // 창의수행역량 + 융합사고역량
-  empathy: [5],     // 공감소통역량
-  glocal: [6],      // 글로컬시민역량
-};
 
 type ResumeCard = {
   programId: number; programName: string; contentId: number; contentTitle: string;
@@ -222,12 +200,7 @@ export default function DashboardPage() {
 
       // 하위 2개 역량과 매칭되는 영상 프로그램 추천 — 내국인만 (설계서 11.3)
       if (myType === "domestic" && coreResult?.scores) {
-        const scores = coreResult.scores as Record<string, number>;
-        const weakKeys = Object.entries(scores)
-          .sort((a, b) => a[1] - b[1])
-          .slice(0, 2)
-          .map(([k]) => k);
-        const wantedIds = weakKeys.flatMap((k) => CORE_KEY_TO_IDS[k] ?? []);
+        const wantedIds = weakestCompetencyIds(coreResult.scores as Record<string, number>, 2);
         if (wantedIds.length > 0) {
           const { data: progs } = await supabase
             .from("extracurricular")
@@ -243,11 +216,10 @@ export default function DashboardPage() {
     })();
   }, []);
 
-  const compassAxes = CORE_COMPETENCIES.map((c) => ({
-    label: c.short,
-    score: coreScores?.[c.key] ?? 0,
-  }));
-  const litCount = compassAxes.filter((a) => a.score >= CORE_MAX * 0.8).length;
+  // 진단은 5개 키로 측정하지만 화면은 학교 정식 6대 역량으로 펼친다
+  const sixAxes = toSixAxes(coreScores);
+  const compassAxes = (sixAxes ?? []).map((a) => ({ label: a.short, score: a.score }));
+  const litCount = (sixAxes ?? []).filter((a) => a.lit).length;
 
   return (
     <div className="min-h-screen bg-ys-paper">

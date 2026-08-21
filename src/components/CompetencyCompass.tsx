@@ -60,7 +60,7 @@ export default function CompetencyCompass({
   const polygon = points.map((p) => `${p.value.x},${p.value.y}`).join(" ");
 
   return (
-    <svg viewBox="-168 -160 336 320" className={className} role="img"
+    <svg viewBox="-168 -158 336 340" className={className} role="img"
          aria-label={`역량 나침반. ${points.map((p) => `${p.label} ${p.score}점`).join(", ")}`}>
       <defs>
         <radialGradient id="ys-cc-glow" cx="50%" cy="50%" r="50%">
