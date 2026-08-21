@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+/*
+ * YOUNG SHINY 디자인 토큰 — 컨셉 '빛'
+ * 로고(#1E66A2)를 기준점으로, 나침반은 빛을 만들지 않고 받는다는 전제.
+ * 자동 다크모드는 쓰지 않는다. 팔레트가 의도적으로 고정된 디자인이다.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 어둠 — 아직 빛이 닿지 않은 바탕 */
+  --ys-navy:      #0B1B33;
+  --ys-navy-soft: #16294A;
+  --ys-navy-line: #25405F;
+
+  /* 로고에서 뻗어나온 블루 */
+  --ys-blue:      #1E66A2;
+  --ys-sky:       #5CA9E0;
+
+  /* 빛 — 화면에서 가장 귀하게 쓴다 */
+  --ys-gold:      #E9B457;
+  --ys-light:     #FFF3DC;
+
+  /* 중성 — 푸른 기를 띠게 해서 팔레트 안에 머물게 한다 */
+  --ys-mist:      #8FA3BE;
+  --ys-paper:     #F5F7FA;
+  --ys-ink:       #0F1D33;
+  --ys-ink-soft:  #46586F;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-ys-navy:      var(--ys-navy);
+  --color-ys-navy-soft: var(--ys-navy-soft);
+  --color-ys-navy-line: var(--ys-navy-line);
+  --color-ys-blue:      var(--ys-blue);
+  --color-ys-sky:       var(--ys-sky);
+  --color-ys-gold:      var(--ys-gold);
+  --color-ys-light:     var(--ys-light);
+  --color-ys-mist:      var(--ys-mist);
+  --color-ys-paper:     var(--ys-paper);
+  --color-ys-ink:       var(--ys-ink);
+  --color-ys-ink-soft:  var(--ys-ink-soft);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-gothic-a1);
+  --font-sans:    var(--font-plex-kr);
+  --font-mono:    var(--font-plex-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ys-paper);
+  color: var(--ys-ink);
+  font-family: var(--font-plex-kr), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 제목은 자간을 좁혀 학교 사이트의 굵은 고딕 톤을 현대적으로 잇는다 */
+.font-display {
+  font-family: var(--font-gothic-a1), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* 방위·수치 표기 */
+.font-data {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+/* 키보드 포커스는 빛으로 */
+:focus-visible {
+  outline: 2px solid var(--ys-gold);
+  outline-offset: 3px;
+}
+
+/*
+ * 유일한 모션: 최초 로드 시 빛이 중심에서 번지며 자리를 잡는 0.8초.
+ * 스크롤 등장·호버 확대 등은 쓰지 않는다.
+ */
+@keyframes ys-bloom {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes ys-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ys-bloom { animation: ys-bloom 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.ys-rise  { animation: ys-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ys-bloom,
+  .ys-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
