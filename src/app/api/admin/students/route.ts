@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     const { admin } = result;
     const { data: students, error: listError } = await admin
       .from("students")
-      .select("student_id, name, password, role, department_id, grade_year, admission_year, phone, email")
+      .select("student_id, name, password, role, student_type, department_id, grade_year, admission_year, phone, email")
       .order("student_id");
     if (listError) {
       return NextResponse.json({ error: listError.message }, { status: 500 });
@@ -77,6 +77,9 @@ export async function PATCH(request: Request) {
     if (typeof body.name === "string") payload.name = body.name.trim() || "";
     if (typeof body.password === "string" && body.password.trim()) payload.password = body.password.trim();
     if (typeof body.role === "string") payload.role = body.role.trim();
+    if (typeof body.student_type === "string" && ["domestic", "international"].includes(body.student_type)) {
+      payload.student_type = body.student_type;
+    }
     if (Object.keys(payload).length === 0) {
       return NextResponse.json({ error: "수정할 필드가 없습니다." }, { status: 400 });
     }

@@ -12,6 +12,7 @@ type Student = {
   name: string | null;
   password: string | null;
   role: string | null;
+  student_type: string | null;
   department_id: number | null;
   grade_year: number | null;
   admission_year: number | null;
@@ -145,7 +146,7 @@ export default function AdminPage() {
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", password: "", role: "student", department_id: "", grade_year: "", admission_year: "", phone: "", email: "" });
+  const [editForm, setEditForm] = useState({ name: "", password: "", role: "student", student_type: "domestic", department_id: "", grade_year: "", admission_year: "", phone: "", email: "" });
   const [newStudent, setNewStudent] = useState({
     student_id: "",
     name: "",
@@ -290,6 +291,7 @@ export default function AdminPage() {
       name: s.name ?? "",
       password: "",
       role: s.role ?? "student",
+      student_type: s.student_type ?? "domestic",
       department_id: s.department_id ? String(s.department_id) : "",
       grade_year: s.grade_year ? String(s.grade_year) : "",
       admission_year: s.admission_year ? String(s.admission_year) : "",
@@ -304,6 +306,7 @@ export default function AdminPage() {
     setSaving(true);
     const payload: Record<string, unknown> = {
       role: editForm.role,
+      student_type: editForm.student_type,
       department_id: editForm.department_id ? Number(editForm.department_id) : null,
       grade_year: editForm.grade_year ? Number(editForm.grade_year) : null,
       admission_year: editForm.admission_year ? Number(editForm.admission_year) : null,
@@ -818,13 +821,20 @@ export default function AdminPage() {
                   <select value={editForm.role} onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="student">학생</option>
                     <option value="admin">관리자</option>
-                    <option value="department_head">학과장</option>
                     <option value="professor">교수</option>
                     <option value="ctl">교수학습지원센터</option>
                     <option value="career_center">취창업진로지원센터</option>
                     <option value="counseling_center">학생생활상담센터</option>
                     <option value="staff">직원</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">학생 유형</label>
+                  <select value={editForm.student_type} onChange={(e) => setEditForm((f) => ({ ...f, student_type: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="domestic">내국인</option>
+                    <option value="international">유학생</option>
+                  </select>
+                  <p className="mt-1 text-xs text-slate-400">유학생은 마일리지가 지급되지 않고 대시보드에 이수 실적이 표시됩니다.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">학과</label>
@@ -901,7 +911,6 @@ export default function AdminPage() {
                   <select value={newStudent.role} onChange={(e) => setNewStudent((s) => ({ ...s, role: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="student">학생</option>
                     <option value="admin">관리자</option>
-                    <option value="department_head">학과장</option>
                     <option value="professor">교수</option>
                     <option value="ctl">교수학습지원센터</option>
                     <option value="career_center">취창업진로지원센터</option>

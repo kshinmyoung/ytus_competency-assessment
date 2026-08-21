@@ -14,6 +14,8 @@ type CompletionRule = {
   survey_id: number | null;
 };
 
+type CoreComp = { id: number; name: string; color_code: string };
+
 type VideoProgram = {
   id: number;
   name: string;
@@ -26,6 +28,7 @@ type VideoProgram = {
   max_participants: number | null;
   is_active: boolean;
   registration_open: boolean;
+  core_competency_tags: number[];
   completion_rule: CompletionRule;
 };
 
@@ -48,6 +51,7 @@ const emptyForm = {
   is_active: true,
   registration_open: false,
   min_progress: 90,
+  core_competency_tags: [] as number[],
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -64,6 +68,7 @@ const DELIVERY_LABELS: Record<string, string> = {
 
 export default function AdminLmsPage() {
   const [items, setItems] = useState<VideoProgram[]>([]);
+  const [coreComps, setCoreComps] = useState<CoreComp[]>([]);
   const [contentCounts, setContentCounts] = useState<Record<number, number>>({});
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [search, setSearch] = useState("");
@@ -119,6 +124,9 @@ export default function AdminLmsPage() {
         return;
       }
       setAllowed(true);
+      // 비교과 관리 화면과 동일하게 핵심역량 목록을 불러온다
+      const { data: comps } = await supabase.from("core_competencies").select("id, name, color_code").order("id");
+      setCoreComps(comps ?? []);
       await load();
     })();
   }, []);
@@ -143,6 +151,7 @@ export default function AdminLmsPage() {
       is_active: item.is_active,
       registration_open: item.registration_open,
       min_progress: item.completion_rule?.min_progress ?? 90,
+      core_competency_tags: item.core_competency_tags ?? [],
     });
     setError("");
     setShowForm(true);
@@ -167,6 +176,7 @@ export default function AdminLmsPage() {
       max_participants: isVideo ? null : form.max_participants,
       is_active: form.is_active,
       registration_open: form.registration_open,
+      core_competency_tags: form.core_competency_tags,
       completion_rule: {
         ...DEFAULT_RULE,
         min_progress: Number(form.min_progress) || 90,
@@ -186,6 +196,15 @@ export default function AdminLmsPage() {
     setEditingId(null);
     setForm(emptyForm);
     await load();
+  };
+
+  const toggleCoreTag = (id: number) => {
+    setForm((prev) => ({
+      ...prev,
+      core_competency_tags: prev.core_competency_tags.includes(id)
+        ? prev.core_competency_tags.filter((t) => t !== id)
+        : [...prev.core_competency_tags, id],
+    }));
   };
 
   const handleDelete = async (item: VideoProgram) => {
@@ -444,6 +463,28 @@ export default function AdminLmsPage() {
                     {capacityDisabled ? "영상형은 정원 무제한" : "비워두면 무제한"}
                   </p>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">핵심역량 태그</label>
+                <div className="flex flex-wrap gap-2">
+                  {coreComps.map((comp) => (
+                    <button
+                      key={comp.id}
+                      type="button"
+                      onClick={() => toggleCoreTag(comp.id)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                        form.core_competency_tags.includes(comp.id) ? "ring-2 ring-offset-1" : "opacity-50"
+                      }`}
+                      style={{ backgroundColor: comp.color_code + "20", color: comp.color_code, outlineColor: comp.color_code }}
+                    >
+                      {comp.name}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  대시보드에서 학생의 취약 역량과 매칭해 추천할 때 사용합니다.
+                </p>
               </div>
 
               <div className="flex items-center gap-6">

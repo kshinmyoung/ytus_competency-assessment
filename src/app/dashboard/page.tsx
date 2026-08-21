@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  Award,
   BookOpen,
   ClipboardCheck,
   Compass,
@@ -13,7 +14,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
-import { lmsGet, formatClock } from "@/lib/lms-client";
+import { lmsGet, formatClock, openCertificate } from "@/lib/lms-client";
 import Navigation from "@/components/Navigation";
 import {
   Legend,
@@ -58,6 +59,8 @@ type ResumeCard = {
 
 type RecommendedProgram = { id: number; name: string; description: string | null };
 
+type Certificate = { certificateNo: string; programId: number; programName: string; completedAt: string; finalProgress: number };
+
 const diagnosisCards = [
   {
     title: "핵심역량진단",
@@ -95,6 +98,9 @@ export default function DashboardPage() {
   const [resume, setResume] = useState<ResumeCard | null>(null);
   const [recommended, setRecommended] = useState<RecommendedProgram[]>([]);
   const [studentType, setStudentType] = useState("domestic");
+  const [completedCount, setCompletedCount] = useState(0);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [certError, setCertError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -197,6 +203,17 @@ export default function DashboardPage() {
         .eq("student_id", studentId.trim());
       setMileage((mileageData ?? []).reduce((sum: number, m: any) => sum + (m.points ?? 0), 0));
 
+      // 유학생은 마일리지 대신 이수 실적을 보여준다 (설계서 11.4)
+      if (myType !== "domestic") {
+        try {
+          const sum = await lmsGet<{ completedCount: number; certificates: Certificate[] }>("/api/lms/my-summary");
+          setCompletedCount(sum.completedCount);
+          setCertificates(sum.certificates);
+        } catch {
+          // 요약 실패는 대시보드를 막지 않는다
+        }
+      }
+
       // 이어보기 (설계서 11.3)
       try {
         const r = await lmsGet<{ resume: ResumeCard | null }>("/api/lms/resume");
@@ -249,10 +266,39 @@ export default function DashboardPage() {
               {departmentName ? `${departmentName} · ` : ""}오늘도 빛나는 내일을 위해 진단을 시작해보세요.
             </p>
           </div>
-          <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-6 py-3 shadow-sm">
-            <p className="text-xs text-amber-600">내 마일리지</p>
-            <p className="text-2xl font-bold text-amber-700">{mileage}<span className="ml-1 text-sm font-normal">점</span></p>
-          </div>
+          {/* 유학생에게는 마일리지 위젯을 렌더링하지 않는다 (0점 표시 금지, 설계서 11.4) */}
+          {studentType === "domestic" ? (
+            <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-6 py-3 shadow-sm">
+              <p className="text-xs text-amber-600">내 마일리지</p>
+              <p className="text-2xl font-bold text-amber-700">{mileage}<span className="ml-1 text-sm font-normal">점</span></p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-3 shadow-sm">
+              <p className="text-xs text-emerald-700">이수 완료 프로그램</p>
+              <p className="text-2xl font-bold text-emerald-700">{completedCount}<span className="ml-1 text-sm font-normal">개</span></p>
+              {certificates.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {certificates.slice(0, 3).map((c) => (
+                    <button
+                      key={c.certificateNo}
+                      type="button"
+                      onClick={async () => {
+                        setCertError("");
+                        try { await openCertificate(c.certificateNo); }
+                        catch (e) { setCertError(e instanceof Error ? e.message : "수료증 열기 실패"); }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-white px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
+                      title={c.programName}
+                    >
+                      <Award className="h-3 w-3" />
+                      수료증
+                    </button>
+                  ))}
+                </div>
+              )}
+              {certError && <p className="mt-1 text-[11px] text-red-600">{certError}</p>}
+            </div>
+          )}
         </div>
 
         {/* 이어보기 (설계서 11.3) */}
