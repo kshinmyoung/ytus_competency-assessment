@@ -270,8 +270,8 @@ export default function LearningDiagnosisPage() {
             <Image
               src="/logo.png"
               alt="YOUNG SHINY"
-              width={120}
-              height={28}
+              width={212}
+              height={40}
               className="h-7 w-auto"
             />
           </div>
@@ -400,8 +400,8 @@ export default function LearningDiagnosisPage() {
           <Image
             src="/logo.png"
             alt="YOUNG SHINY"
-            width={120}
-            height={28}
+            width={212}
+            height={40}
             className="h-7 w-auto"
           />
         </div>

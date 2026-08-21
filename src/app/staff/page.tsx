@@ -137,7 +137,7 @@ export default function StaffPage() {
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="YOUNG SHINY" width={140} height={32} className="h-8 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto" />
             <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">직원</span>
           </div>
           <Link href="/admin/survey" className="flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100">설문 결과</Link>

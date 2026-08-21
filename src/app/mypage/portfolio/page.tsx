@@ -187,7 +187,7 @@ export default function PortfolioPage() {
                 {gradeYear && <span>학년: {gradeYear}학년</span>}
               </div>
             </div>
-            <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-8 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto" />
           </div>
           <p className="mt-2 text-xs text-slate-400">발행일: {today}</p>
         </div>

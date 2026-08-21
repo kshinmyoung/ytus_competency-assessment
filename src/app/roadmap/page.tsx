@@ -62,7 +62,7 @@ export default function RoadmapPage() {
       {/* 공개 페이지용 헤더 (로그인 불필요) */}
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <Image src="/logo.png" alt="영남신학대학교" width={160} height={36} className="h-9 w-auto" />
+          <Image src="/logo.png" alt="영남신학대학교" width={212} height={40} className="h-9 w-auto" />
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">교과목 로드맵</span>
         </div>
       </header>

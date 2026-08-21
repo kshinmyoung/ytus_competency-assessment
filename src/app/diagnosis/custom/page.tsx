@@ -177,7 +177,7 @@ export default function CustomDiagnosisPage() {
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">돌아가기</span>
             </Link>
-            <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
@@ -199,7 +199,7 @@ export default function CustomDiagnosisPage() {
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">돌아가기</span>
             </Link>
-            <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
@@ -246,7 +246,7 @@ export default function CustomDiagnosisPage() {
             <ArrowLeft className="h-5 w-5" />
             <span className="text-sm font-medium">돌아가기</span>
           </Link>
-          <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+          <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
         </div>
       </header>
 

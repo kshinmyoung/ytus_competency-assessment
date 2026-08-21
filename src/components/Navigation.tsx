@@ -90,8 +90,8 @@ export default function Navigation() {
           <Image
             src="/logo.png"
             alt="YOUNG SHINY"
-            width={140}
-            height={32}
+            width={212}
+            height={40}
             className="h-8 w-auto"
           />
         </Link>

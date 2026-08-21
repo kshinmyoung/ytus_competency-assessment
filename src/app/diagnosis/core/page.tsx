@@ -5,17 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
-import {
-  Legend,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { getCurrentStudentId, supabase, waitForStudentId } from "@/lib/supabase";
+import CompetencyCompass from "@/components/CompetencyCompass";
+import { CORE_MAX, toSixAxes } from "@/lib/competencies";
 
 const CATEGORIES = [
   { key: "spiritual", label: "영성역량" },
@@ -66,12 +58,18 @@ const LIKERT_LABELS = [
   "매우 그렇다",
 ];
 
+/**
+ * core_competencies.id 기준 피드백.
+ * 기존 문장을 그대로 옮기되, 진단이 한 묶음으로 재던 창의융합만
+ * 창의수행(3)·융합사고(4) 둘로 쪼갰다.
+ */
 const FEEDBACK_LOW_COMPETENCY: Record<number, string> = {
-  0: "부족한 영성역량을 위해서 영성 태그가 붙은 비교과프로그램을 들어주세요!",
-  1: "기독교적 성찰역량이 부족하군요. 기독교적 성찰역량 태그가 붙은 비교과프로그램을 들어주세요!",
-  2: "부족한 공감소통역량을 위해 공감소통역량 태그가 붙은 비교과프로그램을 들어주세요.",
-  3: "글로컬 역량이 부족하니 글로컬 역량 태그가 붙은 비교과 프로그램을 추천합니다.",
-  4: "창의융합역량이 부족하군요. 창의융합역량 태그가 붙은 비교과 프로그램을 추천합니다.",
+  1: "부족한 영성역량을 위해서 영성 태그가 붙은 비교과프로그램을 들어주세요!",
+  2: "기독교적 성찰역량이 부족하군요. 기독교적 성찰역량 태그가 붙은 비교과프로그램을 들어주세요!",
+  3: "창의수행역량이 부족하군요. 창의수행역량 태그가 붙은 비교과 프로그램을 추천합니다.",
+  4: "융합사고역량이 부족하군요. 융합사고역량 태그가 붙은 비교과 프로그램을 추천합니다.",
+  5: "부족한 공감소통역량을 위해 공감소통역량 태그가 붙은 비교과프로그램을 들어주세요.",
+  6: "글로컬 역량이 부족하니 글로컬 역량 태그가 붙은 비교과 프로그램을 추천합니다.",
 };
 
 const TOTAL_FEEDBACK =
@@ -97,15 +95,16 @@ export default function CoreDiagnosisPage() {
 
   useEffect(() => {
     (async () => {
-      const studentId = await getCurrentStudentId();
-      if (!studentId || studentId.trim() === "") {
+      // 세션 복원 전에 포기하면 이미 진단한 학생에게도 설문이 다시 뜬다
+      const studentId = await waitForStudentId();
+      if (!studentId) {
         setIsLoading(false);
         return;
       }
       const { data, error } = await supabase
         .from("diagnosis_results")
         .select("scores, total_score")
-        .eq("student_id", studentId.trim())
+        .eq("student_id", studentId)
         .eq("diagnosis_type", "core")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -151,31 +150,6 @@ export default function CoreDiagnosisPage() {
     return scores;
   }, [answers]);
 
-  const totalScore = useMemo(
-    () => categoryScores.reduce((a, b) => a + b, 0),
-    [categoryScores]
-  );
-
-  const radarData = useMemo(
-    () =>
-      CATEGORIES.map((cat, i) => ({
-        subject: cat.label,
-        value: categoryScores[i],
-        fullMark: 25,
-      })),
-    [categoryScores]
-  );
-
-  /** 5가지 역량 중 가장 낮은 점수에 해당하는 역량 인덱스(동점이면 모두 포함) */
-  const lowestScoreIndices = useMemo(() => {
-    const minScore = Math.min(...categoryScores);
-    return categoryScores
-      .map((score, i) => (score === minScore ? i : -1))
-      .filter((i) => i >= 0);
-  }, [categoryScores]);
-
-  const showTotalFeedback = totalScore <= TOTAL_SCORE_THRESHOLD;
-
   /** 결과 화면용 점수: DB/제출에서 온 resultScores 우선, 없으면 현재 설문 점수 */
   const displayScores = useMemo(
     () => resultScores ?? categoryScores,
@@ -185,21 +159,27 @@ export default function CoreDiagnosisPage() {
     () => displayScores.reduce((a, b) => a + b, 0),
     [displayScores]
   );
-  const displayRadarData = useMemo(
-    () =>
-      CATEGORIES.map((cat, i) => ({
-        subject: cat.label,
-        value: displayScores[i],
-        fullMark: 25,
-      })),
-    [displayScores]
-  );
-  const displayLowestScoreIndices = useMemo(() => {
-    const minScore = Math.min(...displayScores);
-    return displayScores
-      .map((score, i) => (score === minScore ? i : -1))
-      .filter((i) => i >= 0);
+  /**
+   * 진단은 5개 카테고리로 재지만 학교 정식 역량은 6개다.
+   * 화면에서는 6축으로 펼친다 (창의수행·융합사고는 같은 점수).
+   */
+  const displaySixAxes = useMemo(() => {
+    const byKey: Record<string, number> = {};
+    CATEGORIES.forEach((cat, i) => { byKey[cat.key] = displayScores[i]; });
+    return toSixAxes(byKey) ?? [];
   }, [displayScores]);
+
+  const displayLitCount = useMemo(
+    () => displaySixAxes.filter((a) => a.lit).length,
+    [displaySixAxes],
+  );
+
+  /** 가장 낮은 역량(동점이면 모두) */
+  const displayLowest = useMemo(() => {
+    if (displaySixAxes.length === 0) return [];
+    const min = Math.min(...displaySixAxes.map((a) => a.score));
+    return displaySixAxes.filter((a) => a.score === min);
+  }, [displaySixAxes]);
   const displayShowTotalFeedback = displayTotalScore <= TOTAL_SCORE_THRESHOLD;
 
   const handleReset = () => {
@@ -275,12 +255,12 @@ export default function CoreDiagnosisPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+              className="flex items-center gap-2 text-ys-ink-soft transition hover:text-ys-ink"
             >
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">대시보드</span>
@@ -288,89 +268,117 @@ export default function CoreDiagnosisPage() {
             <Image
               src="/logo.png"
               alt="YOUNG SHINY"
-              width={120}
-              height={28}
+              width={212}
+              height={40}
               className="h-7 w-auto"
             />
           </div>
         </header>
 
         <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
-            핵심역량진단 결과
-          </h1>
-          <p className="mt-1 text-slate-600">
-            5가지 역량별 점수(각 25점 만점)입니다.
-          </p>
+          {/* 결과 요약 — 나침반이 켜지는 순간 */}
+          <section className="overflow-hidden rounded-2xl bg-ys-navy">
+            <div className="flex flex-col gap-8 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-10">
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-semibold text-ys-gold">
+                  핵심역량진단 결과
+                </p>
+                <h1 className="font-display mt-3 text-2xl font-black leading-tight text-white sm:text-3xl">
+                  <span className="text-ys-gold">{displayLitCount}개 방향</span>에
+                  <br />
+                  빛이 닿았습니다
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed text-ys-mist">
+                  여섯 방향 중 {displayLitCount}개가 기준({Math.round(CORE_MAX * 0.8)}점)을 넘었습니다.
+                  <br />
+                  어두운 방향은 부족한 것이 아니라 아직 빛이 닿지 않은 곳입니다.
+                </p>
 
-          {/* 나의 역량 그래프 */}
-          <section className="mt-8">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              나의 역량 그래프
-            </h2>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-              <div className="h-[280px] w-full sm:h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={displayRadarData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <PolarGrid stroke="#cbd5e1" />
-                    <PolarAngleAxis
-                      dataKey="subject"
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                    />
-                    <PolarRadiusAxis
-                      angle={90}
-                      domain={[0, 25]}
-                      tick={{ fontSize: 10 }}
-                    />
-                    <Radar
-                      name="점수"
-                      dataKey="value"
-                      stroke="#1e40af"
-                      fill="#2563eb"
-                      fillOpacity={0.5}
-                      strokeWidth={2}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                      formatter={(value: any) => [`${value}점`, "점수"]}
-                      labelFormatter={(label) => label}
-                    />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
+                <div className="mt-6 flex flex-wrap gap-x-8 gap-y-4">
+                  <div>
+                    <p className="text-[11px] text-ys-mist">총점</p>
+                    <p className="font-data mt-0.5 text-2xl font-medium text-white">
+                      {displayTotalScore}
+                      <span className="ml-1 text-xs text-ys-mist">/ {CORE_MAX * CATEGORIES.length}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-ys-mist">빛이 닿은 방향</p>
+                    <p className="font-data mt-0.5 text-2xl font-medium text-ys-gold">
+                      {displayLitCount}
+                      <span className="ml-1 text-xs text-ys-mist">/ {displaySixAxes.length}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 justify-center lg:w-[420px]">
+                <CompetencyCompass
+                  axes={displaySixAxes.map((a) => ({ label: a.short, score: a.score }))}
+                  max={CORE_MAX}
+                  className="ys-bloom h-auto w-full max-w-[380px]"
+                />
               </div>
             </div>
           </section>
 
+          {/* 역량별 점수 */}
+          <section className="mt-8">
+            <h2 className="font-display mb-4 text-base font-bold text-ys-ink">역량별 점수</h2>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {displaySixAxes.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: a.color }}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm text-ys-ink">{a.name}</span>
+                  <span className="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-slate-100">
+                    <span
+                      className={`block h-full rounded-full ${a.lit ? "bg-ys-gold" : "bg-ys-blue/50"}`}
+                      style={{ width: `${Math.round((a.score / CORE_MAX) * 100)}%` }}
+                    />
+                  </span>
+                  <span className="font-data w-12 shrink-0 text-right text-sm text-ys-ink">
+                    {a.score}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[11.5px] text-ys-ink-soft">
+              창의수행역량과 융합사고역량은 하나의 문항 묶음으로 측정되어 같은 점수로 표시됩니다.
+            </p>
+          </section>
+
           {/* 분석 결과 및 추천 */}
           <section className="mt-10">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              분석 결과 및 추천
+            <h2 className="font-display mb-4 text-base font-bold text-ys-ink">
+              다음으로 채워볼 방향
             </h2>
-            <div className="space-y-4">
-              {displayLowestScoreIndices.length > 0 && (
-                <ul className="space-y-2">
-                  {displayLowestScoreIndices.map((catIndex) => (
+            <div className="flex flex-col gap-3">
+              {displayLowest.length > 0 && (
+                <ul className="flex flex-col gap-2">
+                  {displayLowest.map((a) => (
                     <li
-                      key={catIndex}
-                      className="rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm text-slate-700"
+                      key={a.id}
+                      className="rounded-xl border border-ys-blue/20 bg-ys-blue/5 px-4 py-3 text-sm text-ys-ink"
                     >
-                      {FEEDBACK_LOW_COMPETENCY[catIndex]}
+                      {FEEDBACK_LOW_COMPETENCY[a.id]}
                     </li>
                   ))}
                 </ul>
               )}
               {displayShowTotalFeedback && (
-                <div className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-4 text-sm font-medium text-red-800">
+                <div className="rounded-xl border border-ys-gold/40 bg-ys-gold/10 px-4 py-4 text-sm font-medium text-ys-ink">
                   {TOTAL_FEEDBACK}
                 </div>
               )}
-              {displayLowestScoreIndices.length === 0 && !displayShowTotalFeedback && (
-                <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              {displayLowest.length === 0 && !displayShowTotalFeedback && (
+                <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-ys-ink-soft">
                   전반적으로 역량이 잘 발달되어 있습니다. 비교과 프로그램을 통해 더 성장해 보세요.
                 </p>
               )}
@@ -381,13 +389,13 @@ export default function CoreDiagnosisPage() {
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-ys-ink transition hover:bg-slate-50"
             >
               다시 진단하기
             </button>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              className="inline-flex items-center justify-center rounded-full bg-ys-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-ys-blue/90"
             >
               대시보드로 돌아가기
             </Link>
@@ -398,12 +406,12 @@ export default function CoreDiagnosisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+            className="flex items-center gap-2 text-ys-ink-soft transition hover:text-ys-ink"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="text-sm font-medium">대시보드</span>
@@ -411,8 +419,8 @@ export default function CoreDiagnosisPage() {
           <Image
             src="/logo.png"
             alt="YOUNG SHINY"
-            width={120}
-            height={28}
+            width={212}
+            height={40}
             className="h-7 w-auto"
           />
         </div>

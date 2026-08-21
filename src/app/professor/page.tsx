@@ -192,7 +192,7 @@ export default function ProfessorPage() {
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="YOUNG SHINY" width={140} height={32} className="h-8 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto" />
             <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">{ROLE_LABELS[myRole] ?? myRole}</span>
           </div>
           <div className="flex items-center gap-3">

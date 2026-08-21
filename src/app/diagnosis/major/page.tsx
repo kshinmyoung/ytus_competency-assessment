@@ -162,7 +162,7 @@ export default function MajorDiagnosisPage() {
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
-            <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
@@ -179,7 +179,7 @@ export default function MajorDiagnosisPage() {
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
-            <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
@@ -196,7 +196,7 @@ export default function MajorDiagnosisPage() {
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
-            <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
@@ -217,7 +217,7 @@ export default function MajorDiagnosisPage() {
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
-          <Image src="/logo.png" alt="YOUNG SHINY" width={120} height={28} className="h-7 w-auto" />
+          <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
         </div>
       </header>
 

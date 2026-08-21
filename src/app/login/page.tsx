@@ -112,7 +112,7 @@ export default function LoginPage() {
               <Image
                 src="/logo.png"
                 alt="영남신학대학교"
-                width={180}
+                width={212}
                 height={40}
                 className="h-7 w-auto brightness-0 invert"
                 priority
