@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { canManageLms, canViewLmsProgress } from "@/lib/auth/lms-permissions";
 import { downloadXLSX } from "@/lib/export";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
 type ContentCol = { contentId: number; title: string; durationSec: number; isRequired: boolean };
 
@@ -44,7 +44,7 @@ export default function AdminLmsProgressPage() {
   const [tab, setTab] = useState<"domestic" | "international">("domestic");
 
   const authHeaders = useCallback(async () => {
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await waitForAccessToken();
     return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
   }, []);
 
@@ -59,7 +59,7 @@ export default function AdminLmsProgressPage() {
 
   useEffect(() => {
     (async () => {
-      const sid = await getCurrentStudentId();
+      const sid = await waitForStudentId();
       if (!sid) { setAllowed(false); return; }
       const { data: me } = await supabase.from("students").select("role").eq("student_id", sid).maybeSingle();
       if (!canViewLmsProgress(me?.role)) { setAllowed(false); return; }

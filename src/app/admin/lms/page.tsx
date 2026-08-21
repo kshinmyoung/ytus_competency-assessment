@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { canManageLms } from "@/lib/auth/lms-permissions";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
 type CompletionRule = {
   min_progress: number;
@@ -91,7 +91,7 @@ export default function AdminLmsPage() {
     setItems(list);
 
     if (list.length > 0) {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = await waitForAccessToken();
       const counts: Record<number, number> = {};
       await Promise.all(
         list.map(async (p) => {
@@ -109,7 +109,7 @@ export default function AdminLmsPage() {
 
   useEffect(() => {
     (async () => {
-      const studentId = await getCurrentStudentId();
+      const studentId = await waitForStudentId();
       if (!studentId) {
         setAllowed(false);
         return;

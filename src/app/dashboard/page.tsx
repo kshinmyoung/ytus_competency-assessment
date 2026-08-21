@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForStudentId } from "@/lib/supabase";
 import { lmsGet, formatClock, openCertificate } from "@/lib/lms-client";
 import CompetencyCompass from "@/components/CompetencyCompass";
 import Navigation from "@/components/Navigation";
@@ -101,14 +101,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     (async () => {
-      const studentId = await getCurrentStudentId();
-      if (!studentId?.trim()) return;
+      // 세션 복원 전에 한 번만 묻고 포기하면 대시보드가 빈 채로 남는다
+      const studentId = await waitForStudentId();
+      if (!studentId) return;
 
       // 학생 정보 + 학과
       const { data: student } = await supabase
         .from("students")
         .select("name, department_id, student_type")
-        .eq("student_id", studentId.trim())
+        .eq("student_id", studentId)
         .maybeSingle();
 
       if (student?.name) setUserName(student.name);
@@ -135,7 +136,7 @@ export default function DashboardPage() {
           const { data: myCourses } = await supabase
             .from("student_courses")
             .select("course_id, courses(major_competency_tags)")
-            .eq("student_id", studentId.trim());
+            .eq("student_id", studentId);
 
           const tagCounts: Record<number, number> = {};
           (myCourses ?? []).forEach((sc: any) => {
@@ -161,7 +162,7 @@ export default function DashboardPage() {
       const { data: coreResult } = await supabase
         .from("diagnosis_results")
         .select("scores")
-        .eq("student_id", studentId.trim())
+        .eq("student_id", studentId)
         .eq("diagnosis_type", "core")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -175,7 +176,7 @@ export default function DashboardPage() {
       const { data: coursesData } = await supabase
         .from("student_courses")
         .select("courses(name)")
-        .eq("student_id", studentId.trim())
+        .eq("student_id", studentId)
         .order("created_at", { ascending: false })
         .limit(3);
       setRecentCourses(
@@ -186,7 +187,7 @@ export default function DashboardPage() {
       const { data: extraData } = await supabase
         .from("student_extracurricular")
         .select("extracurricular(name)")
-        .eq("student_id", studentId.trim())
+        .eq("student_id", studentId)
         .order("created_at", { ascending: false })
         .limit(3);
       setRecentExtra(
@@ -197,7 +198,7 @@ export default function DashboardPage() {
       const { data: mileageData } = await supabase
         .from("mileage_records")
         .select("points")
-        .eq("student_id", studentId.trim());
+        .eq("student_id", studentId);
       setMileage((mileageData ?? []).reduce((sum: number, m: any) => sum + (m.points ?? 0), 0));
 
       // 유학생은 마일리지 대신 이수 실적을 보여준다 (설계서 11.4)

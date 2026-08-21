@@ -7,7 +7,7 @@ import Script from "next/script";
 import { useCallback, useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { canManageLms } from "@/lib/auth/lms-permissions";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
 type Content = {
   id: number;
@@ -66,7 +66,7 @@ export default function AdminLmsContentsPage() {
   const [previewError, setPreviewError] = useState("");
 
   const authHeaders = useCallback(async () => {
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await waitForAccessToken();
     return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
   }, []);
 
@@ -79,7 +79,7 @@ export default function AdminLmsContentsPage() {
 
   useEffect(() => {
     (async () => {
-      const studentId = await getCurrentStudentId();
+      const studentId = await waitForStudentId();
       if (!studentId) { setAllowed(false); return; }
       const { data: me } = await supabase
         .from("students").select("role").eq("student_id", studentId).maybeSingle();

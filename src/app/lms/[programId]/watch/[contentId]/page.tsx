@@ -9,7 +9,7 @@ import {
   formatClock, lmsGet, lmsPost, openCertificate,
   type CompleteResult, type LmsProgramDetail,
 } from "@/lib/lms-client";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
 /** 설계서 9.1 — 배속 상한 1.5. 이 세 개만 노출한다. */
 const PLAYBACK_RATES = [1.0, 1.25, 1.5];
@@ -117,7 +117,7 @@ export default function LmsWatchPage() {
         }
         if (!token.iframeUrl) throw new Error("재생 주소를 확인할 수 없습니다.");
         setIframeUrl(token.iframeUrl);
-        tokenRef.current = (await supabase.auth.getSession()).data.session?.access_token ?? "";
+        tokenRef.current = (await waitForAccessToken()) ?? "";
       } catch (e) {
         setError(e instanceof Error ? e.message : "영상을 불러오지 못했습니다.");
       } finally {
@@ -129,7 +129,7 @@ export default function LmsWatchPage() {
   // ---- 워터마크 ----
   useEffect(() => {
     (async () => {
-      const sid = await getCurrentStudentId();
+      const sid = await waitForStudentId();
       if (!sid) return;
       const { data } = await supabase.from("students").select("name").eq("student_id", sid.trim()).maybeSingle();
       setWatermark(`${sid.trim()} ${data?.name ?? ""}`.trim());

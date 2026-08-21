@@ -4,7 +4,7 @@
  * LMS 데이터는 RLS 정책이 없는 테이블을 쓰므로 반드시 /api/lms/* 를 경유한다.
  * 진도율 등 계산값은 서버 응답을 그대로 쓰고 클라이언트에서 다시 계산하지 않는다.
  */
-import { supabase } from "@/lib/supabase";
+import { waitForAccessToken } from "@/lib/supabase";
 
 export type LmsStatus = "신청" | "학습중" | "이수완료";
 
@@ -72,7 +72,8 @@ export type LmsProgramDetail = {
 };
 
 async function authHeaders(): Promise<Record<string, string>> {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  // 페이지 진입 직후에는 세션 복원이 끝나지 않았을 수 있다
+  const token = await waitForAccessToken();
   return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 }
 
