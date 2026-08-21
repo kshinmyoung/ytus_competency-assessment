@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Award,
   BookOpen,
-  ClipboardCheck,
   Compass,
   PlayCircle,
   Sparkles,
@@ -15,30 +14,28 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import { lmsGet, formatClock, openCertificate } from "@/lib/lms-client";
+import CompetencyCompass from "@/components/CompetencyCompass";
 import Navigation from "@/components/Navigation";
 import {
-  Legend,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
   Bar,
   BarChart,
   CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
 const CORE_COMPETENCIES = [
-  { key: "spiritual", label: "영성역량" },
-  { key: "reflection", label: "기독교적 성찰역량" },
-  { key: "empathy", label: "공감소통역량" },
-  { key: "glocal", label: "글로컬역량" },
-  { key: "creative", label: "창의융합역량" },
+  { key: "spiritual", label: "영성역량", short: "영성" },
+  { key: "reflection", label: "기독교적 성찰역량", short: "성찰" },
+  { key: "empathy", label: "공감소통역량", short: "공감소통" },
+  { key: "glocal", label: "글로컬역량", short: "글로컬" },
+  { key: "creative", label: "창의융합역량", short: "창의융합" },
 ];
+
+/** 핵심역량 한 축의 만점 (5문항 × 5점) */
+const CORE_MAX = 25;
 
 /**
  * diagnosis_results.scores 의 키를 core_competencies.id 로 잇는다.
@@ -245,39 +242,72 @@ export default function DashboardPage() {
     })();
   }, []);
 
-  const radarData = CORE_COMPETENCIES.map((c) => ({
-    subject: c.label,
-    value: coreScores?.[c.key] ?? 0,
-    fullMark: 25,
+  const compassAxes = CORE_COMPETENCIES.map((c) => ({
+    label: c.short,
+    score: coreScores?.[c.key] ?? 0,
   }));
+  const litCount = compassAxes.filter((a) => a.score >= CORE_MAX * 0.8).length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <Navigation />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        {/* Welcome + Mileage */}
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-              환영합니다, {userName}님!
-            </h1>
-            <p className="mt-1 text-slate-600">
-              {departmentName ? `${departmentName} · ` : ""}오늘도 빛나는 내일을 위해 진단을 시작해보세요.
-            </p>
-          </div>
-          {/* 유학생에게는 마일리지 위젯을 렌더링하지 않는다 (0점 표시 금지, 설계서 11.4) */}
-          {studentType === "domestic" ? (
-            <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 px-6 py-3 shadow-sm">
-              <p className="text-xs text-amber-600">내 마일리지</p>
-              <p className="text-2xl font-bold text-amber-700">{mileage}<span className="ml-1 text-sm font-normal">점</span></p>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-3 shadow-sm">
-              <p className="text-xs text-emerald-700">이수 완료 프로그램</p>
-              <p className="text-2xl font-bold text-emerald-700">{completedCount}<span className="ml-1 text-sm font-normal">개</span></p>
-              {certificates.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {/* ── 빛이 어디까지 닿았는지 ── */}
+        <section className="overflow-hidden rounded-2xl bg-ys-navy">
+          <div className="flex flex-col gap-8 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-10">
+            <div className="min-w-0 flex-1">
+              <p className="font-data text-[11px] tracking-[0.24em] text-ys-gold">
+                Y-COMPASS 2030
+              </p>
+              <h1 className="font-display mt-3 text-2xl font-black leading-tight text-white sm:text-3xl">
+                {userName}님, 지금까지
+                <br />
+                {coreScores ? (
+                  <>
+                    <span className="text-ys-gold">{litCount}개 방향</span>에 빛이 닿았습니다
+                  </>
+                ) : (
+                  <>여기까지 왔습니다</>
+                )}
+              </h1>
+              {departmentName && (
+                <p className="mt-2 text-sm text-ys-mist">{departmentName}</p>
+              )}
+
+              {/* 유학생에게는 마일리지를 렌더링하지 않는다 (0점 표시 금지) */}
+              <div className="mt-6 flex flex-wrap gap-x-8 gap-y-4">
+                {studentType === "domestic" ? (
+                  <div>
+                    <p className="text-[11px] text-ys-mist">내 마일리지</p>
+                    <p className="font-data mt-0.5 text-2xl font-medium text-ys-gold">
+                      {mileage}
+                      <span className="ml-1 text-xs text-ys-mist">점</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[11px] text-ys-mist">이수 완료 프로그램</p>
+                    <p className="font-data mt-0.5 text-2xl font-medium text-ys-gold">
+                      {completedCount}
+                      <span className="ml-1 text-xs text-ys-mist">개</span>
+                    </p>
+                  </div>
+                )}
+
+                {coreScores && (
+                  <div>
+                    <p className="text-[11px] text-ys-mist">빛이 닿은 방향</p>
+                    <p className="font-data mt-0.5 text-2xl font-medium text-white">
+                      {litCount}
+                      <span className="ml-1 text-xs text-ys-mist">/ {compassAxes.length}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {studentType !== "domestic" && certificates.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
                   {certificates.slice(0, 3).map((c) => (
                     <button
                       key={c.certificateNo}
@@ -287,7 +317,7 @@ export default function DashboardPage() {
                         try { await openCertificate(c.certificateNo); }
                         catch (e) { setCertError(e instanceof Error ? e.message : "수료증 열기 실패"); }
                       }}
-                      className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-white px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-ys-navy-line px-3 py-1.5 text-[11.5px] text-ys-mist transition hover:border-ys-gold hover:text-ys-gold"
                       title={c.programName}
                     >
                       <Award className="h-3 w-3" />
@@ -296,148 +326,93 @@ export default function DashboardPage() {
                   ))}
                 </div>
               )}
-              {certError && <p className="mt-1 text-[11px] text-red-600">{certError}</p>}
+              {certError && <p className="mt-2 text-[11.5px] text-red-300">{certError}</p>}
+
+              {/* 이어보기 */}
+              {resume && (
+                <Link
+                  href={resume.href}
+                  className="group mt-7 flex items-center gap-3 rounded-xl border border-ys-navy-line bg-ys-navy-soft p-3.5 transition hover:border-ys-gold/60"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ys-gold text-ys-navy">
+                    <PlayCircle className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-medium text-white">
+                      {resume.contentTitle}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[11.5px] text-ys-mist">
+                      {formatClock(resume.lastPositionSec)}부터 · 진도 {resume.progress}%
+                    </span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-ys-mist transition group-hover:text-ys-gold" />
+                </Link>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* 이어보기 (설계서 11.3) */}
-        {resume && (
-          <div className="mb-8">
-            <Link
-              href={resume.href}
-              className="group flex flex-wrap items-center gap-4 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm transition hover:shadow-md"
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
-                <PlayCircle className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-blue-700">이어서 학습하기</p>
-                <p className="truncate text-sm font-semibold text-slate-900">{resume.contentTitle}</p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">
-                  {resume.programName} · {formatClock(resume.lastPositionSec)}부터 · 진도 {resume.progress}%
-                </p>
-                <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/70">
-                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min(resume.progress, 100)}%` }} />
+            {/* 역량 나침반 */}
+            <div className="flex shrink-0 justify-center lg:w-[420px]">
+              {coreScores ? (
+                <CompetencyCompass
+                  axes={compassAxes}
+                  max={CORE_MAX}
+                  className="ys-bloom h-auto w-full max-w-[380px]"
+                />
+              ) : (
+                <div className="flex w-full max-w-[380px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-ys-navy-line px-6 py-12 text-center">
+                  <Compass className="h-8 w-8 text-ys-navy-line" />
+                  <p className="text-sm text-ys-mist">
+                    아직 핵심역량 진단 결과가 없습니다.
+                    <br />
+                    진단을 마치면 나침반이 켜집니다.
+                  </p>
+                  <Link
+                    href="/diagnosis/core"
+                    className="rounded-full bg-ys-gold px-5 py-2.5 text-[13.5px] font-semibold text-ys-navy transition hover:bg-ys-light"
+                  >
+                    핵심역량 진단하기
+                  </Link>
                 </div>
-              </div>
-              <span className="inline-flex items-center text-xs font-medium text-blue-600 group-hover:underline">
-                이어보기 <ArrowRight className="ml-1 h-3 w-3" />
-              </span>
-            </Link>
+              )}
+            </div>
           </div>
-        )}
+        </section>
 
-        {/* 취약 역량 기반 영상 프로그램 추천 — 내국인만 (설계서 11.3) */}
+        {/* ── 아직 닿지 않은 방향의 과정 (내국인만) ── */}
         {studentType === "domestic" && recommended.length > 0 && (
-          <div className="mb-8">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              내 역량에 맞는 영상 프로그램
-              <span className="ml-2 text-xs font-normal text-slate-500">낮은 역량 2개 기준 추천</span>
-            </h2>
+          <section className="mt-10">
+            <div className="mb-4 flex items-baseline gap-2">
+              <h2 className="font-display text-base font-bold text-ys-ink">
+                아직 닿지 않은 방향
+              </h2>
+              <span className="text-xs text-ys-ink-soft">낮은 역량 2개 기준 추천</span>
+            </div>
             <div className="grid gap-4 sm:grid-cols-3">
               {recommended.map((p) => (
                 <Link
                   key={p.id}
                   href={`/lms/${p.id}`}
-                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                  className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 transition hover:border-ys-blue/40 hover:shadow-sm"
                 >
-                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                    <Video className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-slate-900">{p.name}</h3>
+                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-ys-blue/10 text-ys-blue">
+                    <Video className="h-4.5 w-4.5" />
+                  </span>
+                  <h3 className="text-sm font-semibold text-ys-ink">{p.name}</h3>
                   {p.description && (
-                    <p className="mt-1 flex-1 line-clamp-2 text-xs text-slate-500">{p.description}</p>
+                    <p className="mt-1 line-clamp-2 flex-1 text-xs text-ys-ink-soft">{p.description}</p>
                   )}
-                  <span className="mt-3 inline-flex items-center text-xs font-medium text-blue-600 group-hover:underline">
-                    학습하기 <ArrowRight className="ml-1 h-3 w-3" />
+                  <span className="mt-3 inline-flex items-center text-xs font-medium text-ys-blue">
+                    학습하기 <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-0.5" />
                   </span>
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Charts row */}
-        <div className="mb-8 grid gap-6 lg:grid-cols-2">
-          {/* Core competency radar */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              핵심역량 현황
-            </h2>
-            {coreScores ? (
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-                    <PolarGrid stroke="#e2e8f0" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} tickLine={false} />
-                    <PolarRadiusAxis angle={90} domain={[0, 25]} tick={{ fontSize: 10 }} />
-                    <Radar
-                      name="점수"
-                      dataKey="value"
-                      stroke="#6366f1"
-                      fill="#818cf8"
-                      fillOpacity={0.4}
-                      strokeWidth={2}
-                    />
-                    <Tooltip formatter={(v: any) => [`${v}점`, "점수"]} />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex h-[280px] items-center justify-center">
-                <div className="text-center">
-                  <p className="text-sm text-slate-500">아직 핵심역량 진단 결과가 없습니다</p>
-                  <Link
-                    href="/diagnosis/core"
-                    className="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    진단하러 가기 <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Major competency bar */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              전공역량 현황
-              {departmentName && (
-                <span className="ml-2 text-xs font-normal text-slate-500">({departmentName})</span>
-              )}
-            </h2>
-            {majorComps.length > 0 ? (
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={majorComps.map((mc) => ({ name: mc.name, 이수: mc.score }))}
-                    margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="이수" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex h-[280px] items-center justify-center">
-                <p className="text-sm text-slate-500">
-                  {departmentName
-                    ? "아직 수강 완료한 과목이 없습니다"
-                    : "학과가 설정되지 않았습니다. 관리자에게 문의하세요."}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Diagnosis cards */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-base font-semibold text-slate-800">역량진단</h2>
+        {/* ── 역량진단 ── */}
+        <section className="mt-10">
+          <h2 className="font-display mb-4 text-base font-bold text-ys-ink">역량진단</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {diagnosisCards.map((card) => {
               const Icon = card.icon;
@@ -445,89 +420,115 @@ export default function DashboardPage() {
                 <Link
                   key={card.href}
                   href={card.href}
-                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                  className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 transition hover:border-ys-blue/40 hover:shadow-sm"
                 >
-                  <div
-                    className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${card.iconBg}`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-slate-900">{card.title}</h3>
-                  <p className="mt-1 flex-1 text-xs text-slate-500">{card.description}</p>
-                  <span className="mt-3 inline-flex items-center text-xs font-medium text-blue-600 group-hover:underline">
-                    시작하기 <ArrowRight className="ml-1 h-3 w-3" />
+                  <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-ys-blue/10 text-ys-blue">
+                    <Icon className="h-4.5 w-4.5" />
+                  </span>
+                  <h3 className="text-sm font-semibold text-ys-ink">{card.title}</h3>
+                  <p className="mt-1 flex-1 text-xs text-ys-ink-soft">{card.description}</p>
+                  <span className="mt-3 inline-flex items-center text-xs font-medium text-ys-blue">
+                    시작하기 <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-0.5" />
                   </span>
                 </Link>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Recent activity */}
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        {/* ── 전공역량 ── */}
+        <section className="mt-10 rounded-xl border border-slate-200 bg-white p-6">
+          <div className="mb-5 flex items-baseline gap-2">
+            <h2 className="font-display text-base font-bold text-ys-ink">전공역량 현황</h2>
+            {departmentName && <span className="text-xs text-ys-ink-soft">{departmentName}</span>}
+          </div>
+          {majorComps.length > 0 ? (
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={majorComps.map((mc) => ({ name: mc.name, 이수: mc.score }))}
+                  margin={{ top: 8, right: 8, bottom: 8, left: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#46586F" }} tickLine={false} axisLine={{ stroke: "#CBD5E1" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#46586F" }} allowDecimals={false} tickLine={false} axisLine={false} />
+                  <Tooltip cursor={{ fill: "#1E66A210" }} />
+                  <Bar dataKey="이수" fill="#1E66A2" radius={[4, 4, 0, 0]} maxBarSize={54} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-16 text-center text-sm text-ys-ink-soft">
+              {departmentName
+                ? "아직 수강 완료한 과목이 없습니다"
+                : "학과가 설정되지 않았습니다. 관리자에게 문의하세요."}
+            </p>
+          )}
+        </section>
+
+        {/* ── 최근 활동 ── */}
+        <section className="mt-10 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-800">최근 수강 과목</h2>
-              <Link href="/courses" className="text-xs font-medium text-blue-600 hover:underline">
+              <h2 className="font-display text-base font-bold text-ys-ink">최근 수강 과목</h2>
+              <Link href="/courses" className="text-xs font-medium text-ys-blue hover:underline">
                 전체보기
               </Link>
             </div>
             {recentCourses.length > 0 ? (
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-2.5">
                 {recentCourses.map((c, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                    <BookOpen className="h-4 w-4 text-slate-400" />
+                  <li key={i} className="flex items-center gap-2.5 text-sm text-ys-ink">
+                    <BookOpen className="h-4 w-4 shrink-0 text-ys-blue/60" />
                     {c.name}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-slate-500">수강 중인 과목이 없습니다</p>
+              <p className="text-sm text-ys-ink-soft">수강 중인 과목이 없습니다</p>
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-800">최근 비교과 활동</h2>
-              <Link href="/extracurricular" className="text-xs font-medium text-blue-600 hover:underline">
+              <h2 className="font-display text-base font-bold text-ys-ink">최근 비교과 활동</h2>
+              <Link href="/extracurricular" className="text-xs font-medium text-ys-blue hover:underline">
                 전체보기
               </Link>
             </div>
             {recentExtra.length > 0 ? (
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-2.5">
                 {recentExtra.map((e, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                    <Trophy className="h-4 w-4 text-slate-400" />
+                  <li key={i} className="flex items-center gap-2.5 text-sm text-ys-ink">
+                    <Trophy className="h-4 w-4 shrink-0 text-ys-blue/60" />
                     {e.name}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-slate-500">참여 중인 비교과 활동이 없습니다</p>
+              <p className="text-sm text-ys-ink-soft">참여 중인 비교과 활동이 없습니다</p>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* AI Guide shortcut */}
-        <div className="mt-8">
-          <Link
-            href="/ai-guide"
-            className="group flex items-center justify-between rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-violet-50 p-6 shadow-sm transition hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
-                <Sparkles className="h-6 w-6 text-indigo-600" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-slate-900">AI 진로가이드</h2>
-                <p className="mt-0.5 text-sm text-slate-600">
-                  역량진단 결과를 바탕으로 맞춤형 진로 조언을 받아보세요
-                </p>
-              </div>
+        {/* ── AI 진로가이드 ── */}
+        <Link
+          href="/ai-guide"
+          className="group mt-10 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-ys-blue/25 bg-white p-6 transition hover:border-ys-blue/50"
+        >
+          <div className="flex items-center gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-ys-blue/10 text-ys-blue">
+              <Sparkles className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="font-display text-base font-bold text-ys-ink">AI 진로가이드</h2>
+              <p className="mt-0.5 text-sm text-ys-ink-soft">
+                역량진단 결과를 바탕으로 맞춤형 진로 조언을 받아보세요
+              </p>
             </div>
-            <ArrowRight className="h-5 w-5 text-indigo-400 transition group-hover:translate-x-1" />
-          </Link>
-        </div>
+          </div>
+          <ArrowRight className="h-5 w-5 text-ys-blue transition group-hover:translate-x-0.5" />
+        </Link>
       </main>
     </div>
   );

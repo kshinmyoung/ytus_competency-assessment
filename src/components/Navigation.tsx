@@ -96,7 +96,7 @@ export default function Navigation() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-0.5 xl:flex">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -107,10 +107,10 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-[13px] font-medium transition ${
                   isActive
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-ys-blue/10 text-ys-blue"
+                    : "text-ys-ink-soft hover:bg-slate-100 hover:text-ys-ink"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -122,14 +122,14 @@ export default function Navigation() {
 
         <div className="flex items-center gap-3">
           {userName && (
-            <span className="hidden text-sm text-slate-600 sm:block">
+            <span className="hidden whitespace-nowrap text-[13px] text-ys-ink-soft sm:block">
               {userName}님
             </span>
           )}
           <button
             type="button"
             onClick={handleLogout}
-            className="hidden items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-900 md:flex"
+            className="hidden items-center gap-1.5 whitespace-nowrap rounded-full bg-ys-navy px-4 py-2 text-[13px] font-medium text-white transition hover:bg-ys-navy-soft xl:flex"
           >
             <LogOut className="h-4 w-4" />
             로그아웃
@@ -138,7 +138,7 @@ export default function Navigation() {
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+            className="rounded-lg p-2 text-ys-ink-soft hover:bg-slate-100 xl:hidden"
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -147,7 +147,7 @@ export default function Navigation() {
 
       {/* Mobile nav */}
       {isOpen && (
-        <div className="border-t border-slate-200 bg-white px-4 pb-4 pt-2 md:hidden">
+        <div className="border-t border-slate-200 bg-white px-4 pb-4 pt-2 xl:hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -161,8 +161,8 @@ export default function Navigation() {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   isActive
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50"
+                    ? "bg-ys-blue/10 text-ys-blue"
+                    : "text-ys-ink-soft hover:bg-slate-100"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function Navigation() {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-2 flex w-full items-center gap-2 rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-medium text-white hover:bg-slate-900"
+            className="mt-2 flex w-full items-center gap-2 rounded-lg bg-ys-navy px-3 py-2.5 text-sm font-medium text-white hover:bg-ys-navy-soft"
           >
             <LogOut className="h-4 w-4" />
             로그아웃
