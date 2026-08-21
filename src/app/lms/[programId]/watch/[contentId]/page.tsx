@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatClock, lmsGet, lmsPost, type LmsProgramDetail } from "@/lib/lms-client";
+import {
+  formatClock, lmsGet, lmsPost, openCertificate,
+  type CompleteResult, type LmsProgramDetail,
+} from "@/lib/lms-client";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 
 /** 설계서 9.1 — 배속 상한 1.5. 이 세 개만 노출한다. */
@@ -76,6 +79,12 @@ export default function LmsWatchPage() {
   const rateRef = useRef(1.0);
   const tokenRef = useRef("");        // 페이지 이탈 시 동기적으로 써야 해서 캐시
 
+  // 이수 확정
+  const minProgressRef = useRef(0);
+  const completeTriedRef = useRef(false);
+  const [completion, setCompletion] = useState<CompleteResult | null>(null);
+  const [certError, setCertError] = useState("");
+
   const content = detail?.contents.find((c) => c.contentId === contentId);
   const durationSec = content?.durationSec ?? 0;
 
@@ -98,10 +107,13 @@ export default function LmsWatchPage() {
           lmsPost<{ iframeUrl: string | null }>("/api/lms/playback-token", { contentId }),
         ]);
         setDetail(data);
+        minProgressRef.current = data.program.minProgress;
         const c = data.contents.find((x) => x.contentId === contentId);
         if (c) {
           setProgress(c.progress);
           setWatchedSec(c.watchedSec);
+          // 이미 기준을 넘긴 콘텐츠는 재진입 시 이수 확정을 다시 시도하지 않는다
+          if (data.completion) completeTriedRef.current = true;
         }
         if (!token.iframeUrl) throw new Error("재생 주소를 확인할 수 없습니다.");
         setIframeUrl(token.iframeUrl);
@@ -148,6 +160,19 @@ export default function LmsWatchPage() {
         setProgress(Number(body.progress ?? 0));
         setWatchedSec(Number(body.watchedSec ?? 0));
         setNotice("");
+        // 이 콘텐츠가 기준을 넘으면 이수 확정을 한 번 시도한다.
+        // 다른 필수 콘텐츠가 남았으면 서버가 incomplete 를 돌려주므로 모달을 띄우지 않는다.
+        if (minProgressRef.current > 0 && Number(body.progress ?? 0) >= minProgressRef.current
+            && !completeTriedRef.current) {
+          completeTriedRef.current = true;
+          try {
+            const r = await lmsPost<CompleteResult>("/api/lms/complete", { programId });
+            if (r.status !== "incomplete") setCompletion(r);
+          } catch {
+            // 이수 확정 실패는 시청을 막지 않는다. 커리큘럼 화면에서 다시 시도할 수 있다.
+            completeTriedRef.current = false;
+          }
+        }
       } else if (body && PERMANENT_REJECTS.includes(body.reason)) {
         // 다시 보내도 거부될 배치는 버린다 (무한 재전송 방지)
         queueRef.current = queueRef.current.slice(batch.length);
@@ -162,7 +187,7 @@ export default function LmsWatchPage() {
     } finally {
       sendingRef.current = false;
     }
-  }, [contentId]);
+  }, [contentId, programId]);
 
   /** 현재 누적 구간을 마감해 큐에 넣는다. 1초 미만이거나 시킹으로 끊긴 조각은 버린다. */
   const closeSegment = useCallback((end: number) => {
@@ -430,6 +455,93 @@ export default function LmsWatchPage() {
           {curriculumOpen && <div className="px-4 pb-4">{curriculum}</div>}
         </div>
       </div>
+
+      {/* 이수 결과 모달 */}
+      {completion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-xl">
+            {completion.status === "completed" && (
+              <>
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">이수 완료</h3>
+                <p className="mt-1.5 text-sm text-slate-600">
+                  {detail.program.name} 과정을 이수했습니다.
+                </p>
+                <div className="mt-4 space-y-1 rounded-lg bg-slate-50 px-4 py-3 text-left text-xs text-slate-600">
+                  <p>수료번호 <span className="font-medium text-slate-900">{completion.certificate_no}</span></p>
+                  <p>최종 진도 <span className="font-medium text-slate-900">{completion.final_progress}%</span></p>
+                  {/* 마일리지는 내국인에게만 표시한다 */}
+                  {detail.studentType === "domestic" && (completion.mileage_granted ?? 0) > 0 && (
+                    <p>마일리지 <span className="font-medium text-blue-700">{completion.mileage_granted}점 지급</span></p>
+                  )}
+                </div>
+                {certError && <p className="mt-3 text-xs text-red-600">{certError}</p>}
+                <div className="mt-5 flex gap-2">
+                  {completion.certificate_no && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setCertError("");
+                        try { await openCertificate(completion.certificate_no!); }
+                        catch (e) { setCertError(e instanceof Error ? e.message : "수료증 열기 실패"); }
+                      }}
+                      className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      수료증 보기
+                    </button>
+                  )}
+                  <Link
+                    href={`/lms/${programId}`}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    확인
+                  </Link>
+                </div>
+              </>
+            )}
+
+            {completion.status === "already_completed" && (
+              <>
+                <h3 className="text-base font-bold text-slate-900">이미 이수한 과정입니다</h3>
+                <p className="mt-1.5 text-sm text-slate-600">추가로 처리할 내용이 없습니다.</p>
+                <button
+                  type="button"
+                  onClick={() => setCompletion(null)}
+                  className="mt-5 w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900"
+                >
+                  닫기
+                </button>
+              </>
+            )}
+
+            {completion.status === "survey_required" && (
+              <>
+                <h3 className="text-base font-bold text-slate-900">설문 제출이 필요합니다</h3>
+                <p className="mt-1.5 text-sm text-slate-600">
+                  진도는 모두 채웠습니다. 만족도 설문을 제출하면 이수가 확정됩니다.
+                </p>
+                <div className="mt-5 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCompletion(null)}
+                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    나중에
+                  </button>
+                  <Link
+                    href="/survey"
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    설문 하러 가기
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

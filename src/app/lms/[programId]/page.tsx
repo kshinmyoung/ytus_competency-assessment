@@ -4,7 +4,7 @@ import { ArrowLeft, Award, CheckCircle2, Clock, FileDown, Lock, PlayCircle } fro
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { formatClock, formatDuration, lmsGet, type LmsProgramDetail } from "@/lib/lms-client";
+import { formatClock, formatDuration, lmsGet, openCertificate, type LmsProgramDetail } from "@/lib/lms-client";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 
 export default function LmsProgramPage() {
@@ -15,6 +15,7 @@ export default function LmsProgramPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [enrolling, setEnrolling] = useState(false);
+  const [certError, setCertError] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -127,16 +128,33 @@ export default function LmsProgramPage() {
             </div>
 
             {completion && (
-              <div className="mt-4 rounded-lg bg-emerald-50 px-4 py-3">
-                <p className="text-xs font-medium text-emerald-800">
-                  이수 완료 · 수료번호 {completion.certificate_no ?? "-"}
-                </p>
-                <p className="mt-0.5 text-[11px] text-emerald-700">
-                  최종 진도 {completion.final_progress}%
-                  {studentType === "domestic" && completion.mileage_granted > 0 && ` · 마일리지 ${completion.mileage_granted}점 지급`}
-                </p>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-emerald-50 px-4 py-3">
+                <div>
+                  <p className="text-xs font-medium text-emerald-800">
+                    이수 완료 · 수료번호 {completion.certificate_no ?? "-"}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-emerald-700">
+                    최종 진도 {completion.final_progress}%
+                    {studentType === "domestic" && completion.mileage_granted > 0 && ` · 마일리지 ${completion.mileage_granted}점 지급`}
+                  </p>
+                </div>
+                {completion.certificate_no && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setCertError("");
+                      try { await openCertificate(completion.certificate_no!); }
+                      catch (e) { setCertError(e instanceof Error ? e.message : "수료증 열기 실패"); }
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    수료증 보기
+                  </button>
+                )}
               </div>
             )}
+            {certError && <p className="mt-2 text-xs text-red-600">{certError}</p>}
           </div>
         )}
       </div>

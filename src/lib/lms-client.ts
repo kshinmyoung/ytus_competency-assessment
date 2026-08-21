@@ -95,6 +95,38 @@ export async function lmsPost<T>(path: string, payload: unknown): Promise<T> {
   return body as T;
 }
 
+export type CompleteResult = {
+  status: "completed" | "incomplete" | "survey_required" | "already_completed";
+  certificate_no?: string;
+  final_progress?: number;
+  mileage_granted?: number;
+  student_type?: string;
+  required?: number;
+  passed?: number;
+  min_progress?: number;
+  survey_id?: number;
+};
+
+/**
+ * 수료증 열기.
+ * 라우트가 Bearer 토큰을 요구하므로 링크로 바로 열 수 없다.
+ * 인증 요청으로 받아 새 창에 그려준다.
+ */
+export async function openCertificate(certificateNo: string): Promise<void> {
+  const res = await fetch(`/api/lms/certificate/${encodeURIComponent(certificateNo)}`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "수료증을 불러오지 못했습니다.");
+  }
+  const html = await res.text();
+  const win = window.open("", "_blank");
+  if (!win) throw new Error("팝업이 차단되었습니다. 팝업을 허용해 주세요.");
+  win.document.write(html);
+  win.document.close();
+}
+
 /** 초 → "1시간 23분" / "5분 12초" */
 export function formatDuration(sec: number): string {
   if (!sec || sec <= 0) return "0분";
