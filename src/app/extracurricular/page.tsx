@@ -1,10 +1,18 @@
 "use client";
 
-import { Calendar, Filter, PlayCircle, Send, Trophy, Video } from "lucide-react";
+import { Calendar, PlayCircle, Send, Trophy, Video } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase, waitForStudentId } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
+import {
+  DELIVERY_GROUPS,
+  ORGANIZER_GROUPS,
+  matchesDelivery,
+  resolveOrganizerGroup,
+  type DeliveryGroupKey,
+  type OrganizerGroupKey,
+} from "@/lib/extracurricular";
 
 type CoreComp = { id: number; name: string; color_code: string };
 type MajorComp = { id: number; name: string };
@@ -34,7 +42,8 @@ export default function ExtracurricularPage() {
   const [majorComps, setMajorComps] = useState<MajorComp[]>([]);
   const [myExtras, setMyExtras] = useState<Map<number, MyExtra>>(new Map());
   const [studentId, setStudentId] = useState("");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [delivery, setDelivery] = useState<DeliveryGroupKey>("online");
+  const [organizer, setOrganizer] = useState<OrganizerGroupKey | "all">("all");
   const [selectedItem, setSelectedItem] = useState<Extra | null>(null);
   const [reflection, setReflection] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,9 +70,15 @@ export default function ExtracurricularPage() {
           .order("start_date", { ascending: false }),
       ]);
 
+      const extras = extraRes.data ?? [];
       setCoreComps(coreRes.data ?? []);
       setMajorComps(majorRes.data ?? []);
-      setItems(extraRes.data ?? []);
+      setItems(extras);
+
+      // 온라인이 비어 있으면 대면부터 보여준다. 빈 탭으로 첫 화면을 맞을 이유가 없다.
+      if (!extras.some((e: Extra) => matchesDelivery(e.delivery_type, "online"))) {
+        setDelivery("offline");
+      }
 
       if (sid) {
         const { data: myE } = await supabase
@@ -77,15 +92,32 @@ export default function ExtracurricularPage() {
     })();
   }, []);
 
-  const categories = useMemo(() => {
-    const cats = new Set(items.map((i) => i.category).filter(Boolean) as string[]);
-    return Array.from(cats).sort();
+  /** 전달 방식 탭별 개수 */
+  const deliveryCounts = useMemo(() => {
+    const counts = {} as Record<DeliveryGroupKey, number>;
+    DELIVERY_GROUPS.forEach((g) => {
+      counts[g.key] = items.filter((i) => matchesDelivery(i.delivery_type, g.key)).length;
+    });
+    return counts;
   }, [items]);
 
+  /** 선택한 전달 방식 안에서의 주관 기관별 개수 */
+  const inDelivery = useMemo(
+    () => items.filter((i) => matchesDelivery(i.delivery_type, delivery)),
+    [items, delivery],
+  );
+
+  const organizerCounts = useMemo(() => {
+    const counts = {} as Record<OrganizerGroupKey, number>;
+    ORGANIZER_GROUPS.forEach((g) => (counts[g.key] = 0));
+    inDelivery.forEach((i) => (counts[resolveOrganizerGroup(i.organizer)] += 1));
+    return counts;
+  }, [inDelivery]);
+
   const filtered = useMemo(() => {
-    if (filterCategory === "all") return items;
-    return items.filter((i) => i.category === filterCategory);
-  }, [items, filterCategory]);
+    if (organizer === "all") return inDelivery;
+    return inDelivery.filter((i) => resolveOrganizerGroup(i.organizer) === organizer);
+  }, [inDelivery, organizer]);
 
   const coreCompMap = useMemo(() => {
     const m: Record<number, CoreComp> = {};
@@ -161,25 +193,79 @@ export default function ExtracurricularPage() {
           <p className="mt-1 text-sm text-ys-ink-soft">다양한 비교과 프로그램에 참여하여 역량을 키워보세요.</p>
         </div>
 
-        {/* Filter */}
-        <div className="mb-6 flex items-center gap-3">
-          <Filter className="h-4 w-4 text-ys-ink-soft/70" />
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-          >
-            <option value="all">전체 카테고리</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+        {/*
+          2단 분류: 위는 전달 방식(온라인/대면), 아래는 주관 기관.
+          기관 선택은 전달 방식 안에서만 뜻이 있으므로 탭을 바꾸면 '전체'로 되돌린다.
+        */}
+        <div className="mb-6">
+          <div className="flex gap-2 border-b border-slate-200">
+            {DELIVERY_GROUPS.map((g) => {
+              const isActive = delivery === g.key;
+              return (
+                <button
+                  key={g.key}
+                  type="button"
+                  onClick={() => {
+                    setDelivery(g.key);
+                    setOrganizer("all");
+                  }}
+                  className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+                    isActive
+                      ? "border-ys-gold text-ys-ink"
+                      : "border-transparent text-ys-ink-soft hover:text-ys-ink"
+                  }`}
+                >
+                  {g.label}
+                  <span className={`font-data text-xs ${isActive ? "text-[#8A6212]" : "text-ys-ink-soft/60"}`}>
+                    {deliveryCounts[g.key] ?? 0}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setOrganizer("all")}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                organizer === "all"
+                  ? "border-ys-blue/40 bg-ys-blue/10 text-ys-blue"
+                  : "border-slate-200 bg-white text-ys-ink-soft hover:border-slate-300"
+              }`}
+            >
+              전체 {inDelivery.length}
+            </button>
+            {ORGANIZER_GROUPS.map((g) => {
+              const count = organizerCounts[g.key] ?? 0;
+              const isActive = organizer === g.key;
+              return (
+                <button
+                  key={g.key}
+                  type="button"
+                  disabled={count === 0}
+                  onClick={() => setOrganizer(g.key)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? "border-ys-blue/40 bg-ys-blue/10 text-ys-blue"
+                      : count === 0
+                        ? "cursor-default border-slate-200 bg-white text-ys-ink-soft/40"
+                        : "border-slate-200 bg-white text-ys-ink-soft hover:border-slate-300"
+                  }`}
+                >
+                  {g.label} {count}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
             <Trophy className="mx-auto h-10 w-10 text-ys-ink-soft/50" />
-            <p className="mt-3 text-sm text-ys-ink-soft">등록된 비교과 프로그램이 없습니다.</p>
+            <p className="mt-3 text-sm text-ys-ink-soft">
+              {DELIVERY_GROUPS.find((g) => g.key === delivery)?.label} 비교과 프로그램이 없습니다.
+            </p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
