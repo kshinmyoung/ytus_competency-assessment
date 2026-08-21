@@ -117,6 +117,56 @@ export function audienceMatches(targetAudience: string, studentType: string): bo
   return targetAudience === "all" || targetAudience === studentType;
 }
 
+export type ContentAccess = {
+  content: { id: number; source_ref: string; extracurricular_id: number; title: string; duration_sec: number };
+  programId: number;
+};
+
+/**
+ * 설계서 8.3 의 검증 순서 — 재생·진도 기록 양쪽에서 동일하게 쓴다.
+ *   1) 콘텐츠·프로그램 존재  2) 신청 여부  3) 대상 일치
+ * student_id 는 반드시 세션에서 온 값을 넘긴다.
+ */
+export async function assertContentAccess(
+  admin: ReturnType<typeof getAdminClient>,
+  studentId: string,
+  studentType: string,
+  contentId: number,
+): Promise<ContentAccess | NextResponse> {
+  const { data: content, error } = await admin
+    .from("extracurricular_contents")
+    .select("id, source_ref, extracurricular_id, title, duration_sec")
+    .eq("id", contentId)
+    .maybeSingle();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!content) return NextResponse.json({ error: "콘텐츠를 찾을 수 없습니다." }, { status: 404 });
+
+  const { data: program } = await admin
+    .from("extracurricular")
+    .select("id, target_audience, is_active")
+    .eq("id", content.extracurricular_id)
+    .maybeSingle();
+  if (!program || !program.is_active) {
+    return NextResponse.json({ error: "프로그램을 찾을 수 없습니다." }, { status: 404 });
+  }
+
+  const { data: enrollment } = await admin
+    .from("student_extracurricular")
+    .select("status")
+    .eq("student_id", studentId)
+    .eq("extracurricular_id", program.id)
+    .maybeSingle();
+  if (!enrollment) {
+    return NextResponse.json({ error: "신청하지 않은 프로그램입니다." }, { status: 403 });
+  }
+
+  if (!audienceMatches(program.target_audience, studentType)) {
+    return NextResponse.json({ error: "수강 대상이 아닌 프로그램입니다." }, { status: 403 });
+  }
+
+  return { content, programId: program.id };
+}
+
 /** 설계서 7장 — 진도 데이터로부터 학습 상태를 파생한다. DB status 는 건드리지 않는다. */
 export function deriveStatus(hasCompletion: boolean, watchedSec: number): "신청" | "학습중" | "이수완료" {
   if (hasCompletion) return "이수완료";

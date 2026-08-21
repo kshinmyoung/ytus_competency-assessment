@@ -12,12 +12,22 @@ import { getCurrentStudentId, supabase } from "@/lib/supabase";
 const PLAYBACK_RATES = [1.0, 1.25, 1.5];
 const MAX_RATE = 1.5;
 
+/** 설계서 9.1 진도 수집 파라미터 */
+const SEGMENT_SEC = 10;        // 10초 단위로 구간을 끊는다
+const BATCH_SIZE = 6;          // 6구간 = 60초마다 전송
+const MAX_BATCH = 10;          // 한 번에 보낼 수 있는 최대 구간 수 (서버 상한)
+const FLUSH_INTERVAL_MS = 60_000;
+const SEEK_THRESHOLD_SEC = 2;  // 이보다 크게 튀면 시킹으로 본다
+
 /** 워터마크 위치 (5분마다 순환) */
 const WATERMARK_SPOTS = [
   "top-6 left-6", "top-6 right-6", "bottom-16 left-6",
   "bottom-16 right-6", "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
 ];
 const WATERMARK_MOVE_MS = 5 * 60 * 1000;
+
+/** 재전송해도 소용없는 거부 사유 — 큐에서 버린다 */
+const PERMANENT_REJECTS = ["NO_VALID_SEGMENT", "INVALID_PAYLOAD", "TOO_MANY_SEGMENTS", "CONTENT_NOT_FOUND"];
 
 type StreamPlayer = {
   playbackRate: number;
@@ -53,9 +63,25 @@ export default function LmsWatchPage() {
   const [spotIndex, setSpotIndex] = useState(0);
   const [curriculumOpen, setCurriculumOpen] = useState(false);
 
-  const content = detail?.contents.find((c) => c.contentId === contentId);
+  // 진도 — 서버가 계산한 값만 표시한다 (클라이언트 계산 금지)
+  const [progress, setProgress] = useState(0);
+  const [watchedSec, setWatchedSec] = useState(0);
+  const [notice, setNotice] = useState("");
 
-  // 커리큘럼 + 재생 토큰
+  // 구간 수집 상태
+  const segStartRef = useRef<number | null>(null);
+  const lastTimeRef = useRef(0);
+  const queueRef = useRef<[number, number][]>([]);
+  const sendingRef = useRef(false);
+  const rateRef = useRef(1.0);
+  const tokenRef = useRef("");        // 페이지 이탈 시 동기적으로 써야 해서 캐시
+  const resumeAtRef = useRef(0);
+  const resumedRef = useRef(false);
+
+  const content = detail?.contents.find((c) => c.contentId === contentId);
+  const durationSec = content?.durationSec ?? 0;
+
+  // ---- 데이터 로드 ----
   useEffect(() => {
     (async () => {
       try {
@@ -64,8 +90,15 @@ export default function LmsWatchPage() {
           lmsPost<{ iframeUrl: string | null }>("/api/lms/playback-token", { contentId }),
         ]);
         setDetail(data);
+        const c = data.contents.find((x) => x.contentId === contentId);
+        if (c) {
+          setProgress(c.progress);
+          setWatchedSec(c.watchedSec);
+          resumeAtRef.current = c.lastPositionSec;   // 새로고침 시 이어보기 지점
+        }
         if (!token.iframeUrl) throw new Error("재생 주소를 확인할 수 없습니다.");
         setIframeUrl(token.iframeUrl);
+        tokenRef.current = (await supabase.auth.getSession()).data.session?.access_token ?? "";
       } catch (e) {
         setError(e instanceof Error ? e.message : "영상을 불러오지 못했습니다.");
       } finally {
@@ -74,7 +107,7 @@ export default function LmsWatchPage() {
     })();
   }, [programId, contentId]);
 
-  // 워터마크 문구 (학번 · 이름)
+  // ---- 워터마크 ----
   useEffect(() => {
     (async () => {
       const sid = await getCurrentStudentId();
@@ -84,15 +117,59 @@ export default function LmsWatchPage() {
     })();
   }, []);
 
-  // 5분마다 워터마크 위치 이동
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSpotIndex((i) => (i + 1) % WATERMARK_SPOTS.length);
-    }, WATERMARK_MOVE_MS);
+    const timer = setInterval(() => setSpotIndex((i) => (i + 1) % WATERMARK_SPOTS.length), WATERMARK_MOVE_MS);
     return () => clearInterval(timer);
   }, []);
 
-  // SDK 초기화. 배속 상한을 넘기면 되돌린다.
+  // ---- 진도 전송 ----
+  const flush = useCallback(async (keepalive = false) => {
+    if (sendingRef.current || queueRef.current.length === 0 || !tokenRef.current) return;
+    const batch = queueRef.current.slice(0, MAX_BATCH);
+    sendingRef.current = true;
+    try {
+      const res = await fetch("/api/lms/watch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenRef.current}` },
+        body: JSON.stringify({ contentId, segments: batch, rate: rateRef.current }),
+        keepalive,
+      });
+      const body = await res.json().catch(() => null);
+
+      if (res.ok && body) {
+        queueRef.current = queueRef.current.slice(batch.length);
+        setProgress(Number(body.progress ?? 0));
+        setWatchedSec(Number(body.watchedSec ?? 0));
+        setNotice("");
+      } else if (body && PERMANENT_REJECTS.includes(body.reason)) {
+        // 다시 보내도 거부될 배치는 버린다 (무한 재전송 방지)
+        queueRef.current = queueRef.current.slice(batch.length);
+        setNotice(body.error ?? "");
+      } else {
+        // 일시적 실패 — 큐를 유지해 다음 전송에 함께 보낸다
+        setNotice(body?.error ?? "진도 저장에 실패했습니다. 잠시 후 다시 시도합니다.");
+      }
+    } catch {
+      // 네트워크 오류 — 큐 유지
+      setNotice("진도 저장에 실패했습니다. 잠시 후 다시 시도합니다.");
+    } finally {
+      sendingRef.current = false;
+    }
+  }, [contentId]);
+
+  /** 현재 누적 구간을 마감해 큐에 넣는다. 1초 미만이거나 시킹으로 끊긴 조각은 버린다. */
+  const closeSegment = useCallback((end: number) => {
+    const start = segStartRef.current;
+    segStartRef.current = null;
+    if (start === null) return;
+    const s = Math.max(0, Math.floor(start));
+    const e = Math.min(Math.floor(end), durationSec > 0 ? durationSec : Math.floor(end));
+    if (e - s < 1) return;
+    // 서버가 15초 초과 구간을 거부하므로 안전하게 잘라 담는다
+    queueRef.current.push([s, Math.min(e, s + 15)]);
+  }, [durationSec]);
+
+  // ---- SDK 초기화 및 이벤트 연결 ----
   const initPlayer = useCallback(() => {
     if (!sdkReady || !iframeUrl || !iframeRef.current || !window.Stream) return;
     if (playerRef.current) return;
@@ -100,21 +177,101 @@ export default function LmsWatchPage() {
     const player = window.Stream(iframeRef.current);
     playerRef.current = player;
 
-    const onRateChange = () => {
-      if (player.playbackRate > MAX_RATE) {
-        player.playbackRate = MAX_RATE;
-        setRate(MAX_RATE);
-      } else {
-        setRate(player.playbackRate);
+    const onLoaded = () => {
+      // 새로고침 시 마지막 위치부터 이어보기
+      if (!resumedRef.current && resumeAtRef.current > 0) {
+        resumedRef.current = true;
+        player.currentTime = resumeAtRef.current;
       }
     };
+
+    const onTimeUpdate = () => {
+      const t = player.currentTime;
+      if (!Number.isFinite(t)) return;
+
+      if (segStartRef.current === null) {
+        segStartRef.current = t;
+        lastTimeRef.current = t;
+        return;
+      }
+
+      const delta = t - lastTimeRef.current;
+      if (delta < 0 || delta > SEEK_THRESHOLD_SEC) {
+        // 시킹 — 건너뛴 구간은 진도에 넣지 않는다
+        closeSegment(lastTimeRef.current);
+        segStartRef.current = t;
+        lastTimeRef.current = t;
+        return;
+      }
+
+      lastTimeRef.current = t;
+      if (t - segStartRef.current >= SEGMENT_SEC) {
+        closeSegment(t);
+        segStartRef.current = t;
+        if (queueRef.current.length >= BATCH_SIZE) void flush();
+      }
+    };
+
+    const onPause = () => {
+      closeSegment(lastTimeRef.current);
+      void flush();
+    };
+
+    const onEnded = () => {
+      closeSegment(lastTimeRef.current);
+      void flush();
+    };
+
+    const onRateChange = () => {
+      const r = player.playbackRate > MAX_RATE ? MAX_RATE : player.playbackRate;
+      if (player.playbackRate > MAX_RATE) player.playbackRate = MAX_RATE;
+      // 배속이 바뀌면 진행 중 구간을 마감해 배치별 rate 를 정확히 남긴다
+      closeSegment(lastTimeRef.current);
+      segStartRef.current = player.currentTime;
+      rateRef.current = r;
+      setRate(r);
+    };
+
+    player.addEventListener("loadeddata", onLoaded);
+    player.addEventListener("timeupdate", onTimeUpdate);
+    player.addEventListener("pause", onPause);
+    player.addEventListener("ended", onEnded);
     player.addEventListener("ratechange", onRateChange);
-  }, [sdkReady, iframeUrl]);
+  }, [sdkReady, iframeUrl, closeSegment, flush]);
 
   useEffect(() => { initPlayer(); }, [initPlayer]);
 
+  // ---- 60초 주기 전송 ----
+  useEffect(() => {
+    const timer = setInterval(() => { void flush(); }, FLUSH_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [flush]);
+
+  // ---- 탭 이탈 시 자동 일시정지 + 즉시 전송 ----
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "hidden") return;
+      playerRef.current?.pause();
+      closeSegment(lastTimeRef.current);
+      void flush(true);
+    };
+    const onPageHide = () => {
+      closeSegment(lastTimeRef.current);
+      void flush(true);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", onPageHide);
+      // 다른 콘텐츠로 이동할 때도 남은 구간을 흘려보낸다
+      onPageHide();
+    };
+  }, [closeSegment, flush]);
+
   const changeRate = (value: number) => {
     setRate(value);
+    rateRef.current = value;
     if (playerRef.current) playerRef.current.playbackRate = value;
   };
 
@@ -137,10 +294,13 @@ export default function LmsWatchPage() {
     );
   }
 
+  const passed = progress >= detail.program.minProgress;
+
   const curriculum = (
     <ol className="space-y-1">
       {detail.contents.map((c, idx) => {
         const isCurrent = c.contentId === contentId;
+        const shownProgress = isCurrent ? progress : c.progress;
         return (
           <li key={c.contentId}>
             <Link
@@ -150,7 +310,7 @@ export default function LmsWatchPage() {
               }`}
             >
               <span className="w-5 shrink-0 text-center">
-                {c.passed ? (
+                {shownProgress >= detail.program.minProgress ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                 ) : isCurrent ? (
                   <PlayCircle className="h-4 w-4 text-blue-400" />
@@ -161,8 +321,7 @@ export default function LmsWatchPage() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{c.title}</span>
                 <span className="mt-0.5 block text-[11px] text-slate-500">
-                  {formatClock(c.durationSec)} · 진도 {c.progress}%
-                  {!c.isRequired && " · 선택"}
+                  {formatClock(c.durationSec)} · 진도 {shownProgress}%{!c.isRequired && " · 선택"}
                 </span>
               </span>
             </Link>
@@ -182,7 +341,6 @@ export default function LmsWatchPage() {
       />
 
       <div className="mx-auto flex max-w-[1600px] flex-col lg:h-screen lg:flex-row">
-        {/* 좌: 플레이어 */}
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center gap-3 px-4 py-3">
             <Link
@@ -208,18 +366,32 @@ export default function LmsWatchPage() {
                 allowFullScreen
                 className="absolute inset-0 h-full w-full border-0"
               />
-              {/* 학번·이름 워터마크 — 클릭을 가로채지 않는다 */}
               {watermark && (
-                <div
-                  className={`pointer-events-none absolute z-10 select-none text-[11px] font-medium text-white/35 drop-shadow sm:text-xs ${WATERMARK_SPOTS[spotIndex]}`}
-                >
+                <div className={`pointer-events-none absolute z-10 select-none text-[11px] font-medium text-white/35 drop-shadow sm:text-xs ${WATERMARK_SPOTS[spotIndex]}`}>
                   {watermark}
                 </div>
               )}
             </div>
           </div>
 
-          {/* 배속 */}
+          {/* 진도 — 서버 응답값 그대로 표시 */}
+          <div className="px-4 pt-3">
+            <div className="mb-1.5 flex items-center justify-between text-[11px]">
+              <span className="text-slate-500">
+                진도 {formatClock(watchedSec)} / {formatClock(durationSec)} · 이수 기준 {detail.program.minProgress}%
+              </span>
+              <span className={`font-semibold ${passed ? "text-emerald-400" : "text-slate-300"}`}>
+                {progress}%{passed && " · 완료"}
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className={`h-full rounded-full transition-all ${passed ? "bg-emerald-500" : "bg-blue-500"}`}
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3 px-4 py-3">
             <span className="text-[11px] text-slate-500">재생 속도</span>
             <div className="flex gap-1">
@@ -236,13 +408,11 @@ export default function LmsWatchPage() {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-500">
-              건너뛴 구간은 진도에 포함되지 않습니다.
-            </p>
+            <p className="text-[11px] text-slate-500">건너뛴 구간은 진도에 포함되지 않습니다.</p>
+            {notice && <p className="text-[11px] text-amber-400">{notice}</p>}
           </div>
         </div>
 
-        {/* 우: 커리큘럼 (데스크톱) */}
         <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-white/10 p-4 lg:block">
           <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             커리큘럼 · 필수 {detail.requiredPassed}/{detail.requiredTotal}
@@ -250,7 +420,6 @@ export default function LmsWatchPage() {
           {curriculum}
         </aside>
 
-        {/* 하단 접이식 커리큘럼 (모바일) */}
         <div className="border-t border-white/10 lg:hidden">
           <button
             type="button"
@@ -263,7 +432,6 @@ export default function LmsWatchPage() {
           {curriculumOpen && <div className="px-4 pb-4">{curriculum}</div>}
         </div>
       </div>
-
     </div>
   );
 }
