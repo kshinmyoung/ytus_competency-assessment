@@ -6,23 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
-import {
-  Legend,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import CompetencyCompass from "@/components/CompetencyCompass";
 
 const CATEGORIES = [
-  { key: "launch", label: "Launch (회복탄력성)" },
-  { key: "explore", label: "Explore (DX 역량)" },
-  { key: "act", label: "Act (상호작용)" },
-  { key: "refine", label: "Refine (메타인지)" },
-  { key: "network", label: "Network (공동체)" },
+  { key: "launch", label: "Launch (회복탄력성)", short: "Launch" },
+  { key: "explore", label: "Explore (DX 역량)", short: "Explore" },
+  { key: "act", label: "Act (상호작용)", short: "Act" },
+  { key: "refine", label: "Refine (메타인지)", short: "Refine" },
+  { key: "network", label: "Network (공동체)", short: "Network" },
 ] as const;
 
 const QUESTIONS: { categoryIndex: number; text: string }[] = [
@@ -164,15 +155,6 @@ export default function LearningDiagnosisPage() {
     () => displayScores.reduce((a, b) => a + b, 0),
     [displayScores]
   );
-  const displayRadarData = useMemo(
-    () =>
-      CATEGORIES.map((cat, i) => ({
-        subject: cat.label,
-        value: displayScores[i],
-        fullMark: 10,
-      })),
-    [displayScores]
-  );
   const displayWeakCategoryIndices = useMemo(
     () =>
       displayScores
@@ -249,20 +231,20 @@ export default function LearningDiagnosisPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-500">로딩 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-ys-paper">
+        <p className="text-ys-ink-soft">로딩 중...</p>
       </div>
     );
   }
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+              className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink"
             >
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">대시보드</span>
@@ -278,70 +260,56 @@ export default function LearningDiagnosisPage() {
         </header>
 
         <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
+          <h1 className="text-xl font-bold text-ys-ink sm:text-2xl">
             학습역량진단 결과
           </h1>
-          <p className="mt-1 text-slate-600">
+          <p className="mt-1 text-ys-ink-soft">
             LEARN 5가지 역량별 점수(각 10점 만점, 총 50점 만점)입니다.
           </p>
 
-          <section className="mt-8">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              나의 역량 그래프
-            </h2>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-              <div className="h-[280px] w-full sm:h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart
-                    data={displayRadarData}
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                  >
-                    <PolarGrid stroke="#cbd5e1" />
-                    <PolarAngleAxis
-                      dataKey="subject"
-                      tick={{ fontSize: 10 }}
-                      tickLine={false}
-                    />
-                    <PolarRadiusAxis
-                      angle={90}
-                      domain={[0, 10]}
-                      tick={{ fontSize: 10 }}
-                    />
-                    <Radar
-                      name="점수"
-                      dataKey="value"
-                      stroke="#1e40af"
-                      fill="#2563eb"
-                      fillOpacity={0.5}
-                      strokeWidth={2}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                      formatter={(value: any) => [`${value}점`, "점수"]}
-                      labelFormatter={(label) => label}
-                    />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
+          <section className="mt-8 overflow-hidden rounded-2xl bg-ys-navy p-5 sm:p-7">
+            <div className="flex flex-col items-center gap-7 lg:flex-row lg:gap-9">
+              <CompetencyCompass
+                axes={CATEGORIES.map((c, i) => ({ label: c.short, score: displayScores[i] }))}
+                max={10}
+                className="ys-bloom h-auto w-full max-w-[320px] shrink-0"
+              />
+              <div className="w-full min-w-0">
+                <p className="text-[12px] font-semibold text-ys-gold">학습역량진단 결과</p>
+                <p className="font-display mt-2 text-2xl font-black leading-tight text-white">
+                  총점 {displayTotalScore}
+                  <span className="ml-1 text-base font-medium text-ys-mist">/ {TOTAL_MAX}점</span>
+                </p>
+                <ul className="mt-5 flex flex-col gap-2">
+                  {CATEGORIES.map((c, i) => (
+                    <li key={c.key} className="flex items-center gap-3">
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-ys-mist">{c.label}</span>
+                      <span className="h-1 w-20 shrink-0 overflow-hidden rounded-full bg-white/10">
+                        <span
+                          className={`block h-full rounded-full ${displayScores[i] >= 10 * 0.8 ? "bg-ys-gold" : "bg-ys-sky/60"}`}
+                          style={{ width: `${Math.round((displayScores[i] / 10) * 100)}%` }}
+                        />
+                      </span>
+                      <span className="font-data w-8 shrink-0 text-right text-[13px] text-white">{displayScores[i]}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </section>
 
           <section className="mt-10">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
+            <h2 className="mb-4 text-base font-semibold text-ys-ink">
               종합 점수 진단
             </h2>
             <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <div className="flex-shrink-0">{totalFeedback.icon}</div>
               <div>
-                <p className="font-medium text-slate-900">{totalFeedback.status}</p>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="font-medium text-ys-ink">{totalFeedback.status}</p>
+                <p className="mt-2 text-sm text-ys-ink-soft">
                   {totalFeedback.message}
                 </p>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-ys-ink-soft">
                   총점 {displayTotalScore}점 / {TOTAL_MAX}점
                 </p>
               </div>
@@ -350,14 +318,14 @@ export default function LearningDiagnosisPage() {
 
           {displayWeakCategoryIndices.length > 0 && (
             <section className="mt-8">
-              <h2 className="mb-4 text-base font-semibold text-slate-800">
+              <h2 className="mb-4 text-base font-semibold text-ys-ink">
                 세부 역량 처방
               </h2>
               <ul className="space-y-2">
                 {displayWeakCategoryIndices.map((idx) => (
                   <li
                     key={idx}
-                    className="rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm text-slate-700"
+                    className="rounded-xl border border-ys-blue/20 bg-ys-blue/10/50 px-4 py-3 text-sm text-ys-ink"
                   >
                     {CATEGORY_WEAK_FEEDBACK[idx]}
                   </li>
@@ -370,13 +338,13 @@ export default function LearningDiagnosisPage() {
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-ys-ink hover:bg-ys-paper"
             >
               다시 진단하기
             </button>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              className="inline-flex items-center justify-center rounded-full bg-ys-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-ys-blue/90"
             >
               대시보드로 돌아가기
             </Link>
@@ -387,12 +355,12 @@ export default function LearningDiagnosisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+            className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="text-sm font-medium">대시보드</span>
@@ -408,10 +376,10 @@ export default function LearningDiagnosisPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
+        <h1 className="text-xl font-bold text-ys-ink sm:text-2xl">
           학습역량진단
         </h1>
-        <p className="mt-1 text-slate-600">
+        <p className="mt-1 text-ys-ink-soft">
           각 문항에 대해 1(전혀 그렇지 않다) ~ 5(매우 그렇다) 중 하나를 선택해 주세요.
         </p>
 
@@ -421,7 +389,7 @@ export default function LearningDiagnosisPage() {
               key={index}
               className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
             >
-              <p className="mb-4 text-sm font-medium text-slate-900">
+              <p className="mb-4 text-sm font-medium text-ys-ink">
                 {index + 1}. {q.text}
               </p>
               <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -430,8 +398,8 @@ export default function LearningDiagnosisPage() {
                     key={value}
                     className={`flex cursor-pointer items-center justify-center rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition sm:min-w-[4rem] ${
                       answers[index] === value
-                        ? "border-blue-600 bg-blue-600 text-white"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/50"
+                        ? "border-blue-600 bg-ys-blue text-white"
+                        : "border-slate-200 bg-white text-ys-ink hover:border-ys-blue/40 hover:bg-ys-blue/10/50"
                     }`}
                   >
                     <input
@@ -449,7 +417,7 @@ export default function LearningDiagnosisPage() {
                   </label>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-slate-500 sm:hidden">
+              <p className="mt-2 text-xs text-ys-ink-soft sm:hidden">
                 1: 전혀 그렇지 않다 → 5: 매우 그렇다
               </p>
             </section>
@@ -457,14 +425,14 @@ export default function LearningDiagnosisPage() {
 
           <div className="flex flex-col items-center gap-4 pb-12">
             {!allAnswered && (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-ys-ink-soft">
                 모든 문항에 응답하면 결과를 볼 수 있습니다.
               </p>
             )}
             <button
               type="submit"
               disabled={!allAnswered || isSubmitting}
-              className="w-full max-w-xs rounded-full bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto"
+              className="w-full max-w-xs rounded-full bg-ys-blue px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-ys-blue/90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto"
             >
               {isSubmitting ? "저장 중..." : "제출하기"}
             </button>
