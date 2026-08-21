@@ -111,22 +111,22 @@ export default function AdminLmsProgressPage() {
     await load();
   };
 
-  if (allowed === null) return <AdminLayout><p className="text-sm text-slate-500">확인 중...</p></AdminLayout>;
+  if (allowed === null) return <AdminLayout><p className="text-sm text-ys-ink-soft">확인 중...</p></AdminLayout>;
   if (!allowed) {
     return (
       <AdminLayout>
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow">
-          <p className="text-sm text-slate-600">진도 현황 조회 권한이 없습니다.</p>
+          <p className="text-sm text-ys-ink-soft">진도 현황 조회 권한이 없습니다.</p>
         </div>
       </AdminLayout>
     );
   }
-  if (loading) return <AdminLayout><p className="text-sm text-slate-500">불러오는 중...</p></AdminLayout>;
+  if (loading) return <AdminLayout><p className="text-sm text-ys-ink-soft">불러오는 중...</p></AdminLayout>;
   if (error || !data) {
     return (
       <AdminLayout>
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow">
-          <p className="text-sm text-slate-600">{error || "데이터가 없습니다."}</p>
+          <p className="text-sm text-ys-ink-soft">{error || "데이터가 없습니다."}</p>
         </div>
       </AdminLayout>
     );
@@ -137,14 +137,14 @@ export default function AdminLmsProgressPage() {
   return (
     <AdminLayout>
       <div className="mb-6">
-        <Link href="/admin/lms" className="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+        <Link href="/admin/lms" className="mb-3 inline-flex items-center gap-1.5 text-sm text-ys-ink-soft hover:text-ys-ink">
           <ArrowLeft className="h-4 w-4" />
           영상 LMS 관리
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{data.program.name} — 진도 현황</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-lg font-bold text-ys-ink">{data.program.name} — 진도 현황</h2>
+            <p className="mt-1 text-xs text-ys-ink-soft">
               이수 기준 진도 {data.program.minProgress}% · 콘텐츠 {data.contents.length}개
               {data.program.completionMileage > 0 && ` · 이수 마일리지 ${data.program.completionMileage}점(내국인)`}
             </p>
@@ -152,7 +152,7 @@ export default function AdminLmsProgressPage() {
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
           >
             <Download className="h-4 w-4" />
             엑셀 다운로드
@@ -160,7 +160,7 @@ export default function AdminLmsProgressPage() {
         </div>
       </div>
 
-      {notice && <p className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">{notice}</p>}
+      {notice && <p className="mb-4 rounded-lg bg-ys-blue/10 px-3 py-2 text-xs text-ys-blue">{notice}</p>}
 
       {/* 유형별 요약 — 합산하지 않는다 */}
       <div className="mb-5 grid gap-3 sm:grid-cols-2">
@@ -172,16 +172,16 @@ export default function AdminLmsProgressPage() {
               type="button"
               onClick={() => setTab(type)}
               className={`rounded-xl border p-4 text-left transition ${
-                tab === type ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:border-slate-300"
+                tab === type ? "border-ys-blue/40 bg-ys-blue/10" : "border-slate-200 bg-white hover:border-slate-300"
               }`}
             >
-              <p className="text-xs font-medium text-slate-500">{TYPE_LABEL[type]}</p>
+              <p className="text-xs font-medium text-ys-ink-soft">{TYPE_LABEL[type]}</p>
               {s ? (
-                <p className="mt-1 text-sm text-slate-900">
+                <p className="mt-1 text-sm text-ys-ink">
                   수강 <b>{s.enrolled}</b>명 · 이수 <b>{s.completed}</b>명 · 평균 진도 <b>{s.avgProgress}%</b>
                 </p>
               ) : (
-                <p className="mt-1 text-sm text-slate-400">해당 학생 없음</p>
+                <p className="mt-1 text-sm text-ys-ink-soft/70">해당 학생 없음</p>
               )}
             </button>
           );
@@ -190,50 +190,50 @@ export default function AdminLmsProgressPage() {
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow">
         <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+          <thead className="bg-ys-paper">
             <tr>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학번</th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">이름</th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">진도</th>
-              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">필수</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">학번</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">이름</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">진도</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">필수</th>
               {data.contents.map((c, i) => (
-                <th key={c.contentId} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold text-slate-500" title={c.title}>
+                <th key={c.contentId} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold text-ys-ink-soft" title={c.title}>
                   {i + 1}{c.isRequired ? "" : "*"}
                 </th>
               ))}
-              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">이수</th>
-              {canManage && <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase text-slate-600">관리</th>}
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">이수</th>
+              {canManage && <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">관리</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={6 + data.contents.length} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={6 + data.contents.length} className="px-4 py-8 text-center text-sm text-ys-ink-soft">
                   {TYPE_LABEL[tab]} 수강생이 없습니다.
                 </td>
               </tr>
             ) : (
               visible.map((r) => (
-                <tr key={r.studentId} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-600">{r.studentId}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-900">{r.name || "-"}</td>
+                <tr key={r.studentId} className="hover:bg-ys-paper">
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ys-ink-soft">{r.studentId}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-ys-ink">{r.name || "-"}</td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className={`h-full rounded-full ${r.progress >= data.program.minProgress ? "bg-emerald-500" : "bg-blue-500"}`}
+                          className={`h-full rounded-full ${r.progress >= data.program.minProgress ? "bg-emerald-500" : "bg-ys-blue"}`}
                           style={{ width: `${Math.min(r.progress, 100)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-slate-600">{r.progress}%</span>
+                      <span className="text-xs text-ys-ink-soft">{r.progress}%</span>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-600">{r.requiredPassed}/{r.requiredTotal}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-ys-ink-soft">{r.requiredPassed}/{r.requiredTotal}</td>
                   {data.contents.map((c) => {
                     const p = r.perContent.find((x) => x.contentId === c.contentId)?.progress ?? 0;
                     return (
                       <td key={c.contentId} className="whitespace-nowrap px-3 py-3 text-xs">
-                        <span className={p >= data.program.minProgress ? "font-medium text-emerald-600" : p > 0 ? "text-slate-600" : "text-slate-300"}>
+                        <span className={p >= data.program.minProgress ? "font-medium text-emerald-600" : p > 0 ? "text-ys-ink-soft" : "text-ys-ink-soft/50"}>
                           {p}%
                         </span>
                       </td>
@@ -250,7 +250,7 @@ export default function AdminLmsProgressPage() {
                         취소됨
                       </span>
                     ) : (
-                      <span className="text-[11px] text-slate-400">미이수</span>
+                      <span className="text-[11px] text-ys-ink-soft/70">미이수</span>
                     )}
                   </td>
                   {canManage && (
@@ -260,7 +260,7 @@ export default function AdminLmsProgressPage() {
                           type="button"
                           disabled={busy === r.studentId}
                           onClick={() => handleRevoke(r)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-ys-ink hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                           이수 취소
@@ -270,7 +270,7 @@ export default function AdminLmsProgressPage() {
                           type="button"
                           disabled={busy === r.studentId}
                           onClick={() => handleApprove(r)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-ys-ink hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
                         >
                           <ShieldCheck className="h-3.5 w-3.5" />
                           이수 승인
@@ -285,7 +285,7 @@ export default function AdminLmsProgressPage() {
         </table>
       </div>
 
-      <p className="mt-3 text-[11px] text-slate-400">
+      <p className="mt-3 text-[11px] text-ys-ink-soft/70">
         콘텐츠 열의 번호는 커리큘럼 순서이며 <b>*</b> 는 선택 콘텐츠입니다.
         내국인과 유학생은 이수 기준·마일리지 지급이 달라 합산하지 않고 따로 표시합니다.
       </p>

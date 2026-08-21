@@ -224,7 +224,7 @@ export default function AdminLmsPage() {
   if (allowed === null) {
     return (
       <AdminLayout>
-        <p className="text-sm text-slate-500">확인 중...</p>
+        <p className="text-sm text-ys-ink-soft">확인 중...</p>
       </AdminLayout>
     );
   }
@@ -233,7 +233,7 @@ export default function AdminLmsPage() {
     return (
       <AdminLayout>
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow">
-          <p className="text-sm text-slate-600">영상 LMS 관리 권한이 없습니다.</p>
+          <p className="text-sm text-ys-ink-soft">영상 LMS 관리 권한이 없습니다.</p>
         </div>
       </AdminLayout>
     );
@@ -243,12 +243,12 @@ export default function AdminLmsPage() {
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">영상 LMS 관리</h2>
-          <p className="mt-1 text-xs text-slate-500">영상형·혼합형 비교과 프로그램만 표시됩니다.</p>
+          <h2 className="text-lg font-bold text-ys-ink">영상 LMS 관리</h2>
+          <p className="mt-1 text-xs text-ys-ink-soft">영상형·혼합형 비교과 프로그램만 표시됩니다.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/70" />
             <input
               type="text"
               placeholder="프로그램명 검색..."
@@ -260,7 +260,7 @@ export default function AdminLmsPage() {
           <button
             type="button"
             onClick={() => { setEditingId(null); setForm(emptyForm); setError(""); setShowForm(true); }}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
           >
             <Plus className="h-4 w-4" />
             영상 프로그램 추가
@@ -270,45 +270,45 @@ export default function AdminLmsPage() {
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
         <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+          <thead className="bg-ys-paper">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">프로그램명</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">유형</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">대상</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">콘텐츠</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">이수 기준</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">마일리지</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">상태</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-600">관리</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">프로그램명</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">유형</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">대상</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">콘텐츠</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">이수 기준</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">마일리지</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">상태</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-ys-ink-soft">
                   영상형 프로그램이 없습니다. &lsquo;영상 프로그램 추가&rsquo;로 만들어 주세요.
                 </td>
               </tr>
             ) : (
               filtered.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.name}</td>
+                <tr key={item.id} className="hover:bg-ys-paper">
+                  <td className="px-4 py-3 text-sm font-medium text-ys-ink">{item.name}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-ys-blue/10 px-2 py-0.5 text-[11px] font-medium text-ys-blue">
                       <Film className="h-3 w-3" />
                       {DELIVERY_LABELS[item.delivery_type] ?? item.delivery_type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{AUDIENCE_LABELS[item.target_audience] ?? item.target_audience}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{contentCounts[item.id] ?? 0}개</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">진도 {item.completion_rule?.min_progress ?? 90}%</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">{AUDIENCE_LABELS[item.target_audience] ?? item.target_audience}</td>
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">{contentCounts[item.id] ?? 0}개</td>
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">진도 {item.completion_rule?.min_progress ?? 90}%</td>
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">
                     {item.completion_mileage > 0 ? `${item.completion_mileage}점` : "-"}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        item.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+                        item.is_active ? "bg-ys-gold/15 text-[#8A6212]" : "bg-slate-100 text-ys-ink-soft"
                       }`}
                     >
                       {item.is_active ? "운영중" : "비활성"}
@@ -318,14 +318,14 @@ export default function AdminLmsPage() {
                     <div className="flex items-center justify-end gap-2">
                       <Link
                         href={`/admin/lms/${item.id}/contents`}
-                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-ys-ink hover:bg-ys-paper"
                       >
                         <ListVideo className="h-3.5 w-3.5" />
                         콘텐츠
                       </Link>
                       <Link
                         href={`/admin/lms/${item.id}/progress`}
-                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-ys-ink hover:bg-ys-paper"
                       >
                         <BarChart3 className="h-3.5 w-3.5" />
                         진도 현황
@@ -333,7 +333,7 @@ export default function AdminLmsPage() {
                       <button
                         type="button"
                         onClick={() => handleEdit(item)}
-                        className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        className="rounded-lg p-1.5 text-ys-ink-soft hover:bg-slate-100 hover:text-ys-ink"
                         title="수정"
                       >
                         <Edit3 className="h-4 w-4" />
@@ -341,7 +341,7 @@ export default function AdminLmsPage() {
                       <button
                         type="button"
                         onClick={() => handleDelete(item)}
-                        className="rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600"
+                        className="rounded-lg p-1.5 text-ys-ink-soft hover:bg-red-50 hover:text-red-600"
                         title="삭제"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -358,12 +358,12 @@ export default function AdminLmsPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-base font-bold text-slate-900">
+            <h3 className="mb-4 text-base font-bold text-ys-ink">
               {editingId ? "영상 프로그램 수정" : "영상 프로그램 추가"}
             </h3>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">프로그램명 *</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">프로그램명 *</label>
                 <input
                   type="text"
                   required
@@ -375,7 +375,7 @@ export default function AdminLmsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">카테고리</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">카테고리</label>
                   <input
                     type="text"
                     value={form.category}
@@ -384,7 +384,7 @@ export default function AdminLmsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">주관 부서</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">주관 부서</label>
                   <input
                     type="text"
                     value={form.organizer}
@@ -395,7 +395,7 @@ export default function AdminLmsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">설명</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">설명</label>
                 <textarea
                   rows={3}
                   value={form.description}
@@ -406,7 +406,7 @@ export default function AdminLmsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">전달 방식</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">전달 방식</label>
                   <select
                     value={form.delivery_type}
                     onChange={(e) => setForm({ ...form, delivery_type: e.target.value })}
@@ -417,7 +417,7 @@ export default function AdminLmsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">수강 대상</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">수강 대상</label>
                   <select
                     value={form.target_audience}
                     onChange={(e) => setForm({ ...form, target_audience: e.target.value })}
@@ -432,7 +432,7 @@ export default function AdminLmsPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">이수 기준 진도율 (%)</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">이수 기준 진도율 (%)</label>
                   <input
                     type="number"
                     min={1}
@@ -443,7 +443,7 @@ export default function AdminLmsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">이수 마일리지</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">이수 마일리지</label>
                   <input
                     type="number"
                     min={0}
@@ -451,10 +451,10 @@ export default function AdminLmsPage() {
                     onChange={(e) => setForm({ ...form, completion_mileage: Number(e.target.value) })}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">유학생은 지급되지 않습니다.</p>
+                  <p className="mt-1 text-[11px] text-ys-ink-soft/70">유학생은 지급되지 않습니다.</p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">정원</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">정원</label>
                   <input
                     type="number"
                     min={0}
@@ -464,16 +464,16 @@ export default function AdminLmsPage() {
                       setForm({ ...form, max_participants: e.target.value === "" ? null : Number(e.target.value) })
                     }
                     placeholder={capacityDisabled ? "무제한" : ""}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-ys-ink-soft/70"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-ys-ink-soft/70">
                     {capacityDisabled ? "영상형은 정원 무제한" : "비워두면 무제한"}
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">핵심역량 태그</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">핵심역량 태그</label>
                 <div className="flex flex-wrap gap-2">
                   {coreComps.map((comp) => (
                     <button
@@ -489,13 +489,13 @@ export default function AdminLmsPage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-ys-ink-soft/70">
                   대시보드에서 학생의 취약 역량과 매칭해 추천할 때 사용합니다.
                 </p>
               </div>
 
               <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
+                <label className="flex items-center gap-2 text-sm text-ys-ink">
                   <input
                     type="checkbox"
                     checked={form.is_active}
@@ -504,7 +504,7 @@ export default function AdminLmsPage() {
                   />
                   운영중
                 </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
+                <label className="flex items-center gap-2 text-sm text-ys-ink">
                   <input
                     type="checkbox"
                     checked={form.registration_open}
@@ -523,14 +523,14 @@ export default function AdminLmsPage() {
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50"
                 >
                   {saving ? "저장 중..." : "저장"}
                 </button>

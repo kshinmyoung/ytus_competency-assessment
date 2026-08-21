@@ -156,8 +156,8 @@ export default function AdminDashboardPage() {
 
   if (authorized === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-500">확인 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-ys-paper">
+        <p className="text-ys-ink-soft">확인 중...</p>
       </div>
     );
   }
@@ -167,8 +167,8 @@ export default function AdminDashboardPage() {
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">통계 대시보드</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl font-bold text-ys-ink">통계 대시보드</h1>
+          <p className="mt-1 text-sm text-ys-ink-soft">
             홈페이지 방문/진단/리퍼럴/예약 통계 · {stats?.generated_at ? new Date(stats.generated_at).toLocaleString("ko-KR") : "-"}
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function AdminDashboardPage() {
           type="button"
           onClick={loadStats}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           새로고침
@@ -192,25 +192,25 @@ export default function AdminDashboardPage() {
           {/* 요약 카드 */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              icon={<Users className="h-5 w-5 text-blue-600" />}
+              icon={<Users className="h-5 w-5 text-ys-blue" />}
               title="총 방문자 (누적 고유)"
               value={stats.visits.unique_all_time.toLocaleString()}
               subtitle={`오늘 고유 ${stats.visits.unique_today.toLocaleString()}명 · 30일 고유 ${stats.visits.unique_30d.toLocaleString()}명`}
             />
             <StatCard
-              icon={<BarChart3 className="h-5 w-5 text-violet-600" />}
+              icon={<BarChart3 className="h-5 w-5 text-ys-blue" />}
               title="총 페이지뷰"
               value={stats.visits.total.toLocaleString()}
               subtitle={`오늘 ${stats.visits.today.toLocaleString()} · 7일 ${stats.visits.last_7d.toLocaleString()} · 30일 ${stats.visits.last_30d.toLocaleString()}`}
             />
             <StatCard
-              icon={<Send className="h-5 w-5 text-orange-600" />}
+              icon={<Send className="h-5 w-5 text-ys-sky" />}
               title="리퍼럴 총건수"
               value={stats.referrals.total.toLocaleString()}
               subtitle={Object.entries(stats.referrals.by_status).map(([k, v]) => `${k} ${v}`).join(" · ") || "-"}
             />
             <StatCard
-              icon={<Calendar className="h-5 w-5 text-green-600" />}
+              icon={<Calendar className="h-5 w-5 text-[#8A6212]" />}
               title="예약 총건수"
               value={stats.reservations.total.toLocaleString()}
               subtitle={Object.entries(stats.reservations.by_status).map(([k, v]) => `${k} ${v}`).join(" · ") || "-"}
@@ -219,23 +219,23 @@ export default function AdminDashboardPage() {
 
           {/* 진단 통계 */}
           <section className="mt-8">
-            <h2 className="mb-3 text-base font-semibold text-slate-800">진단 실시 건수</h2>
+            <h2 className="mb-3 text-base font-semibold text-ys-ink">진단 실시 건수</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {(["core", "learning", "calling", "major", "custom"] as const).map((k) => (
                 <div key={k} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-medium text-slate-500">{DIAGNOSIS_LABELS[k]}</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">{stats.diagnosis[k].toLocaleString()}</p>
+                  <p className="text-xs font-medium text-ys-ink-soft">{DIAGNOSIS_LABELS[k]}</p>
+                  <p className="mt-2 text-2xl font-bold text-ys-ink">{stats.diagnosis[k].toLocaleString()}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-ys-ink-soft">
               전체 진단 건수: {stats.diagnosis.total.toLocaleString()} · 총 학생 {stats.students.total.toLocaleString()}명
             </p>
           </section>
 
           {/* 최근 7일 방문 추이 */}
           <section className="mt-8">
-            <h2 className="mb-3 text-base font-semibold text-slate-800">최근 7일 방문 추이</h2>
+            <h2 className="mb-3 text-base font-semibold text-ys-ink">최근 7일 방문 추이</h2>
             <DailyBar daily={stats.visits.daily_7d} />
           </section>
 
@@ -255,21 +255,21 @@ export default function AdminDashboardPage() {
 
           {/* 데이터 내보내기 */}
           <section className="mt-8">
-            <h2 className="mb-3 text-base font-semibold text-slate-800">데이터 내보내기 (CSV / Excel)</h2>
+            <h2 className="mb-3 text-base font-semibold text-ys-ink">데이터 내보내기 (CSV / Excel)</h2>
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-ys-paper">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">데이터셋</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">설명</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">다운로드</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">데이터셋</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">설명</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">다운로드</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {(["visits", "diagnosis", "referrals", "reservations", "students"] as const).map((ds) => (
                     <tr key={ds}>
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900">{DATASET_LABELS[ds]}</td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
+                      <td className="px-4 py-3 text-sm font-medium text-ys-ink">{DATASET_LABELS[ds]}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">
                         {ds === "visits" && "홈페이지 방문 로그 전체 (경로/세션ID/시간)"}
                         {ds === "diagnosis" && "진단 결과 전체 (5종 통합, 세부 점수 포함)"}
                         {ds === "referrals" && "리퍼럴 전체 이력"}
@@ -282,7 +282,7 @@ export default function AdminDashboardPage() {
                             type="button"
                             onClick={() => handleExport(ds, "csv")}
                             disabled={exportingKey === `${ds}:csv`}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-ys-ink hover:bg-ys-paper disabled:opacity-50"
                           >
                             <Download className="h-3.5 w-3.5" />
                             CSV
@@ -315,10 +315,10 @@ function StatCard({ icon, title, value, subtitle }: { icon: React.ReactNode; tit
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2">
         {icon}
-        <p className="text-sm font-medium text-slate-600">{title}</p>
+        <p className="text-sm font-medium text-ys-ink-soft">{title}</p>
       </div>
-      <p className="mt-3 text-3xl font-bold text-slate-900">{value}</p>
-      {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+      <p className="mt-3 text-3xl font-bold text-ys-ink">{value}</p>
+      {subtitle && <p className="mt-1 text-xs text-ys-ink-soft">{subtitle}</p>}
     </div>
   );
 }
@@ -328,21 +328,21 @@ function DailyBar({ daily }: { daily: Record<string, number> }) {
   const max = Math.max(1, ...entries.map(([, v]) => v));
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-end justify-between gap-2" style={{ minHeight: 140 }}>
+      <div className="flex h-[160px] items-stretch justify-between gap-2">
         {entries.map(([date, count]) => {
           const heightPct = Math.max(4, Math.round((count / max) * 100));
           const dayLabel = date.slice(5);
           return (
             <div key={date} className="flex flex-1 flex-col items-center gap-1">
-              <div className="w-full flex flex-1 items-end">
+              <div className="flex w-full flex-1 items-end">
                 <div
-                  className="w-full rounded-t bg-blue-500 transition-all"
+                  className="w-full rounded-t bg-ys-blue transition-all"
                   style={{ height: `${heightPct}%` }}
                   title={`${date}: ${count}회`}
                 />
               </div>
-              <span className="text-[10px] text-slate-500">{dayLabel}</span>
-              <span className="text-[10px] font-medium text-slate-700">{count}</span>
+              <span className="text-[10px] text-ys-ink-soft">{dayLabel}</span>
+              <span className="text-[10px] font-medium text-ys-ink">{count}</span>
             </div>
           );
         })}
@@ -364,9 +364,9 @@ function BreakdownCard({
   const total = entries.reduce((sum, [, v]) => sum + v, 0);
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+      <h3 className="text-sm font-semibold text-ys-ink">{title}</h3>
       {entries.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">데이터가 없습니다.</p>
+        <p className="mt-3 text-sm text-ys-ink-soft">데이터가 없습니다.</p>
       ) : (
         <ul className="mt-3 space-y-2">
           {entries.map(([k, v]) => {
@@ -374,11 +374,11 @@ function BreakdownCard({
             return (
               <li key={k}>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-700">{labels[k] ?? k}</span>
-                  <span className="font-medium text-slate-900">{v.toLocaleString()} ({pct}%)</span>
+                  <span className="text-ys-ink">{labels[k] ?? k}</span>
+                  <span className="font-medium text-ys-ink">{v.toLocaleString()} ({pct}%)</span>
                 </div>
                 <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
+                  <div className="h-full rounded-full bg-ys-blue" style={{ width: `${pct}%` }} />
                 </div>
               </li>
             );

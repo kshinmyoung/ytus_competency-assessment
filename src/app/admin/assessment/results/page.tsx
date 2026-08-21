@@ -126,12 +126,12 @@ export default function AdminAssessmentResultsPage() {
   return (
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-slate-900">응답 데이터 조회</h2>
+        <h2 className="text-lg font-bold text-ys-ink">응답 데이터 조회</h2>
         <div className="flex gap-2">
-          <button type="button" onClick={downloadDiagCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <button type="button" onClick={downloadDiagCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">
             <Download className="h-4 w-4" /> 역량별 CSV
           </button>
-          <button type="button" onClick={downloadQuestionCSV} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <button type="button" onClick={downloadQuestionCSV} className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-3 py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
             <Download className="h-4 w-4" /> 문항별 CSV
           </button>
         </div>
@@ -139,23 +139,23 @@ export default function AdminAssessmentResultsPage() {
 
       {/* 탭 */}
       <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
-        <button type="button" onClick={() => setViewTab("diagnosis")} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${viewTab === "diagnosis" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>역량별 결과</button>
-        <button type="button" onClick={() => setViewTab("questions")} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${viewTab === "questions" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>문항별 결과</button>
+        <button type="button" onClick={() => setViewTab("diagnosis")} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${viewTab === "diagnosis" ? "bg-ys-blue text-white" : "text-ys-ink-soft hover:bg-slate-100"}`}>역량별 결과</button>
+        <button type="button" onClick={() => setViewTab("questions")} className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${viewTab === "questions" ? "bg-ys-blue text-white" : "text-ys-ink-soft hover:bg-slate-100"}`}>문항별 결과</button>
       </div>
 
       {/* 요약 카드 */}
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">참여 학생</p><p className="mt-1 text-2xl font-bold text-slate-900">{uniqueDiagStudents}명</p></div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-violet-600">핵심역량</p><p className="mt-1 text-2xl font-bold text-violet-600">{countByType.core}건</p></div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-blue-600">학습역량</p><p className="mt-1 text-2xl font-bold text-blue-600">{countByType.learning}건</p></div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-green-600">소명진단</p><p className="mt-1 text-2xl font-bold text-green-600">{countByType.calling}건</p></div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-ys-ink-soft">참여 학생</p><p className="mt-1 text-2xl font-bold text-ys-ink">{uniqueDiagStudents}명</p></div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-ys-blue">핵심역량</p><p className="mt-1 text-2xl font-bold text-ys-blue">{countByType.core}건</p></div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-ys-blue">학습역량</p><p className="mt-1 text-2xl font-bold text-ys-blue">{countByType.learning}건</p></div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-[#8A6212]">소명진단</p><p className="mt-1 text-2xl font-bold text-[#8A6212]">{countByType.calling}건</p></div>
       </div>
 
       {/* === 역량별 결과 === */}
       {viewTab === "diagnosis" && (
         <>
           <div className="mb-4 flex flex-wrap items-center gap-3">
-            <Filter className="h-4 w-4 text-slate-400" />
+            <Filter className="h-4 w-4 text-ys-ink-soft/70" />
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
               <option value="all">전체</option><option value="core">핵심역량</option><option value="learning">학습역량</option><option value="calling">소명진단</option>
             </select>
@@ -164,27 +164,27 @@ export default function AdminAssessmentResultsPage() {
 
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+              <thead className="bg-ys-paper">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학번</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">이름</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">유형</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">총점</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">세부</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">일시</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">학번</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">이름</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">유형</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">총점</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">세부</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">일시</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {filteredDiag.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">데이터 없음</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-ys-ink-soft">데이터 없음</td></tr>
                 ) : filteredDiag.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm text-slate-900">{r.student_id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{nameMap[r.student_id] ?? "-"}</td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.diagnosis_type === "core" ? "bg-violet-50 text-violet-700" : r.diagnosis_type === "learning" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}`}>{DIAGNOSIS_LABELS[r.diagnosis_type] ?? r.diagnosis_type}</span></td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{r.total_score}점</td>
-                    <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{r.scores && Object.entries(r.scores).map(([k, v]) => <span key={k} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{SCORE_LABELS[r.diagnosis_type]?.[k] ?? k}:{v}</span>)}</div></td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{formatDateTimeKorea(r.created_at)}</td>
+                  <tr key={r.id} className="hover:bg-ys-paper">
+                    <td className="px-4 py-3 text-sm text-ys-ink">{r.student_id}</td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{nameMap[r.student_id] ?? "-"}</td>
+                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.diagnosis_type === "core" ? "bg-ys-blue/10 text-ys-blue" : r.diagnosis_type === "learning" ? "bg-ys-blue/10 text-ys-blue" : "bg-ys-gold/15 text-[#8A6212]"}`}>{DIAGNOSIS_LABELS[r.diagnosis_type] ?? r.diagnosis_type}</span></td>
+                    <td className="px-4 py-3 text-sm font-medium text-ys-ink">{r.total_score}점</td>
+                    <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{r.scores && Object.entries(r.scores).map(([k, v]) => <span key={k} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-ys-ink-soft">{SCORE_LABELS[r.diagnosis_type]?.[k] ?? k}:{v}</span>)}</div></td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{formatDateTimeKorea(r.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -198,9 +198,9 @@ export default function AdminAssessmentResultsPage() {
         <>
           {/* 문항별 전체 평균 */}
           <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-base font-semibold text-slate-800">문항별 평균 점수</h3>
+            <h3 className="mb-4 text-base font-semibold text-ys-ink">문항별 평균 점수</h3>
             {questions.filter((q) => questionAvg[q.id]).length === 0 ? (
-              <p className="text-sm text-slate-500">문항별 응답 데이터가 없습니다.</p>
+              <p className="text-sm text-ys-ink-soft">문항별 응답 데이터가 없습니다.</p>
             ) : (
               <div className="max-h-[400px] overflow-auto space-y-2">
                 {questions.filter((q) => questionAvg[q.id]).map((q) => {
@@ -209,14 +209,14 @@ export default function AdminAssessmentResultsPage() {
                   const pct = Math.round((mean / 5) * 100);
                   return (
                     <div key={q.id} className="flex items-center gap-3">
-                      <span className="w-8 text-right text-xs text-slate-400">{q.question_order}</span>
+                      <span className="w-8 text-right text-xs text-ys-ink-soft/70">{q.question_order}</span>
                       <div className="flex-1">
-                        <p className="text-xs text-slate-800 truncate">{q.question_text}</p>
+                        <p className="text-xs text-ys-ink truncate">{q.question_text}</p>
                         <div className="mt-0.5 flex items-center gap-2">
                           <div className="h-2 flex-1 rounded-full bg-slate-100">
-                            <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+                            <div className="h-full rounded-full bg-ys-blue" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="w-16 text-right text-xs font-medium text-slate-700">{mean}점 ({avg.count}명)</span>
+                          <span className="w-16 text-right text-xs font-medium text-ys-ink">{mean}점 ({avg.count}명)</span>
                         </div>
                       </div>
                     </div>
@@ -228,7 +228,7 @@ export default function AdminAssessmentResultsPage() {
 
           {/* 학생별 문항별 상세 */}
           <div className="mb-6">
-            <h3 className="mb-3 text-base font-semibold text-slate-800">학생별 문항별 점수</h3>
+            <h3 className="mb-3 text-base font-semibold text-ys-ink">학생별 문항별 점수</h3>
             <div className="mb-3 flex items-center gap-3">
               <select value={selectedStudent ?? ""} onChange={(e) => setSelectedStudent(e.target.value || null)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
                 <option value="">학생 선택...</option>
@@ -241,13 +241,13 @@ export default function AdminAssessmentResultsPage() {
             {selectedStudent && studentResponses.length > 0 && (
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
                 <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-ys-paper">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">순서</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">진단유형</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">문항</th>
-                      <th className="px-3 py-2 text-center text-xs font-semibold text-slate-600">점수</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">평균</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">순서</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">진단유형</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">문항</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-ys-ink-soft">점수</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">평균</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -256,15 +256,15 @@ export default function AdminAssessmentResultsPage() {
                       const mean = avg ? Math.round((avg.total / avg.count) * 10) / 10 : 0;
                       const diff = r.answer_value - mean;
                       return (
-                        <tr key={r.id} className="hover:bg-slate-50">
-                          <td className="px-3 py-2 text-xs text-slate-400">{r.question_order}</td>
-                          <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{r.competency_type}</span></td>
-                          <td className="max-w-xs truncate px-3 py-2 text-xs text-slate-800">{r.question_text}</td>
+                        <tr key={r.id} className="hover:bg-ys-paper">
+                          <td className="px-3 py-2 text-xs text-ys-ink-soft/70">{r.question_order}</td>
+                          <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-ys-ink-soft">{r.competency_type}</span></td>
+                          <td className="max-w-xs truncate px-3 py-2 text-xs text-ys-ink">{r.question_text}</td>
                           <td className="px-3 py-2 text-center">
-                            <span className={`rounded-full px-2.5 py-1 text-sm font-bold ${r.answer_value >= 4 ? "bg-green-50 text-green-700" : r.answer_value >= 3 ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}>{r.answer_value}</span>
+                            <span className={`rounded-full px-2.5 py-1 text-sm font-bold ${r.answer_value >= 4 ? "bg-ys-gold/15 text-[#8A6212]" : r.answer_value >= 3 ? "bg-ys-blue/10 text-ys-blue" : "bg-red-50 text-red-700"}`}>{r.answer_value}</span>
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-500">
-                            {mean} <span className={diff >= 0 ? "text-green-600" : "text-red-600"}>({diff >= 0 ? "+" : ""}{diff.toFixed(1)})</span>
+                          <td className="px-3 py-2 text-xs text-ys-ink-soft">
+                            {mean} <span className={diff >= 0 ? "text-[#8A6212]" : "text-red-600"}>({diff >= 0 ? "+" : ""}{diff.toFixed(1)})</span>
                           </td>
                         </tr>
                       );
@@ -275,7 +275,7 @@ export default function AdminAssessmentResultsPage() {
             )}
 
             {selectedStudent && studentResponses.length === 0 && (
-              <p className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">이 학생의 문항별 응답이 없습니다.</p>
+              <p className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-ys-ink-soft">이 학생의 문항별 응답이 없습니다.</p>
             )}
           </div>
         </>

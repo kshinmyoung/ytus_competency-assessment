@@ -176,13 +176,13 @@ export default function AdminLmsContentsPage() {
   };
 
   if (allowed === null) {
-    return <AdminLayout><p className="text-sm text-slate-500">확인 중...</p></AdminLayout>;
+    return <AdminLayout><p className="text-sm text-ys-ink-soft">확인 중...</p></AdminLayout>;
   }
   if (!allowed) {
     return (
       <AdminLayout>
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow">
-          <p className="text-sm text-slate-600">영상 LMS 관리 권한이 없습니다.</p>
+          <p className="text-sm text-ys-ink-soft">영상 LMS 관리 권한이 없습니다.</p>
         </div>
       </AdminLayout>
     );
@@ -197,21 +197,21 @@ export default function AdminLmsContentsPage() {
       <Script src="https://embed.cloudflarestream.com/embed/sdk.latest.js" strategy="lazyOnload" />
 
       <div className="mb-6">
-        <Link href="/admin/lms" className="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+        <Link href="/admin/lms" className="mb-3 inline-flex items-center gap-1.5 text-sm text-ys-ink-soft hover:text-ys-ink">
           <ArrowLeft className="h-4 w-4" />
           영상 LMS 관리
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{programName || "프로그램"} — 콘텐츠</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-lg font-bold text-ys-ink">{programName || "프로그램"} — 콘텐츠</h2>
+            <p className="mt-1 text-xs text-ys-ink-soft">
               필수 {requiredCount}개 · 전체 {contents.length}개 · 총 {formatDuration(totalSec)} · 이수 기준 진도 {minProgress}%
             </p>
           </div>
           <button
             type="button"
             onClick={() => { setEditingId(null); setForm({ ...emptyForm, contentOrder: contents.length + 1 }); setError(""); setNotice(""); setShowForm(true); }}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
           >
             <Plus className="h-4 w-4" />
             콘텐츠 추가
@@ -219,38 +219,38 @@ export default function AdminLmsContentsPage() {
         </div>
       </div>
 
-      {notice && <p className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">{notice}</p>}
+      {notice && <p className="mb-4 rounded-lg bg-ys-blue/10 px-3 py-2 text-xs text-ys-blue">{notice}</p>}
       {previewError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{previewError}</p>}
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
         <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+          <thead className="bg-ys-paper">
             <tr>
-              <th className="w-20 px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">순서</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">제목</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">영상 UID</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">길이</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">언어</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">필수</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-600">관리</th>
+              <th className="w-20 px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">순서</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">제목</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">영상 UID</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">길이</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">언어</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">필수</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">불러오는 중...</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-ys-ink-soft">불러오는 중...</td></tr>
             ) : contents.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">등록된 콘텐츠가 없습니다.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-ys-ink-soft">등록된 콘텐츠가 없습니다.</td></tr>
             ) : (
               contents.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm text-slate-600">{item.content_order}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.title}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{item.source_ref}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{formatDuration(item.duration_sec)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{item.language}</td>
+                <tr key={item.id} className="hover:bg-ys-paper">
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">{item.content_order}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-ys-ink">{item.title}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-ys-ink-soft">{item.source_ref}</td>
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">{formatDuration(item.duration_sec)}</td>
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">{item.language}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      item.is_required ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"
+                      item.is_required ? "bg-ys-blue/10 text-ys-blue" : "bg-slate-100 text-ys-ink-soft"
                     }`}>
                       {item.is_required ? "필수" : "선택"}
                     </span>
@@ -260,15 +260,15 @@ export default function AdminLmsContentsPage() {
                       <button
                         type="button"
                         onClick={() => openPreview(item)}
-                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-ys-ink hover:bg-ys-paper"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         미리보기
                       </button>
-                      <button type="button" onClick={() => handleEdit(item)} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" title="수정">
+                      <button type="button" onClick={() => handleEdit(item)} className="rounded-lg p-1.5 text-ys-ink-soft hover:bg-slate-100 hover:text-ys-ink" title="수정">
                         <Edit3 className="h-4 w-4" />
                       </button>
-                      <button type="button" onClick={() => handleDelete(item)} className="rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600" title="삭제">
+                      <button type="button" onClick={() => handleDelete(item)} className="rounded-lg p-1.5 text-ys-ink-soft hover:bg-red-50 hover:text-red-600" title="삭제">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -283,10 +283,10 @@ export default function AdminLmsContentsPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-base font-bold text-slate-900">{editingId ? "콘텐츠 수정" : "콘텐츠 추가"}</h3>
+            <h3 className="mb-4 text-base font-bold text-ys-ink">{editingId ? "콘텐츠 수정" : "콘텐츠 추가"}</h3>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">제목 *</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">제목 *</label>
                 <input
                   type="text" required value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -295,20 +295,20 @@ export default function AdminLmsContentsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">Cloudflare Stream 영상 UID *</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">Cloudflare Stream 영상 UID *</label>
                 <input
                   type="text" required value={form.sourceRef}
                   onChange={(e) => setForm({ ...form, sourceRef: e.target.value })}
                   placeholder="예: 26c2f463075e106aceea61e8c16859c3"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
                 />
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-ys-ink-soft/70">
                   저장 시 영상 길이를 Cloudflare 에서 자동으로 조회합니다. 수기 입력란은 제공하지 않습니다.
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">설명</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">설명</label>
                 <textarea
                   rows={2} value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -318,7 +318,7 @@ export default function AdminLmsContentsPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">순서</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">순서</label>
                   <input
                     type="number" min={0} value={form.contentOrder}
                     onChange={(e) => setForm({ ...form, contentOrder: Number(e.target.value) })}
@@ -326,7 +326,7 @@ export default function AdminLmsContentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">언어</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">언어</label>
                   <select
                     value={form.language}
                     onChange={(e) => setForm({ ...form, language: e.target.value })}
@@ -339,7 +339,7 @@ export default function AdminLmsContentsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">언어 묶음 키</label>
+                  <label className="mb-1 block text-xs font-medium text-ys-ink-soft">언어 묶음 키</label>
                   <input
                     type="text" value={form.contentGroup}
                     onChange={(e) => setForm({ ...form, contentGroup: e.target.value })}
@@ -350,7 +350,7 @@ export default function AdminLmsContentsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">첨부 자료 URL</label>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">첨부 자료 URL</label>
                 <input
                   type="url" value={form.attachmentUrl}
                   onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
@@ -358,7 +358,7 @@ export default function AdminLmsContentsPage() {
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-slate-700">
+              <label className="flex items-center gap-2 text-sm text-ys-ink">
                 <input
                   type="checkbox" checked={form.isRequired}
                   onChange={(e) => setForm({ ...form, isRequired: e.target.checked })}
@@ -373,13 +373,13 @@ export default function AdminLmsContentsPage() {
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
                 >
                   취소
                 </button>
                 <button
                   type="submit" disabled={saving}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50"
                 >
                   {saving ? "영상 정보 조회 중..." : "저장"}
                 </button>
@@ -394,15 +394,15 @@ export default function AdminLmsContentsPage() {
           <div className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900">{preview.content.title}</h3>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <h3 className="text-base font-bold text-ys-ink">{preview.content.title}</h3>
+                <p className="mt-0.5 text-xs text-ys-ink-soft">
                   {formatDuration(preview.content.duration_sec)} · {preview.content.source_ref}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setPreview(null)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-ys-ink hover:bg-ys-paper"
               >
                 닫기
               </button>
@@ -417,12 +417,12 @@ export default function AdminLmsContentsPage() {
               />
             </div>
             {!preview.allowedOrigins.some((o) => hostname.startsWith(o.split(":")[0])) && (
-              <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+              <p className="mt-3 rounded-lg bg-ys-gold/10 px-3 py-2 text-[11px] text-[#8A6212]">
                 이 도메인({hostname})은 영상 허용 도메인이 아니라 재생이 차단됩니다.
                 미리보기는 배포된 주소({preview.allowedOrigins.join(", ") || "미설정"})에서 확인해 주세요.
               </p>
             )}
-            <p className="mt-3 text-[11px] text-slate-400">
+            <p className="mt-3 text-[11px] text-ys-ink-soft/70">
               등록 직후에는 보안 설정 전파(최대 1분)로 재생이 일시적으로 실패할 수 있습니다. 잠시 후 다시 시도해 주세요.
             </p>
           </div>

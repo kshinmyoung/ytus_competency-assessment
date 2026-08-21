@@ -21,7 +21,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForStudentId } from "@/lib/supabase";
 
 const ADMIN_TABS = [
   { label: "통계 대시보드", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -68,7 +68,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     (async () => {
-      const studentId = await getCurrentStudentId();
+      // 세션 복원 전에 읽으면 정상 관리자도 홈으로 튕긴다. 복원될 때까지 기다린다.
+      const studentId = await waitForStudentId();
       if (!studentId?.trim()) {
         router.replace("/");
         return;
@@ -109,8 +110,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (authorized === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-500">확인 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-ys-paper">
+        <p className="text-sm text-ys-ink-soft">확인 중...</p>
       </div>
     );
   }
@@ -118,17 +119,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white shadow-sm">
+    <div className="min-h-screen bg-ys-paper">
+      {/*
+        관리자 화면은 학생 화면과 같은 팔레트를 쓰되 나침반·히어로 같은 장식은 넣지 않는다.
+        여기는 정체성을 보여주는 자리가 아니라 하루 종일 들여다보는 작업 도구다.
+        브랜드는 네이비 헤더 한 줄로만 드러낸다.
+      */}
+      <header className="bg-ys-navy">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/admin" className="flex items-center gap-3">
-            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto" />
-            <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-white">{ROLE_LABELS[userRole] ?? userRole}</span>
+            {/* 어두운 배경이라 원본 파란 로고를 흰색 단색으로 바꾼다 */}
+            <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto brightness-0 invert" />
+            <span className="rounded-full border border-ys-gold/40 px-2.5 py-0.5 text-xs font-medium text-ys-gold">
+              {ROLE_LABELS[userRole] ?? userRole}
+            </span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ys-mist transition hover:text-white"
             >
               <LayoutDashboard className="h-4 w-4" />
               대시보드
@@ -136,7 +145,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900"
+              className="flex items-center gap-1.5 rounded-lg border border-ys-navy-line px-3 py-2 text-sm font-medium text-ys-mist transition hover:border-ys-gold hover:text-ys-gold"
             >
               <LogOut className="h-4 w-4" />
               로그아웃
@@ -161,8 +170,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   href={tab.href}
                   className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
                     isActive
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-ys-blue/10 text-ys-blue"
+                      : "text-ys-ink-soft hover:bg-ys-paper hover:text-ys-ink"
                   }`}
                 >
                   <Icon className="h-4 w-4" />

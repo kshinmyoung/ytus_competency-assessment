@@ -16,8 +16,8 @@ const ROLE_LABELS: Record<string, string> = {
   professor: "교수", department_head: "학과장",
 };
 const CATEGORY_COLORS: Record<string, string> = {
-  "일반": "bg-slate-100 text-slate-700", "학업": "bg-blue-50 text-blue-700", "진로": "bg-indigo-50 text-indigo-700",
-  "심리": "bg-violet-50 text-violet-700", "신앙": "bg-amber-50 text-amber-700", "생활": "bg-green-50 text-green-700", "기타": "bg-slate-100 text-slate-600",
+  "일반": "bg-slate-100 text-ys-ink", "학업": "bg-ys-blue/10 text-ys-blue", "진로": "bg-ys-blue/10 text-ys-blue",
+  "심리": "bg-ys-blue/10 text-ys-blue", "신앙": "bg-ys-gold/10 text-[#8A6212]", "생활": "bg-ys-gold/15 text-[#8A6212]", "기타": "bg-slate-100 text-ys-ink-soft",
 };
 
 export default function AdminCounselingPage() {
@@ -74,30 +74,30 @@ export default function AdminCounselingPage() {
   return (
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-slate-900">상담기록 관리</h2>
-        <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        <h2 className="text-lg font-bold text-ys-ink">상담기록 관리</h2>
+        <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">
           <Download className="h-4 w-4" /> CSV 내보내기
         </button>
       </div>
 
       {/* 통계 */}
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">전체 상담기록</p><p className="mt-1 text-xl font-bold text-slate-900">{stats.total}건</p></div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-ys-ink-soft">전체 상담기록</p><p className="mt-1 text-xl font-bold text-ys-ink">{stats.total}건</p></div>
         <div className="rounded-xl border border-red-200 bg-red-50 p-4"><p className="text-xs text-red-700">후속 상담 필요</p><p className="mt-1 text-xl font-bold text-red-700">{stats.followUp}건</p></div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4"><p className="text-xs text-blue-700">이번 달</p><p className="mt-1 text-xl font-bold text-blue-700">{stats.thisMonth}건</p></div>
+        <div className="rounded-xl border border-ys-blue/30 bg-ys-blue/10 p-4"><p className="text-xs text-ys-blue">이번 달</p><p className="mt-1 text-xl font-bold text-ys-blue">{stats.thisMonth}건</p></div>
       </div>
 
       {/* 필터 */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/70" />
           <input type="text" placeholder="학번, 이름, 상담자 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-56 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm" />
         </div>
         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
           <option value="all">전체 분류</option>
           {Object.keys(CATEGORY_COLORS).map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        <label className="flex items-center gap-1.5 text-sm text-slate-700">
+        <label className="flex items-center gap-1.5 text-sm text-ys-ink">
           <input type="checkbox" checked={filterFollowUp} onChange={(e) => setFilterFollowUp(e.target.checked)} className="rounded" />
           후속 상담만
         </label>
@@ -105,7 +105,7 @@ export default function AdminCounselingPage() {
 
       {/* 목록 */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"><p className="text-sm text-slate-500">상담기록이 없습니다.</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"><p className="text-sm text-ys-ink-soft">상담기록이 없습니다.</p></div>
       ) : (
         <div className="space-y-3">
           {filtered.map((r) => (
@@ -116,11 +116,11 @@ export default function AdminCounselingPage() {
                     <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-white">{r.student_id} {nameMap[r.student_id] ?? ""}</span>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[r.category] ?? ""}`}>{r.category}</span>
                     {r.follow_up_needed && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
-                    {r.is_private && <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] text-slate-500">비공개</span>}
+                    {r.is_private && <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] text-ys-ink-soft">비공개</span>}
                   </div>
-                  <p className="mt-2 text-sm text-slate-800">{r.content}</p>
-                  {r.action_plan && <p className="mt-1 text-xs text-blue-700">조치: {r.action_plan}</p>}
-                  <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
+                  <p className="mt-2 text-sm text-ys-ink">{r.content}</p>
+                  {r.action_plan && <p className="mt-1 text-xs text-ys-blue">조치: {r.action_plan}</p>}
+                  <div className="mt-2 flex items-center gap-3 text-[10px] text-ys-ink-soft/70">
                     <span>상담일: {r.counseling_date}</span>
                     <span>상담자: {nameMap[r.counselor_id] ?? r.counselor_id} ({ROLE_LABELS[r.counselor_role] ?? r.counselor_role})</span>
                     {r.follow_up_date && <span>후속: {r.follow_up_date}</span>}

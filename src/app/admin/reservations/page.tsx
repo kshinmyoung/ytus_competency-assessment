@@ -22,9 +22,9 @@ type Reservation = {
 
 const CENTERS = [
   { key: "all", name: "전체" },
-  { key: "ctl", name: "교수학습지원센터", color: "#10B981", bg: "bg-green-50", text: "text-green-700" },
-  { key: "career_center", name: "취창업진로지원센터", color: "#3B82F6", bg: "bg-blue-50", text: "text-blue-700" },
-  { key: "counseling_center", name: "학생생활상담센터", color: "#8B5CF6", bg: "bg-violet-50", text: "text-violet-700" },
+  { key: "ctl", name: "교수학습지원센터", color: "#10B981", bg: "bg-ys-gold/10", text: "text-[#8A6212]" },
+  { key: "career_center", name: "취창업진로지원센터", color: "#3B82F6", bg: "bg-ys-blue/10", text: "text-ys-blue" },
+  { key: "counseling_center", name: "학생생활상담센터", color: "#8B5CF6", bg: "bg-ys-blue/10", text: "text-ys-blue" },
 ];
 
 const STATUS_OPTIONS = ["신청", "확인", "완료", "취소"];
@@ -247,10 +247,10 @@ export default function AdminReservationsPage() {
   return (
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-slate-900">예약 관리</h2>
+        <h2 className="text-lg font-bold text-ys-ink">예약 관리</h2>
         <div className="flex gap-2">
           <button type="button" onClick={() => { setShowAddReservation(true); setAddResForm({ student_id: "", reservation_date: "", time_slot: "", purpose: "" }); setAddResSearch(""); }}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
             <Plus className="h-4 w-4" /> 예약 추가
           </button>
           <button type="button" onClick={() => { setShowAddExtra(true); setAddExtraForm({ student_id: "", extracurricular_id: 0 }); setAddExtraSearch(""); }}
@@ -258,10 +258,10 @@ export default function AdminReservationsPage() {
             <Plus className="h-4 w-4" /> 비교과 대리신청
           </button>
           <div className="flex rounded-lg border border-slate-300 bg-white">
-            <button type="button" onClick={() => setViewMode("list")} className={`px-3 py-2 text-xs font-medium ${viewMode === "list" ? "bg-slate-800 text-white rounded-l-lg" : "text-slate-600"}`}>목록</button>
-            <button type="button" onClick={() => setViewMode("calendar")} className={`px-3 py-2 text-xs font-medium ${viewMode === "calendar" ? "bg-slate-800 text-white rounded-r-lg" : "text-slate-600"}`}>캘린더</button>
+            <button type="button" onClick={() => setViewMode("list")} className={`px-3 py-2 text-xs font-medium ${viewMode === "list" ? "bg-slate-800 text-white rounded-l-lg" : "text-ys-ink-soft"}`}>목록</button>
+            <button type="button" onClick={() => setViewMode("calendar")} className={`px-3 py-2 text-xs font-medium ${viewMode === "calendar" ? "bg-slate-800 text-white rounded-r-lg" : "text-ys-ink-soft"}`}>캘린더</button>
           </div>
-          <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <button type="button" onClick={downloadCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">
             <Download className="h-4 w-4" /> CSV
           </button>
         </div>
@@ -270,33 +270,33 @@ export default function AdminReservationsPage() {
       {/* 센터명 표시 */}
       {filterCenter !== "all" && (
         <div className="mb-4">
-          <h3 className="text-base font-semibold text-slate-800">{CENTERS.find((c) => c.key === filterCenter)?.name} 예약 현황</h3>
+          <h3 className="text-base font-semibold text-ys-ink">{CENTERS.find((c) => c.key === filterCenter)?.name} 예약 현황</h3>
         </div>
       )}
 
       {/* 통계 */}
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-slate-300" onClick={() => setFilterStatus("all")}>
-          <p className="text-xs text-slate-500">{filterCenter === "all" ? "전체" : CENTERS.find((c) => c.key === filterCenter)?.name} 예약</p>
-          <p className="mt-1 text-xl font-bold text-slate-900">{stats.total}건</p>
+          <p className="text-xs text-ys-ink-soft">{filterCenter === "all" ? "전체" : CENTERS.find((c) => c.key === filterCenter)?.name} 예약</p>
+          <p className="mt-1 text-xl font-bold text-ys-ink">{stats.total}건</p>
         </div>
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-yellow-300" onClick={() => setFilterStatus("신청")}>
-          <p className="text-xs text-yellow-700">대기 중 (신청)</p>
-          <p className="mt-1 text-xl font-bold text-yellow-700">{stats.pending}건</p>
+        <div className="rounded-xl border border-yellow-200 bg-ys-blue/10 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-yellow-300" onClick={() => setFilterStatus("신청")}>
+          <p className="text-xs text-ys-blue">대기 중 (신청)</p>
+          <p className="mt-1 text-xl font-bold text-ys-blue">{stats.pending}건</p>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300" onClick={() => { setFilterStatus("all"); setFilterDate(new Date().toISOString().split("T")[0]); }}>
-          <p className="text-xs text-blue-700">오늘 예약</p>
-          <p className="mt-1 text-xl font-bold text-blue-700">{stats.today}건</p>
+        <div className="rounded-xl border border-ys-blue/30 bg-ys-blue/10 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300" onClick={() => { setFilterStatus("all"); setFilterDate(new Date().toISOString().split("T")[0]); }}>
+          <p className="text-xs text-ys-blue">오늘 예약</p>
+          <p className="mt-1 text-xl font-bold text-ys-blue">{stats.today}건</p>
         </div>
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-green-300" onClick={() => setFilterStatus("완료")}>
-          <p className="text-xs text-green-700">완료</p>
-          <p className="mt-1 text-xl font-bold text-green-700">{stats.completed}건</p>
+        <div className="rounded-xl border border-ys-gold/30 bg-ys-gold/10 p-4 shadow-sm cursor-pointer hover:ring-2 hover:ring-green-300" onClick={() => setFilterStatus("완료")}>
+          <p className="text-xs text-[#8A6212]">완료</p>
+          <p className="mt-1 text-xl font-bold text-[#8A6212]">{stats.completed}건</p>
         </div>
       </div>
 
       {/* 필터 */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Filter className="h-4 w-4 text-slate-400" />
+        <Filter className="h-4 w-4 text-ys-ink-soft/70" />
         <select value={filterCenter} onChange={(e) => setFilterCenter(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
           {CENTERS.map((c) => <option key={c.key} value={c.key}>{c.name}</option>)}
         </select>
@@ -305,7 +305,7 @@ export default function AdminReservationsPage() {
           {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
-        {filterDate && <button type="button" onClick={() => setFilterDate("")} className="text-xs text-slate-500 hover:text-slate-700">날짜 초기화</button>}
+        {filterDate && <button type="button" onClick={() => setFilterDate("")} className="text-xs text-ys-ink-soft hover:text-ys-ink">날짜 초기화</button>}
       </div>
 
       {/* 캘린더 뷰 */}
@@ -316,19 +316,19 @@ export default function AdminReservationsPage() {
               const [y, m] = calendarMonth.split("-").map(Number);
               const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
               setCalendarMonth(prev);
-            }} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">◀ 이전</button>
-            <h3 className="text-base font-semibold text-slate-900">{calendarData.year}년 {calendarData.month}월</h3>
+            }} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-ys-ink-soft hover:bg-ys-paper">◀ 이전</button>
+            <h3 className="text-base font-semibold text-ys-ink">{calendarData.year}년 {calendarData.month}월</h3>
             <button type="button" onClick={() => {
               const [y, m] = calendarMonth.split("-").map(Number);
               const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
               setCalendarMonth(next);
-            }} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">다음 ▶</button>
+            }} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-ys-ink-soft hover:bg-ys-paper">다음 ▶</button>
           </div>
 
           {/* 요일 헤더 */}
           <div className="grid grid-cols-7 gap-1 mb-1">
             {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
-              <div key={d} className={`text-center text-xs font-semibold py-1 ${d === "일" ? "text-red-500" : d === "토" ? "text-blue-500" : "text-slate-500"}`}>{d}</div>
+              <div key={d} className={`text-center text-xs font-semibold py-1 ${d === "일" ? "text-red-500" : d === "토" ? "text-ys-blue" : "text-ys-ink-soft"}`}>{d}</div>
             ))}
           </div>
 
@@ -342,9 +342,9 @@ export default function AdminReservationsPage() {
               const dayOfWeek = new Date(day.date).getDay();
               return (
                 <div key={day.date}
-                  className={`min-h-[70px] rounded-lg border p-1.5 text-xs transition cursor-pointer hover:bg-slate-50 ${isToday ? "border-blue-500 bg-blue-50" : "border-slate-200"}`}
+                  className={`min-h-[70px] rounded-lg border p-1.5 text-xs transition cursor-pointer hover:bg-ys-paper ${isToday ? "border-ys-blue bg-ys-blue/10" : "border-slate-200"}`}
                   onClick={() => { setFilterDate(day.date); setViewMode("list"); }}>
-                  <div className={`font-medium ${dayOfWeek === 0 ? "text-red-500" : dayOfWeek === 6 ? "text-blue-500" : "text-slate-700"}`}>{day.day}</div>
+                  <div className={`font-medium ${dayOfWeek === 0 ? "text-red-500" : dayOfWeek === 6 ? "text-ys-blue" : "text-ys-ink"}`}>{day.day}</div>
                   {hasRes && (
                     <div className="mt-0.5 space-y-0.5">
                       {day.reservations.slice(0, 3).map((r, i) => {
@@ -352,15 +352,15 @@ export default function AdminReservationsPage() {
                         return (
                           <div key={i} className={`truncate rounded px-1 py-0.5 text-[9px] ${
                             r.status === "신청" ? "bg-yellow-100 text-yellow-800" :
-                            r.status === "확인" ? "bg-blue-100 text-blue-800" :
-                            "bg-green-100 text-green-800"
+                            r.status === "확인" ? "bg-ys-blue/15 text-ys-blue" :
+                            "bg-green-100 text-[#8A6212]"
                           }`}>
                             {r.time_slot.split("-")[0]} {nameMap[r.student_id]?.substring(0, 3) ?? r.student_id}
                           </div>
                         );
                       })}
                       {day.reservations.length > 3 && (
-                        <div className="text-[9px] text-slate-400">+{day.reservations.length - 3}건</div>
+                        <div className="text-[9px] text-ys-ink-soft/70">+{day.reservations.length - 3}건</div>
                       )}
                     </div>
                   )}
@@ -370,9 +370,9 @@ export default function AdminReservationsPage() {
           </div>
 
           {/* 범례 */}
-          <div className="mt-3 flex gap-4 text-[10px] text-slate-500">
+          <div className="mt-3 flex gap-4 text-[10px] text-ys-ink-soft">
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-yellow-200" /> 신청</span>
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-blue-200" /> 확인</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-ys-blue/25" /> 확인</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-green-200" /> 완료</span>
           </div>
         </div>
@@ -381,48 +381,48 @@ export default function AdminReservationsPage() {
       {/* 예약 목록 */}
       {viewMode === "list" && <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
         <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+          <thead className="bg-ys-paper">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">센터</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학번 / 이름</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학과</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">날짜 / 시간</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">목적</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">상태</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-600">관리</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">센터</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">학번 / 이름</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">학과</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">날짜 / 시간</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">목적</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">상태</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">예약이 없습니다.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-ys-ink-soft">예약이 없습니다.</td></tr>
             ) : (
               filtered.map((r) => {
                 const center = centerLabel(r.center_type);
                 return (
-                  <tr key={r.id} className={`hover:bg-slate-50 ${r.status === "취소" ? "opacity-40" : ""}`}>
+                  <tr key={r.id} className={`hover:bg-ys-paper ${r.status === "취소" ? "opacity-40" : ""}`}>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${center?.bg ?? ""} ${center?.text ?? ""}`}>{center?.name ?? r.center_type}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-slate-900">{r.student_id}</p>
-                      <p className="text-xs text-slate-500">{nameMap[r.student_id] ?? "-"}</p>
+                      <p className="text-sm font-medium text-ys-ink">{r.student_id}</p>
+                      <p className="text-xs text-ys-ink-soft">{nameMap[r.student_id] ?? "-"}</p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{deptMap[r.student_id] ?? "-"}</td>
+                    <td className="px-4 py-3 text-xs text-ys-ink-soft">{deptMap[r.student_id] ?? "-"}</td>
                     <td className="px-4 py-3">
-                      <p className="flex items-center gap-1 text-sm text-slate-900"><Calendar className="h-3 w-3 text-slate-400" />{r.reservation_date}</p>
-                      <p className="flex items-center gap-1 text-xs text-slate-500"><Clock className="h-3 w-3 text-slate-400" />{r.time_slot}</p>
+                      <p className="flex items-center gap-1 text-sm text-ys-ink"><Calendar className="h-3 w-3 text-ys-ink-soft/70" />{r.reservation_date}</p>
+                      <p className="flex items-center gap-1 text-xs text-ys-ink-soft"><Clock className="h-3 w-3 text-ys-ink-soft/70" />{r.time_slot}</p>
                     </td>
                     <td className="max-w-[150px] px-4 py-3">
-                      <p className="truncate text-xs text-slate-600">{r.purpose ?? "-"}</p>
-                      {r.admin_note && <p className="mt-0.5 truncate rounded bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">{r.admin_note}</p>}
+                      <p className="truncate text-xs text-ys-ink-soft">{r.purpose ?? "-"}</p>
+                      {r.admin_note && <p className="mt-0.5 truncate rounded bg-ys-blue/10 px-1.5 py-0.5 text-[10px] text-ys-blue">{r.admin_note}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <select value={r.status} onChange={(e) => handleStatusChange(r.id, e.target.value)}
                         className={`rounded-lg border px-2 py-1 text-xs font-medium ${
-                          r.status === "신청" ? "border-yellow-300 bg-yellow-50 text-yellow-700" :
-                          r.status === "확인" ? "border-blue-300 bg-blue-50 text-blue-700" :
-                          r.status === "완료" ? "border-green-300 bg-green-50 text-green-700" :
-                          "border-slate-200 bg-slate-50 text-slate-400"
+                          r.status === "신청" ? "border-yellow-300 bg-ys-blue/10 text-ys-blue" :
+                          r.status === "확인" ? "border-ys-blue/40 bg-ys-blue/10 text-ys-blue" :
+                          r.status === "완료" ? "border-green-300 bg-ys-gold/15 text-[#8A6212]" :
+                          "border-slate-200 bg-ys-paper text-ys-ink-soft/70"
                         }`}>
                         {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -433,7 +433,7 @@ export default function AdminReservationsPage() {
                         <FileText className="inline h-4 w-4" />
                       </button>
                       <button type="button" onClick={() => { setEditingNote(r.id); setNoteText(r.admin_note ?? ""); }}
-                        className="mr-1 text-slate-400 hover:text-blue-600" title="메모">
+                        className="mr-1 text-ys-ink-soft/70 hover:text-ys-blue" title="메모">
                         <MessageSquare className="inline h-4 w-4" />
                       </button>
                       <button type="button" onClick={() => handleDeleteReservation(r.id)}
@@ -453,13 +453,13 @@ export default function AdminReservationsPage() {
       {editingNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditingNote(null)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-900">관리자 메모</h3>
-            <p className="mt-1 text-xs text-slate-500">학생에게 표시되는 메모입니다.</p>
+            <h3 className="text-lg font-semibold text-ys-ink">관리자 메모</h3>
+            <p className="mt-1 text-xs text-ys-ink-soft">학생에게 표시되는 메모입니다.</p>
             <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={4} placeholder="상담 내용, 준비사항 등"
               className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             <div className="mt-4 flex gap-2">
-              <button type="button" onClick={() => setEditingNote(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
-              <button type="button" onClick={() => handleSaveNote(editingNote)} className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700">저장</button>
+              <button type="button" onClick={() => setEditingNote(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">취소</button>
+              <button type="button" onClick={() => handleSaveNote(editingNote)} className="flex-1 rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90">저장</button>
             </div>
           </div>
         </div>
@@ -469,25 +469,25 @@ export default function AdminReservationsPage() {
       {showAddReservation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddReservation(false)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-900">예약 직접 추가</h3>
-            <p className="mt-1 text-xs text-slate-500">현장 방문 학생의 예약을 담당자가 직접 입력합니다.</p>
+            <h3 className="text-lg font-semibold text-ys-ink">예약 직접 추가</h3>
+            <p className="mt-1 text-xs text-ys-ink-soft">현장 방문 학생의 예약을 담당자가 직접 입력합니다.</p>
             <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700">학생 검색 *</label>
+                <label className="block text-xs font-medium text-ys-ink">학생 검색 *</label>
                 <input type="text" placeholder="학번 입력 (예: 22403020)" value={addResForm.student_id}
                   onChange={(e) => setAddResForm({ ...addResForm, student_id: e.target.value.trim() })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 {addResForm.student_id && nameMap[addResForm.student_id] && (
-                  <p className="mt-1 text-xs text-green-600">학생: {nameMap[addResForm.student_id]}</p>
+                  <p className="mt-1 text-xs text-[#8A6212]">학생: {nameMap[addResForm.student_id]}</p>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700">날짜 *</label>
+                <label className="block text-xs font-medium text-ys-ink">날짜 *</label>
                 <input type="date" value={addResForm.reservation_date} onChange={(e) => setAddResForm({ ...addResForm, reservation_date: e.target.value })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700">시간대 *</label>
+                <label className="block text-xs font-medium text-ys-ink">시간대 *</label>
                 <select value={addResForm.time_slot} onChange={(e) => setAddResForm({ ...addResForm, time_slot: e.target.value })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                   <option value="">선택</option>
@@ -495,14 +495,14 @@ export default function AdminReservationsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700">상담 목적</label>
+                <label className="block text-xs font-medium text-ys-ink">상담 목적</label>
                 <input type="text" value={addResForm.purpose} onChange={(e) => setAddResForm({ ...addResForm, purpose: e.target.value })}
                   placeholder="현장 방문" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddReservation(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="button" onClick={() => setShowAddReservation(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">취소</button>
                 <button type="button" onClick={handleAddReservation} disabled={addSaving || !addResForm.student_id || !addResForm.reservation_date || !addResForm.time_slot}
-                  className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                  className="flex-1 rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50">
                   {addSaving ? "등록 중..." : "예약 등록"}
                 </button>
               </div>
@@ -515,20 +515,20 @@ export default function AdminReservationsPage() {
       {showAddExtra && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddExtra(false)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-900">비교과 대리 신청</h3>
-            <p className="mt-1 text-xs text-slate-500">현장 방문 학생의 비교과 프로그램을 담당자가 대리 신청합니다.</p>
+            <h3 className="text-lg font-semibold text-ys-ink">비교과 대리 신청</h3>
+            <p className="mt-1 text-xs text-ys-ink-soft">현장 방문 학생의 비교과 프로그램을 담당자가 대리 신청합니다.</p>
             <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-700">학생 검색 *</label>
+                <label className="block text-xs font-medium text-ys-ink">학생 검색 *</label>
                 <input type="text" placeholder="학번 입력 (예: 22403020)" value={addExtraForm.student_id}
                   onChange={(e) => setAddExtraForm({ ...addExtraForm, student_id: e.target.value.trim() })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 {addExtraForm.student_id && nameMap[addExtraForm.student_id] && (
-                  <p className="mt-1 text-xs text-green-600">학생: {nameMap[addExtraForm.student_id]}</p>
+                  <p className="mt-1 text-xs text-[#8A6212]">학생: {nameMap[addExtraForm.student_id]}</p>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700">비교과 프로그램 *</label>
+                <label className="block text-xs font-medium text-ys-ink">비교과 프로그램 *</label>
                 <select value={addExtraForm.extracurricular_id} onChange={(e) => setAddExtraForm({ ...addExtraForm, extracurricular_id: Number(e.target.value) })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                   <option value={0}>선택</option>
@@ -536,7 +536,7 @@ export default function AdminReservationsPage() {
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddExtra(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="button" onClick={() => setShowAddExtra(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">취소</button>
                 <button type="button" onClick={handleAddExtraForStudent} disabled={addSaving || !addExtraForm.student_id || !addExtraForm.extracurricular_id}
                   className="flex-1 rounded-lg bg-green-600 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
                   {addSaving ? "신청 중..." : "대리 신청"}
@@ -551,42 +551,42 @@ export default function AdminReservationsPage() {
       {showCounselForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCounselForm(null)}>
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-slate-900">상담기록 작성</h3>
-            <p className="mt-1 text-sm text-slate-500">학생: {showCounselForm} - {nameMap[showCounselForm] ?? ""}</p>
+            <h3 className="text-lg font-semibold text-ys-ink">상담기록 작성</h3>
+            <p className="mt-1 text-sm text-ys-ink-soft">학생: {showCounselForm} - {nameMap[showCounselForm] ?? ""}</p>
             <div className="mt-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700">분류</label>
+                  <label className="block text-xs font-medium text-ys-ink">분류</label>
                   <select value={counselForm.category} onChange={(e) => setCounselForm({ ...counselForm, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     {COUNSEL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="flex items-end gap-3">
-                  <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                  <label className="flex items-center gap-1.5 text-xs text-ys-ink">
                     <input type="checkbox" checked={counselForm.follow_up_needed} onChange={(e) => setCounselForm({ ...counselForm, follow_up_needed: e.target.checked })} className="rounded" />
                     후속 상담 필요
                   </label>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700">상담 내용 *</label>
+                <label className="block text-xs font-medium text-ys-ink">상담 내용 *</label>
                 <textarea value={counselForm.content} onChange={(e) => setCounselForm({ ...counselForm, content: e.target.value })} rows={4}
                   placeholder="상담 내용을 기록하세요." className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700">조치 계획 (선택)</label>
+                <label className="block text-xs font-medium text-ys-ink">조치 계획 (선택)</label>
                 <input type="text" value={counselForm.action_plan} onChange={(e) => setCounselForm({ ...counselForm, action_plan: e.target.value })}
                   placeholder="향후 조치 사항" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               </div>
               {counselForm.follow_up_needed && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-700">후속 상담일</label>
+                  <label className="block text-xs font-medium text-ys-ink">후속 상담일</label>
                   <input type="date" value={counselForm.follow_up_date} onChange={(e) => setCounselForm({ ...counselForm, follow_up_date: e.target.value })}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
               )}
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowCounselForm(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                <button type="button" onClick={() => setShowCounselForm(null)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">취소</button>
                 <button type="button" onClick={handleSaveCounsel} disabled={counselSaving || !counselForm.content.trim()}
                   className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
                   {counselSaving ? "저장 중..." : "상담기록 저장"}

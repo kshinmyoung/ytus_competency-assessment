@@ -524,8 +524,8 @@ export default function AdminPage() {
 
   if (authorized === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-500">확인 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-ys-paper">
+        <p className="text-ys-ink-soft">확인 중...</p>
       </div>
     );
   }
@@ -563,24 +563,24 @@ export default function AdminPage() {
       />
       {printData && (
         <div className="print-area hidden">
-          <h1 className="mb-4 text-2xl font-bold text-gray-900">진단 결과 보고서</h1>
-          <p className="mb-4 text-lg text-gray-700">{printData.title}</p>
+          <h1 className="mb-4 text-2xl font-bold text-ys-ink">진단 결과 보고서</h1>
+          <p className="mb-4 text-lg text-ys-ink">{printData.title}</p>
           <table className="min-w-full divide-y divide-gray-200">
             <thead>
-              <tr className="divide-x divide-gray-200 bg-gray-50">
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">학번</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">이름</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">총점</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">진단시간</th>
+              <tr className="divide-x divide-gray-200 bg-ys-paper">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-ys-ink">학번</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-ys-ink">이름</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-ys-ink">총점</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-ys-ink">진단시간</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {printData.rows.map((r, i) => (
                 <tr key={i} className="divide-x divide-gray-200">
-                  <td className="px-4 py-2 text-sm text-gray-900">{r.student_id}</td>
-                  <td className="px-4 py-2 text-sm text-gray-900">{r.name}</td>
-                  <td className="px-4 py-2 text-sm text-gray-900">{r.total_score}</td>
-                  <td className="px-4 py-2 text-sm text-gray-900">{r.created_at}</td>
+                  <td className="px-4 py-2 text-sm text-ys-ink">{r.student_id}</td>
+                  <td className="px-4 py-2 text-sm text-ys-ink">{r.name}</td>
+                  <td className="px-4 py-2 text-sm text-ys-ink">{r.total_score}</td>
+                  <td className="px-4 py-2 text-sm text-ys-ink">{r.created_at}</td>
                 </tr>
               ))}
             </tbody>
@@ -589,25 +589,25 @@ export default function AdminPage() {
       )}
       {printIndividual && (
         <div className="print-individual hidden font-sans">
-          <h1 className="mb-2 text-xl font-bold text-gray-900">개인 진단 결과 보고서</h1>
-          <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-700">
+          <h1 className="mb-2 text-xl font-bold text-ys-ink">개인 진단 결과 보고서</h1>
+          <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-ys-ink">
             <p><strong>학생 성명:</strong> {printIndividual.name}</p>
             <p><strong>학번:</strong> {printIndividual.student_id}</p>
             <p><strong>진단명:</strong> {printIndividual.diagnosisName}</p>
             <p><strong>총점:</strong> {printIndividual.total_score}점</p>
           </div>
-          <table className="min-w-full border-collapse border border-gray-200">
+          <table className="min-w-full border-collapse border border-slate-200">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-4 py-2 text-left text-sm font-semibold text-gray-700">역량명</th>
-                <th className="border border-gray-200 px-4 py-2 text-right text-sm font-semibold text-gray-700">점수</th>
+              <tr className="bg-ys-paper">
+                <th className="border border-slate-200 px-4 py-2 text-left text-sm font-semibold text-ys-ink">역량명</th>
+                <th className="border border-slate-200 px-4 py-2 text-right text-sm font-semibold text-ys-ink">점수</th>
               </tr>
             </thead>
             <tbody>
               {printIndividual.scoreRows.map((row, i) => (
                 <tr key={i}>
-                  <td className="border border-gray-200 px-4 py-2 text-sm text-gray-900">{row.label}</td>
-                  <td className="border border-gray-200 px-4 py-2 text-right text-sm text-gray-900">{row.score}</td>
+                  <td className="border border-slate-200 px-4 py-2 text-sm text-ys-ink">{row.label}</td>
+                  <td className="border border-slate-200 px-4 py-2 text-right text-sm text-ys-ink">{row.score}</td>
                 </tr>
               ))}
             </tbody>
@@ -617,22 +617,22 @@ export default function AdminPage() {
       {/* 학생 관리 */}
         <section className="mb-10 no-print">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-base font-semibold text-slate-800">학생 관리</h2>
+            <h2 className="text-base font-semibold text-ys-ink">학생 관리</h2>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/60" />
                 <input
                   type="text"
                   placeholder="학번 또는 이름 검색..."
                   value={searchStudent}
                   onChange={(e) => setSearchStudent(e.target.value)}
-                  className="w-56 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm"
+                  className="w-56 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm"
                 />
               </div>
               <select
                 value={filterDiagnosis}
                 onChange={(e) => setFilterDiagnosis(e.target.value as typeof filterDiagnosis)}
-                className="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm"
+                className="rounded-lg border border-slate-300 py-2 pl-3 pr-8 text-sm"
               >
                 <option value="all">전체 학생</option>
                 <option value="core">핵심역량 완료</option>
@@ -643,7 +643,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => setShowAddStudent(true)}
-                className="no-print flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="no-print flex items-center gap-2 rounded-lg bg-ys-blue px-3 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
               >
                 <UserPlus className="h-4 w-4" />
                 학생 추가
@@ -652,7 +652,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => setShowCsvUpload(true)}
                 disabled={isBulkProcessing}
-                className="no-print flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="no-print flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper disabled:opacity-50"
               >
                 <Upload className="h-4 w-4" />
                 CSV 업로드
@@ -661,38 +661,38 @@ export default function AdminPage() {
           </div>
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-ys-paper">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">학번</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">이름</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">역할</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">연락처</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">이메일</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">진단현황</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">관리</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">학번</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">이름</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">역할</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">연락처</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">이메일</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">진단현황</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {filteredStudents.map((s) => (
-                  <tr key={s.student_id} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-900">{s.student_id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{s.name ?? "-"}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{s.role ?? "-"}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{s.phone ?? "-"}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{s.email ?? "-"}</td>
+                  <tr key={s.student_id} className="hover:bg-ys-paper">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-ys-ink">{s.student_id}</td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.name ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.role ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.phone ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.email ?? "-"}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        {studentDiagnosisMap[s.student_id]?.has("core") && <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">핵심</span>}
-                        {studentDiagnosisMap[s.student_id]?.has("learning") && <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">학습</span>}
-                        {studentDiagnosisMap[s.student_id]?.has("calling") && <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-700">소명</span>}
-                        {!studentDiagnosisMap[s.student_id] && <span className="text-[10px] text-slate-400">미진단</span>}
+                        {studentDiagnosisMap[s.student_id]?.has("core") && <span className="rounded-full bg-ys-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-ys-blue">핵심</span>}
+                        {studentDiagnosisMap[s.student_id]?.has("learning") && <span className="rounded-full bg-ys-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-ys-blue">학습</span>}
+                        {studentDiagnosisMap[s.student_id]?.has("calling") && <span className="rounded-full bg-ys-gold/10 px-1.5 py-0.5 text-[10px] font-medium text-[#8A6212]">소명</span>}
+                        {!studentDiagnosisMap[s.student_id] && <span className="text-[10px] text-ys-ink-soft/70">미진단</span>}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       <button
                         type="button"
                         onClick={() => handleEditStudent(s)}
-                        className="no-print mr-3 text-sm font-medium text-blue-600 hover:text-blue-800"
+                        className="no-print mr-3 text-sm font-medium text-ys-blue hover:text-ys-blue"
                       >
                         수정
                       </button>
@@ -713,7 +713,7 @@ export default function AdminPage() {
 
         {/* 진단 결과 탭 */}
         <section>
-          <h2 className="no-print mb-4 text-base font-semibold text-slate-800">진단 결과 조회</h2>
+          <h2 className="no-print mb-4 text-base font-semibold text-ys-ink">진단 결과 조회</h2>
           <div className="no-print mb-4 flex flex-wrap items-center gap-2">
             <div className="flex rounded-lg border border-slate-200 bg-white p-1">
               {(["core", "learning", "calling"] as const).map((tab) => (
@@ -722,7 +722,7 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => setActiveTab(tab)}
                   className={`rounded-md px-4 py-2 text-sm font-medium ${
-                    activeTab === tab ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                    activeTab === tab ? "bg-ys-blue text-white" : "text-ys-ink-soft hover:bg-slate-100"
                   }`}
                 >
                   {DIAGNOSIS_LABELS[tab]}
@@ -730,19 +730,19 @@ export default function AdminPage() {
               ))}
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/60" />
               <input
                 type="text"
                 placeholder="학번 또는 이름 검색..."
                 value={searchResult}
                 onChange={(e) => setSearchResult(e.target.value)}
-                className="w-56 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm"
+                className="w-56 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm"
               />
             </div>
             <button
               type="button"
               onClick={downloadPDF}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="flex items-center gap-2 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
             >
               <FileDown className="h-4 w-4" />
               PDF로 내보내기
@@ -758,36 +758,36 @@ export default function AdminPage() {
           </div>
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-ys-paper">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">학번</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">이름</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">총점</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">진단시간</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">상세</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">학번</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">이름</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">총점</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">진단시간</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">상세</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {filteredResults.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-ys-ink-soft">
                       {searchResult.trim() ? "검색 결과가 없습니다." : "진단 결과가 없습니다."}
                     </td>
                   </tr>
                 ) : (
                   filteredResults.map((r) => (
-                    <tr key={r.id ?? r.student_id + (r.created_at ?? "")} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-900">{r.student_id}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{nameMap[r.student_id] ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-900">{r.total_score}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                    <tr key={r.id ?? r.student_id + (r.created_at ?? "")} className="hover:bg-ys-paper">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-ys-ink">{r.student_id}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{nameMap[r.student_id] ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink">{r.total_score}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">
                         {formatDateTimeKorea(r.created_at)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         <button
                           type="button"
                           onClick={() => setDetailRow(r)}
-                          className="no-print text-sm font-medium text-blue-600 hover:text-blue-800"
+                          className="no-print text-sm font-medium text-ys-blue hover:text-ys-blue"
                         >
                           상세보기
                         </button>
@@ -804,20 +804,20 @@ export default function AdminPage() {
       {editingStudent && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">학생/사용자 수정</h3>
-            <p className="mt-1 text-sm text-slate-500">학번: {editingStudent.student_id}</p>
+            <h3 className="text-lg font-semibold text-ys-ink">학생/사용자 수정</h3>
+            <p className="mt-1 text-sm text-ys-ink-soft">학번: {editingStudent.student_id}</p>
             <form onSubmit={handleSaveEdit} className="mt-4 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">이름</label>
+                  <label className="block text-sm font-medium text-ys-ink">이름</label>
                   <input type="text" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">비밀번호 (변경 시에만)</label>
+                  <label className="block text-sm font-medium text-ys-ink">비밀번호 (변경 시에만)</label>
                   <input type="password" value={editForm.password} onChange={(e) => setEditForm((f) => ({ ...f, password: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="비워두면 기존 유지" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">역할</label>
+                  <label className="block text-sm font-medium text-ys-ink">역할</label>
                   <select value={editForm.role} onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="student">학생</option>
                     <option value="admin">관리자</option>
@@ -829,22 +829,22 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">학생 유형</label>
+                  <label className="block text-sm font-medium text-ys-ink">학생 유형</label>
                   <select value={editForm.student_type} onChange={(e) => setEditForm((f) => ({ ...f, student_type: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="domestic">내국인</option>
                     <option value="international">유학생</option>
                   </select>
-                  <p className="mt-1 text-xs text-slate-400">유학생은 마일리지가 지급되지 않고 대시보드에 이수 실적이 표시됩니다.</p>
+                  <p className="mt-1 text-xs text-ys-ink-soft/70">유학생은 마일리지가 지급되지 않고 대시보드에 이수 실적이 표시됩니다.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">학과</label>
+                  <label className="block text-sm font-medium text-ys-ink">학과</label>
                   <select value={editForm.department_id} onChange={(e) => setEditForm((f) => ({ ...f, department_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">선택 안함</option>
                     {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">학년</label>
+                  <label className="block text-sm font-medium text-ys-ink">학년</label>
                   <select value={editForm.grade_year} onChange={(e) => setEditForm((f) => ({ ...f, grade_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">선택 안함</option>
                     <option value="1">1학년</option>
@@ -854,15 +854,15 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">입학년도</label>
+                  <label className="block text-sm font-medium text-ys-ink">입학년도</label>
                   <input type="number" value={editForm.admission_year} onChange={(e) => setEditForm((f) => ({ ...f, admission_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">연락처</label>
+                  <label className="block text-sm font-medium text-ys-ink">연락처</label>
                   <input type="text" value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">이메일</label>
+                  <label className="block text-sm font-medium text-ys-ink">이메일</label>
                   <input type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
               </div>
@@ -870,14 +870,14 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setEditingStudent(null)}
-                  className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50"
                 >
                   {saving ? "저장 중..." : "저장"}
                 </button>
@@ -891,23 +891,23 @@ export default function AdminPage() {
       {showAddStudent && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">학생/사용자 추가</h3>
+            <h3 className="text-lg font-semibold text-ys-ink">학생/사용자 추가</h3>
             <form onSubmit={handleAddStudent} className="mt-4 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">학번 (ID) *</label>
+                  <label className="block text-sm font-medium text-ys-ink">학번 (ID) *</label>
                   <input type="text" value={newStudent.student_id} onChange={(e) => setNewStudent((s) => ({ ...s, student_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">이름</label>
+                  <label className="block text-sm font-medium text-ys-ink">이름</label>
                   <input type="text" value={newStudent.name} onChange={(e) => setNewStudent((s) => ({ ...s, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">비밀번호 *</label>
+                  <label className="block text-sm font-medium text-ys-ink">비밀번호 *</label>
                   <input type="password" value={newStudent.password} onChange={(e) => setNewStudent((s) => ({ ...s, password: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">역할</label>
+                  <label className="block text-sm font-medium text-ys-ink">역할</label>
                   <select value={newStudent.role} onChange={(e) => setNewStudent((s) => ({ ...s, role: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="student">학생</option>
                     <option value="admin">관리자</option>
@@ -919,14 +919,14 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">학과</label>
+                  <label className="block text-sm font-medium text-ys-ink">학과</label>
                   <select value={newStudent.department_id} onChange={(e) => setNewStudent((s) => ({ ...s, department_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">선택 안함</option>
                     {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">학년</label>
+                  <label className="block text-sm font-medium text-ys-ink">학년</label>
                   <select value={newStudent.grade_year} onChange={(e) => setNewStudent((s) => ({ ...s, grade_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">선택 안함</option>
                     <option value="1">1학년</option>
@@ -936,21 +936,21 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">입학년도</label>
+                  <label className="block text-sm font-medium text-ys-ink">입학년도</label>
                   <input type="number" placeholder="예: 2026" value={newStudent.admission_year} onChange={(e) => setNewStudent((s) => ({ ...s, admission_year: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">연락처</label>
+                  <label className="block text-sm font-medium text-ys-ink">연락처</label>
                   <input type="text" placeholder="010-0000-0000" value={newStudent.phone} onChange={(e) => setNewStudent((s) => ({ ...s, phone: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700">이메일</label>
+                  <label className="block text-sm font-medium text-ys-ink">이메일</label>
                   <input type="email" placeholder="example@email.com" value={newStudent.email} onChange={(e) => setNewStudent((s) => ({ ...s, email: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddStudent(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">취소</button>
-                <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">{saving ? "등록 중..." : "등록"}</button>
+                <button type="button" onClick={() => setShowAddStudent(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">취소</button>
+                <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50">{saving ? "등록 중..." : "등록"}</button>
               </div>
             </form>
           </div>
@@ -973,15 +973,15 @@ export default function AdminPage() {
             />
             {!bulkProgress ? (
               <>
-                <h3 className="text-lg font-semibold text-slate-900">CSV 일괄 등록</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <h3 className="text-lg font-semibold text-ys-ink">CSV 일괄 등록</h3>
+                <p className="mt-1 text-sm text-ys-ink-soft">
                   CSV 헤더: student_id, password, name, role, department_id, grade_year, admission_year, phone, email (필수: student_id, password)
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button
                     type="button"
                     onClick={() => csvInputRef.current?.click()}
-                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    className="flex items-center gap-2 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
                   >
                     <Upload className="h-4 w-4" />
                     파일 선택
@@ -989,7 +989,7 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setShowCsvUpload(false)}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
                   >
                     취소
                   </button>
@@ -997,9 +997,9 @@ export default function AdminPage() {
               </>
             ) : bulkProgress.done ? (
               <>
-                <h3 className="text-lg font-semibold text-slate-900">일괄 등록 결과</h3>
-                <p className="mt-3 text-sm text-slate-700">
-                  성공: <strong className="text-green-600">{bulkProgress.success}명</strong>, 실패:{" "}
+                <h3 className="text-lg font-semibold text-ys-ink">일괄 등록 결과</h3>
+                <p className="mt-3 text-sm text-ys-ink">
+                  성공: <strong className="text-[#8A6212]">{bulkProgress.success}명</strong>, 실패:{" "}
                   <strong className="text-red-600">{bulkProgress.failed}명</strong>
                 </p>
                 {bulkProgress.failedIds.length > 0 && (
@@ -1016,24 +1016,24 @@ export default function AdminPage() {
                     setBulkProgress(null);
                     setShowCsvUpload(false);
                   }}
-                  className="mt-4 w-full rounded-lg bg-slate-200 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
+                  className="mt-4 w-full rounded-lg bg-slate-200 py-2 text-sm font-medium text-ys-ink hover:bg-slate-300"
                 >
                   닫기
                 </button>
               </>
             ) : (
               <>
-                <h3 className="text-lg font-semibold text-slate-900">일괄 등록 중</h3>
-                <p className="mt-2 text-sm text-slate-600">
+                <h3 className="text-lg font-semibold text-ys-ink">일괄 등록 중</h3>
+                <p className="mt-2 text-sm text-ys-ink-soft">
                   {bulkProgress.total}명 중 {bulkProgress.current}명 등록 중...
                 </p>
                 <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                    className="h-full rounded-full bg-ys-blue transition-all duration-300"
                     style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-ys-ink-soft">
                   성공 {bulkProgress.success}명, 실패 {bulkProgress.failed}명
                 </p>
               </>
@@ -1052,30 +1052,30 @@ export default function AdminPage() {
             className="detail-modal-content max-h-[80vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl font-sans"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-slate-900">세부 역량 점수</h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <h3 className="text-lg font-semibold text-ys-ink">세부 역량 점수</h3>
+            <p className="mt-1 text-sm text-ys-ink-soft">
               학번: {detailRow.student_id} · 총점: {detailRow.total_score}
             </p>
             <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <table className="detail-score-table min-w-full border-collapse font-sans text-slate-900">
+              <table className="detail-score-table min-w-full border-collapse font-sans text-ys-ink">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">역량명</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-700">점수</th>
+                  <tr className="border-b border-slate-200 bg-ys-paper">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-ys-ink">역량명</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-ys-ink">점수</th>
                   </tr>
                 </thead>
                 <tbody>
                   {getScoreRows(detailRow.diagnosis_type, detailRow.scores).length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="px-4 py-4 text-center text-sm text-slate-500">
+                      <td colSpan={2} className="px-4 py-4 text-center text-sm text-ys-ink-soft">
                         저장된 세부 점수 없음
                       </td>
                     </tr>
                   ) : (
                     getScoreRows(detailRow.diagnosis_type, detailRow.scores).map((row, i) => (
-                      <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
-                        <td className="px-4 py-3 text-sm text-slate-900">{row.label}</td>
-                        <td className="px-4 py-3 text-right text-sm font-medium text-slate-900">{row.score}</td>
+                      <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-ys-paper/50">
+                        <td className="px-4 py-3 text-sm text-ys-ink">{row.label}</td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-ys-ink">{row.score}</td>
                       </tr>
                     ))
                   )}
@@ -1086,14 +1086,14 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={printIndividualReport}
-                className="no-print flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+                className="no-print flex-1 rounded-lg bg-ys-blue py-2.5 text-sm font-medium text-white hover:bg-ys-blue/90"
               >
                 이 결과만 프린트
               </button>
               <button
                 type="button"
                 onClick={() => setDetailRow(null)}
-                className="no-print flex-1 rounded-lg bg-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-300"
+                className="no-print flex-1 rounded-lg bg-slate-200 py-2.5 text-sm font-medium text-ys-ink hover:bg-slate-300"
               >
                 닫기
               </button>
@@ -1110,39 +1110,39 @@ export default function AdminPage() {
             className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-slate-900">최저점 학생 조회</h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <h3 className="text-lg font-semibold text-ys-ink">최저점 학생 조회</h3>
+            <p className="mt-1 text-sm text-ys-ink-soft">
               {DIAGNOSIS_LABELS[activeTab]} · 하위 20% ({lowScoreResults.length}명)
             </p>
-            <div className="mt-4 overflow-hidden rounded-xl border border-gray-200">
+            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-ys-paper">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">학번</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">이름</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">총점</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">진단시간</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">학번</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">이름</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">총점</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ys-ink-soft">진단시간</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {lowScoreResults.map((r, i) => (
                     <tr key={`${r.student_id}-${r.created_at}-${i}`}>
-                      <td className="px-4 py-3 text-sm text-slate-900">{r.student_id}</td>
-                      <td className="px-4 py-3 text-sm text-slate-900">{nameMap[r.student_id] ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-900">{r.total_score}</td>
-                      <td className="px-4 py-3 text-sm text-slate-500">{formatDateTimeKorea(r.created_at)}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink">{r.student_id}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink">{nameMap[r.student_id] ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink">{r.total_score}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{formatDateTimeKorea(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="mt-4 rounded-lg bg-ys-gold/10 p-3 text-sm text-[#8A6212]">
               위 학생들은 집중 상담 및 <strong>[Boost]</strong> 프로그램 참여 권고 대상입니다.
             </p>
             <button
               type="button"
               onClick={() => setShowLowScore(false)}
-              className="mt-4 w-full rounded-lg bg-slate-200 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
+              className="mt-4 w-full rounded-lg bg-slate-200 py-2 text-sm font-medium text-ys-ink hover:bg-slate-300"
             >
               닫기
             </button>

@@ -333,8 +333,8 @@ export default function AdminImportPage() {
   return (
     <AdminLayout>
       <div className="mb-6">
-        <h2 className="text-lg font-bold text-slate-900">통합 일괄 등록</h2>
-        <p className="mt-1 text-sm text-slate-600">학생, 교과목, 비교과, 수강배정, 멘토링을 CSV로 한곳에서 등록합니다.</p>
+        <h2 className="text-lg font-bold text-ys-ink">통합 일괄 등록</h2>
+        <p className="mt-1 text-sm text-ys-ink-soft">학생, 교과목, 비교과, 수강배정, 멘토링을 CSV로 한곳에서 등록합니다.</p>
       </div>
 
       {/* 탭 */}
@@ -346,8 +346,8 @@ export default function AdminImportPage() {
             onClick={() => { setActiveTab(tab.key); setResult(null); }}
             className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition ${
               activeTab === tab.key
-                ? (tab.key === "graduate" ? "bg-red-600 text-white" : "bg-blue-600 text-white")
-                : (tab.key === "graduate" ? "text-red-600 hover:bg-red-50" : "text-slate-600 hover:bg-slate-100")
+                ? (tab.key === "graduate" ? "bg-red-600 text-white" : "bg-ys-blue text-white")
+                : (tab.key === "graduate" ? "text-red-600 hover:bg-red-50" : "text-ys-ink-soft hover:bg-slate-100")
             }`}
           >
             {tab.label}
@@ -357,18 +357,18 @@ export default function AdminImportPage() {
 
       {/* 현재 탭 내용 */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-900">{currentTab.label} 일괄 등록</h3>
-        <p className="mt-1 text-sm text-slate-600">{currentTab.description}</p>
+        <h3 className="text-base font-semibold text-ys-ink">{currentTab.label} 일괄 등록</h3>
+        <p className="mt-1 text-sm text-ys-ink-soft">{currentTab.description}</p>
 
         {/* 헤더 정보 */}
-        <div className="mt-4 rounded-lg bg-slate-50 p-4">
-          <p className="text-xs font-medium text-slate-500">CSV 헤더 (필드)</p>
-          <p className="mt-1 font-mono text-sm text-slate-800">{currentTab.headers}</p>
+        <div className="mt-4 rounded-lg bg-ys-paper p-4">
+          <p className="text-xs font-medium text-ys-ink-soft">CSV 헤더 (필드)</p>
+          <p className="mt-1 font-mono text-sm text-ys-ink">{currentTab.headers}</p>
         </div>
 
         {/* 예시 */}
         <div className="mt-3 rounded-lg bg-slate-900 p-4">
-          <p className="mb-2 text-xs font-medium text-slate-400">예시</p>
+          <p className="mb-2 text-xs font-medium text-ys-ink-soft/70">예시</p>
           <pre className="overflow-x-auto text-xs text-green-400 whitespace-pre">{currentTab.example}</pre>
         </div>
 
@@ -380,7 +380,7 @@ export default function AdminImportPage() {
             onClick={() => fileRef.current?.click()}
             disabled={processing}
             className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${
-              activeTab === "graduate" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
+              activeTab === "graduate" ? "bg-red-600 hover:bg-red-700" : "bg-ys-blue hover:bg-ys-blue/90"
             }`}
           >
             <Upload className="h-4 w-4" />
@@ -389,7 +389,7 @@ export default function AdminImportPage() {
           <button
             type="button"
             onClick={downloadTemplate}
-            className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-ys-ink hover:bg-ys-paper"
           >
             <Download className="h-4 w-4" /> 템플릿 다운로드
           </button>
@@ -397,11 +397,11 @@ export default function AdminImportPage() {
 
         {/* 결과 */}
         {result && (
-          <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="mt-5 rounded-lg border border-slate-200 bg-ys-paper p-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-sm font-medium text-green-700">성공: {result.success}건</span>
+                <CheckCircle className="h-5 w-5 text-ys-gold" />
+                <span className="text-sm font-medium text-[#8A6212]">성공: {result.success}건</span>
               </div>
               {result.failed > 0 && (
                 <div className="flex items-center gap-2">
@@ -422,9 +422,9 @@ export default function AdminImportPage() {
       </div>
 
       {/* 안내 */}
-      <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
-        <h4 className="text-sm font-semibold text-blue-800">등록 순서 가이드</h4>
-        <ol className="mt-2 space-y-1 text-sm text-blue-700">
+      <div className="mt-6 rounded-xl border border-ys-blue/20 bg-ys-blue/10 p-5">
+        <h4 className="text-sm font-semibold text-ys-blue">등록 순서 가이드</h4>
+        <ol className="mt-2 space-y-1 text-sm text-ys-blue">
           <li>1. <strong>학생/사용자</strong> 등록 (학생, 교수, 센터 계정)</li>
           <li>2. <strong>교과목</strong> 등록</li>
           <li>3. <strong>비교과</strong> 프로그램 등록</li>
@@ -432,7 +432,7 @@ export default function AdminImportPage() {
           <li>5. <strong>비교과 배정</strong> (학생 ↔ 비교과 연결)</li>
           <li>6. <strong>멘토링 배정</strong> (교수 ↔ 학생 연결)</li>
         </ol>
-        <p className="mt-2 text-xs text-blue-600">department_id: 1=신학과, 2=기독교교육학과, 3=상담심리학과, 4=사회복지학과, 5=국제언어다문화학과</p>
+        <p className="mt-2 text-xs text-ys-blue">department_id: 1=신학과, 2=기독교교육학과, 3=상담심리학과, 4=사회복지학과, 5=국제언어다문화학과</p>
       </div>
     </AdminLayout>
   );

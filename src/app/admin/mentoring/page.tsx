@@ -148,13 +148,13 @@ export default function AdminMentoringPage() {
     <AdminLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">멘토링 그룹 관리</h2>
-          <p className="mt-1 text-sm text-slate-600">교수 또는 학과장에게 학생 그룹을 배정합니다.</p>
+          <h2 className="text-lg font-bold text-ys-ink">멘토링 그룹 관리</h2>
+          <p className="mt-1 text-sm text-ys-ink-soft">교수 또는 학과장에게 학생 그룹을 배정합니다.</p>
         </div>
         <button
           type="button"
           onClick={() => { setCsvResult(null); setShowCsvUpload(true); }}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
         >
           <Upload className="h-4 w-4" /> CSV 일괄 배정
         </button>
@@ -162,7 +162,7 @@ export default function AdminMentoringPage() {
 
       {/* 멘토 선택 */}
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <label className="block text-sm font-medium text-slate-700">멘토 선택</label>
+        <label className="block text-sm font-medium text-ys-ink">멘토 선택</label>
         <select
           value={selectedMentor}
           onChange={(e) => setSelectedMentor(e.target.value)}
@@ -177,7 +177,7 @@ export default function AdminMentoringPage() {
           ))}
         </select>
         {mentors.length === 0 && (
-          <p className="mt-2 text-xs text-amber-600">교수 또는 학과장 역할이 부여된 계정이 없습니다. 학생 관리에서 역할을 변경해주세요.</p>
+          <p className="mt-2 text-xs text-[#8A6212]">교수 또는 학과장 역할이 부여된 계정이 없습니다. 학생 관리에서 역할을 변경해주세요.</p>
         )}
       </div>
 
@@ -186,29 +186,29 @@ export default function AdminMentoringPage() {
           {/* 현재 그룹 */}
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ys-ink">
                 <Users className="h-4 w-4" />
                 배정된 학생 ({mentorGroups.length}명)
               </h3>
             </div>
             {mentorGroups.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-slate-500">배정된 학생이 없습니다.</p>
+              <p className="px-5 py-8 text-center text-sm text-ys-ink-soft">배정된 학생이 없습니다.</p>
             ) : (
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-ys-paper">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">학번</th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">이름</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">관리</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-ys-ink-soft">학번</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-ys-ink-soft">이름</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-ys-ink-soft">관리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {mentorGroups.map((g) => {
                     const s = studentMap[g.student_id];
                     return (
-                      <tr key={g.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-2 text-sm text-slate-900">{g.student_id}</td>
-                        <td className="px-4 py-2 text-sm text-slate-600">{s?.name ?? "-"}</td>
+                      <tr key={g.id} className="hover:bg-ys-paper">
+                        <td className="px-4 py-2 text-sm text-ys-ink">{g.student_id}</td>
+                        <td className="px-4 py-2 text-sm text-ys-ink-soft">{s?.name ?? "-"}</td>
                         <td className="px-4 py-2 text-right">
                           <button type="button" onClick={() => handleRemoveStudent(g.id)} className="text-red-500 hover:text-red-700">
                             <Trash2 className="inline h-4 w-4" />
@@ -225,9 +225,9 @@ export default function AdminMentoringPage() {
           {/* 학생 추가 */}
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h3 className="text-sm font-semibold text-slate-800">학생 추가</h3>
+              <h3 className="text-sm font-semibold text-ys-ink">학생 추가</h3>
               <div className="relative mt-2">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/70" />
                 <input
                   type="text"
                   placeholder="학번 또는 이름 검색..."
@@ -239,22 +239,22 @@ export default function AdminMentoringPage() {
             </div>
             <div className="max-h-[400px] overflow-auto">
               {availableStudents.slice(0, 50).map((s) => (
-                <div key={s.student_id} className="flex items-center justify-between border-b border-slate-100 px-5 py-2 last:border-0 hover:bg-slate-50">
+                <div key={s.student_id} className="flex items-center justify-between border-b border-slate-100 px-5 py-2 last:border-0 hover:bg-ys-paper">
                   <div>
-                    <span className="text-sm text-slate-900">{s.student_id}</span>
-                    <span className="ml-2 text-sm text-slate-500">{s.name ?? ""}</span>
+                    <span className="text-sm text-ys-ink">{s.student_id}</span>
+                    <span className="ml-2 text-sm text-ys-ink-soft">{s.name ?? ""}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleAddStudent(s.student_id)}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
+                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-ys-blue hover:bg-ys-blue/10"
                   >
                     <Plus className="h-3 w-3" /> 추가
                   </button>
                 </div>
               ))}
               {availableStudents.length > 50 && (
-                <p className="px-5 py-2 text-xs text-slate-400">검색으로 범위를 좁혀주세요 ({availableStudents.length}명)</p>
+                <p className="px-5 py-2 text-xs text-ys-ink-soft/70">검색으로 범위를 좁혀주세요 ({availableStudents.length}명)</p>
               )}
             </div>
           </div>
@@ -266,19 +266,19 @@ export default function AdminMentoringPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCsvUpload(false)}>
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <input ref={csvRef} type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
-            <h3 className="text-lg font-semibold text-slate-900">멘토링 CSV 일괄 배정</h3>
-            <p className="mt-1 text-sm text-slate-500">헤더: mentor_id, student_id</p>
-            <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600 font-mono">
+            <h3 className="text-lg font-semibold text-ys-ink">멘토링 CSV 일괄 배정</h3>
+            <p className="mt-1 text-sm text-ys-ink-soft">헤더: mentor_id, student_id</p>
+            <div className="mt-3 rounded-lg bg-ys-paper p-3 text-xs text-ys-ink-soft font-mono">
               mentor_id,student_id<br/>
               PROF001,22501001<br/>
               PROF001,22501002<br/>
               PROF002,22601001
             </div>
-            <p className="mt-2 text-xs text-slate-400">이미 배정된 관계는 무시되고 새 관계만 추가됩니다.</p>
-            {csvProcessing && <p className="mt-3 text-sm text-blue-600">처리 중...</p>}
+            <p className="mt-2 text-xs text-ys-ink-soft/70">이미 배정된 관계는 무시되고 새 관계만 추가됩니다.</p>
+            {csvProcessing && <p className="mt-3 text-sm text-ys-blue">처리 중...</p>}
             {csvResult && (
-              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-sm">성공: <strong className="text-green-600">{csvResult.success}건</strong>, 실패: <strong className="text-red-600">{csvResult.failed}건</strong></p>
+              <div className="mt-3 rounded-lg border border-slate-200 bg-ys-paper p-3">
+                <p className="text-sm">성공: <strong className="text-[#8A6212]">{csvResult.success}건</strong>, 실패: <strong className="text-red-600">{csvResult.failed}건</strong></p>
                 {csvResult.errors.length > 0 && (
                   <div className="mt-2 max-h-32 overflow-auto text-xs text-red-600">
                     {csvResult.errors.map((err, i) => <p key={i}>{err}</p>)}
@@ -288,11 +288,11 @@ export default function AdminMentoringPage() {
             )}
             <div className="mt-4 flex gap-2">
               {!csvProcessing && (
-                <button type="button" onClick={() => csvRef.current?.click()} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                <button type="button" onClick={() => csvRef.current?.click()} className="flex items-center gap-2 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
                   <Upload className="h-4 w-4" /> 파일 선택
                 </button>
               )}
-              <button type="button" onClick={() => setShowCsvUpload(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">닫기</button>
+              <button type="button" onClick={() => setShowCsvUpload(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">닫기</button>
             </div>
           </div>
         </div>
