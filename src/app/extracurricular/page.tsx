@@ -1,9 +1,9 @@
 "use client";
 
-import { Calendar, Filter, PlayCircle, Send, Tag, Trophy, Video } from "lucide-react";
+import { Calendar, Filter, PlayCircle, Send, Trophy, Video } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForStudentId } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 
 type CoreComp = { id: number; name: string; color_code: string };
@@ -41,8 +41,8 @@ export default function ExtracurricularPage() {
 
   useEffect(() => {
     (async () => {
-      const sid = await getCurrentStudentId();
-      if (sid) setStudentId(sid.trim());
+      const sid = await waitForStudentId();
+      if (sid) setStudentId(sid);
 
       // 설계서 4.2 목록 필터: 학생 유형에 맞는 프로그램만 노출한다
       const { data: me } = sid
@@ -139,30 +139,31 @@ export default function ExtracurricularPage() {
   };
 
   const statusBadge = (status: string) => {
+    // 완료는 사이트 전체에서 '빛이 닿은 것'을 뜻하는 금색으로 통일한다
     const styles: Record<string, string> = {
-      "신청": "bg-yellow-50 text-yellow-700",
-      "참여중": "bg-blue-50 text-blue-700",
-      "완료": "bg-green-50 text-green-700",
+      "신청": "bg-ys-blue/10 text-ys-blue",
+      "참여중": "bg-ys-blue/10 text-ys-blue",
+      "완료": "bg-ys-gold/15 text-[#8A6212]",
     };
     return (
-      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${styles[status] ?? "bg-slate-100 text-slate-600"}`}>
+      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${styles[status] ?? "bg-slate-100 text-ys-ink-soft"}`}>
         {status}
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <Navigation />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">비교과 프로그램</h1>
-          <p className="mt-1 text-sm text-slate-600">다양한 비교과 프로그램에 참여하여 역량을 키워보세요.</p>
+          <h1 className="text-2xl font-bold text-ys-ink">비교과 프로그램</h1>
+          <p className="mt-1 text-sm text-ys-ink-soft">다양한 비교과 프로그램에 참여하여 역량을 키워보세요.</p>
         </div>
 
         {/* Filter */}
         <div className="mb-6 flex items-center gap-3">
-          <Filter className="h-4 w-4 text-slate-400" />
+          <Filter className="h-4 w-4 text-ys-ink-soft/70" />
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -176,9 +177,9 @@ export default function ExtracurricularPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-            <Trophy className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-3 text-sm text-slate-500">등록된 비교과 프로그램이 없습니다.</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <Trophy className="mx-auto h-10 w-10 text-ys-ink-soft/50" />
+            <p className="mt-3 text-sm text-ys-ink-soft">등록된 비교과 프로그램이 없습니다.</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -187,13 +188,13 @@ export default function ExtracurricularPage() {
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                  className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
                 >
                   <div className="mb-2 flex items-start justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">
+                    <h3 className="text-sm font-semibold text-ys-ink">
                       {/* 영상형 프로그램 표시 (설계서 11.3) */}
                       {item.delivery_type === "video" && (
-                        <span className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-violet-50 px-1.5 py-0.5 align-middle text-[10px] font-medium text-violet-700">
+                        <span className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-ys-blue/10 px-1.5 py-0.5 align-middle text-[10px] font-medium text-ys-blue">
                           <Video className="h-2.5 w-2.5" />
                           영상
                         </span>
@@ -201,22 +202,22 @@ export default function ExtracurricularPage() {
                       {item.name}
                     </h3>
                     {item.category && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
+                      <span className="max-w-[38%] shrink-0 truncate rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-ys-ink-soft" title={item.category ?? ""}>
                         {item.category}
                       </span>
                     )}
                   </div>
                   {item.organizer && (
-                    <p className="text-xs text-slate-500">주관: {item.organizer}</p>
+                    <p className="text-xs text-ys-ink-soft">주관: {item.organizer}</p>
                   )}
                   {item.start_date && (
-                    <p className="flex items-center gap-1 text-xs text-slate-500">
+                    <p className="flex items-center gap-1 text-xs text-ys-ink-soft">
                       <Calendar className="h-3 w-3" />
                       {item.start_date}{item.end_date ? ` ~ ${item.end_date}` : ""}
                     </p>
                   )}
                   {item.description && (
-                    <p className="mt-2 flex-1 text-xs text-slate-600 line-clamp-2">{item.description}</p>
+                    <p className="mt-2 flex-1 text-xs text-ys-ink-soft line-clamp-2">{item.description}</p>
                   )}
 
                   {/* Tags */}
@@ -227,10 +228,13 @@ export default function ExtracurricularPage() {
                       return (
                         <span
                           key={`core-${tagId}`}
-                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                          style={{ backgroundColor: comp.color_code + "15", color: comp.color_code }}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10.5px] text-ys-ink-soft"
                         >
-                          <Tag className="h-2.5 w-2.5" />
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: comp.color_code }}
+                            aria-hidden="true"
+                          />
                           {comp.name}
                         </span>
                       );
@@ -241,9 +245,9 @@ export default function ExtracurricularPage() {
                       return (
                         <span
                           key={`major-${tagId}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10.5px] text-ys-ink-soft"
                         >
-                          <Tag className="h-2.5 w-2.5" />
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ys-blue" aria-hidden="true" />
                           {comp.name}
                         </span>
                       );
@@ -261,19 +265,19 @@ export default function ExtracurricularPage() {
                               setSelectedItem(item);
                               setReflection("");
                             }}
-                            className="text-xs font-medium text-blue-600 hover:underline"
+                            className="text-xs font-medium text-ys-blue hover:underline"
                           >
                             소감 입력
                           </button>
                         )}
                         {myStatus.reflection && (
-                          <span className="text-xs text-green-600">소감 작성완료</span>
+                          <span className="text-xs text-ys-gold">소감 작성완료</span>
                         )}
                         {/* 영상형은 신청 후 바로 학습으로 이동 (status 는 '신청' 그대로 둔다) */}
                         {["video", "hybrid"].includes(item.delivery_type) && (
                           <Link
                             href={`/lms/${item.id}`}
-                            className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                            className="inline-flex items-center gap-1 rounded-full bg-ys-blue px-3 py-1.5 text-xs font-medium text-white hover:bg-ys-blue/90"
                           >
                             <PlayCircle className="h-3 w-3" />
                             학습 시작
@@ -285,13 +289,13 @@ export default function ExtracurricularPage() {
                         type="button"
                         onClick={() => handleApply(item.id)}
                         disabled={submitting || !studentId}
-                        className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-full bg-ys-blue px-3 py-1.5 text-xs font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50"
                       >
                         <Send className="h-3 w-3" />
                         참여 신청
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-400">신청 마감</span>
+                      <span className="text-xs text-ys-ink-soft/70">신청 마감</span>
                     )}
                   </div>
                 </div>
@@ -307,11 +311,11 @@ export default function ExtracurricularPage() {
             onClick={() => setSelectedItem(null)}
           >
             <div
-              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+              className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-semibold text-slate-900">활동 소감</h3>
-              <p className="mt-1 text-sm text-slate-500">{selectedItem.name}</p>
+              <h3 className="text-lg font-semibold text-ys-ink">활동 소감</h3>
+              <p className="mt-1 text-sm text-ys-ink-soft">{selectedItem.name}</p>
               <textarea
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
@@ -323,7 +327,7 @@ export default function ExtracurricularPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedItem(null)}
-                  className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-slate-50"
                 >
                   취소
                 </button>
@@ -331,7 +335,7 @@ export default function ExtracurricularPage() {
                   type="button"
                   onClick={() => handleReflection(selectedItem.id)}
                   disabled={submitting || !reflection.trim()}
-                  className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50"
                 >
                   {submitting ? "저장 중..." : "저장"}
                 </button>
