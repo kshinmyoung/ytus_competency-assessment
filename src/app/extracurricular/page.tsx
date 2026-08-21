@@ -42,10 +42,21 @@ export default function ExtracurricularPage() {
       const sid = await getCurrentStudentId();
       if (sid) setStudentId(sid.trim());
 
+      // 설계서 4.2 목록 필터: 학생 유형에 맞는 프로그램만 노출한다
+      const { data: me } = sid
+        ? await supabase.from("students").select("student_type").eq("student_id", sid.trim()).maybeSingle()
+        : { data: null };
+      const studentType = (me?.student_type ?? "domestic").trim();
+
       const [coreRes, majorRes, extraRes] = await Promise.all([
         supabase.from("core_competencies").select("*").order("id"),
         supabase.from("major_competencies").select("*").order("id"),
-        supabase.from("extracurricular").select("*").eq("is_active", true).order("start_date", { ascending: false }),
+        supabase
+          .from("extracurricular")
+          .select("*")
+          .eq("is_active", true)
+          .in("target_audience", ["all", studentType])
+          .order("start_date", { ascending: false }),
       ]);
 
       setCoreComps(coreRes.data ?? []);

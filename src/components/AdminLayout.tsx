@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileBarChart,
   FileText,
+  Film,
   LayoutDashboard,
   LogOut,
   Send,
@@ -25,6 +26,7 @@ const ADMIN_TABS = [
   { label: "학생 관리", href: "/admin", icon: Users },
   { label: "교과목 관리", href: "/admin/courses", icon: BookOpen },
   { label: "비교과 관리", href: "/admin/extracurricular", icon: Trophy },
+  { label: "영상 LMS", href: "/admin/lms", icon: Film },
   { label: "진단 문항 관리", href: "/admin/assessment", icon: ClipboardCheck },
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "멘토링 관리", href: "/admin/mentoring", icon: UserCheck },
@@ -40,6 +42,7 @@ const ADMIN_TABS = [
 const CENTER_TABS = [
   { label: "교과목", href: "/admin/courses", icon: BookOpen },
   { label: "비교과", href: "/admin/extracurricular", icon: Trophy },
+  { label: "영상 LMS", href: "/admin/lms", icon: Film },
   { label: "진단 문항", href: "/admin/assessment", icon: ClipboardCheck },
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
