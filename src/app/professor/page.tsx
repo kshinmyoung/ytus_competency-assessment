@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForStudentId } from "@/lib/supabase";
 import { formatDateTimeKorea } from "@/lib/date";
 import {
   Bar, BarChart, CartesianGrid, Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis,
@@ -18,7 +18,7 @@ type CourseRecord = { course_id: number; semester: string | null; year: number |
 type ExtraRecord = { extracurricular_id: number; status: string; extracurricular: { name: string } | null };
 type CounselingRecord = { id: number; student_id: string; counselor_id: string; counselor_role: string; counseling_date: string; category: string; content: string; action_plan: string | null; follow_up_needed: boolean; follow_up_date: string | null; is_private: boolean; created_at: string };
 const COUNSEL_CATEGORIES = ["일반", "학업", "진로", "심리", "신앙", "생활", "기타"];
-const CATEGORY_COLORS: Record<string, string> = { "일반": "bg-slate-100 text-slate-700", "학업": "bg-blue-50 text-blue-700", "진로": "bg-indigo-50 text-indigo-700", "심리": "bg-violet-50 text-violet-700", "신앙": "bg-amber-50 text-amber-700", "생활": "bg-green-50 text-green-700", "기타": "bg-slate-100 text-slate-600" };
+const CATEGORY_COLORS: Record<string, string> = { "일반": "bg-slate-100 text-ys-ink", "학업": "bg-ys-blue/10 text-ys-blue", "진로": "bg-ys-blue/10 text-ys-blue", "심리": "bg-ys-blue/10 text-ys-blue", "신앙": "bg-ys-gold/10 text-[#8A6212]", "생활": "bg-ys-gold/15 text-[#8A6212]", "기타": "bg-slate-100 text-ys-ink-soft" };
 
 const ROLE_LABELS: Record<string, string> = {
   department_head: "학과장", professor: "교수",
@@ -53,7 +53,7 @@ export default function ProfessorPage() {
 
   useEffect(() => {
     (async () => {
-      const sid = await getCurrentStudentId();
+      const sid = await waitForStudentId();
       if (!sid?.trim()) { router.replace("/login"); return; }
       setMyId(sid.trim());
 
@@ -168,7 +168,7 @@ export default function ProfessorPage() {
 
   const handleLogout = async () => { await supabase.auth.signOut(); sessionStorage.clear(); router.push("/login"); };
 
-  if (authorized === null) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><p className="text-slate-500">확인 중...</p></div>;
+  if (authorized === null) return <div className="flex min-h-screen items-center justify-center bg-ys-paper"><p className="text-ys-ink-soft">확인 중...</p></div>;
   if (!authorized) return null;
 
   const deptName = myDeptId ? departments[myDeptId] ?? "" : "";
@@ -188,15 +188,15 @@ export default function ProfessorPage() {
       ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-8 w-auto" />
-            <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">{ROLE_LABELS[myRole] ?? myRole}</span>
+            <span className="rounded-full bg-ys-blue/15 px-2.5 py-0.5 text-xs font-medium text-ys-blue">{ROLE_LABELS[myRole] ?? myRole}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-600">{myName}님</span>
+            <span className="text-sm text-ys-ink-soft">{myName}님</span>
             <button type="button" onClick={handleLogout} className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900">
               <LogOut className="h-4 w-4" /> 로그아웃
             </button>
@@ -212,7 +212,7 @@ export default function ProfessorPage() {
               const Icon = tab.icon;
               return (
                 <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === tab.key ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50"}`}>
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === tab.key ? "bg-ys-blue/10 text-ys-blue" : "text-ys-ink-soft hover:bg-ys-paper"}`}>
                   <Icon className="h-4 w-4" />{tab.label}
                 </button>
               );
@@ -226,32 +226,32 @@ export default function ProfessorPage() {
         {activeTab === "students" && (
           <div>
             <div className="mb-6">
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-xl font-bold text-ys-ink">
                 {myRole === "department_head" ? `${deptName} 학생 현황` : "멘토링 학생 현황"}
               </h1>
-              <p className="mt-1 text-sm text-slate-600">총 {myStudents.length}명</p>
+              <p className="mt-1 text-sm text-ys-ink-soft">총 {myStudents.length}명</p>
             </div>
 
             {/* 요약 */}
             <div className="mb-6 grid gap-4 sm:grid-cols-4">
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs text-slate-500">전체 학생</p><p className="mt-1 text-xl font-bold text-slate-900">{myStudents.length}명</p>
+                <p className="text-xs text-ys-ink-soft">전체 학생</p><p className="mt-1 text-xl font-bold text-ys-ink">{myStudents.length}명</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs text-slate-500">핵심역량 완료</p><p className="mt-1 text-xl font-bold text-violet-600">{myStudents.filter((s) => diagMap[s.student_id]?.has("core")).length}명</p>
+                <p className="text-xs text-ys-ink-soft">핵심역량 완료</p><p className="mt-1 text-xl font-bold text-ys-blue">{myStudents.filter((s) => diagMap[s.student_id]?.has("core")).length}명</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs text-slate-500">학습역량 완료</p><p className="mt-1 text-xl font-bold text-blue-600">{myStudents.filter((s) => diagMap[s.student_id]?.has("learning")).length}명</p>
+                <p className="text-xs text-ys-ink-soft">학습역량 완료</p><p className="mt-1 text-xl font-bold text-ys-blue">{myStudents.filter((s) => diagMap[s.student_id]?.has("learning")).length}명</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs text-slate-500">소명진단 완료</p><p className="mt-1 text-xl font-bold text-green-600">{myStudents.filter((s) => diagMap[s.student_id]?.has("calling")).length}명</p>
+                <p className="text-xs text-ys-ink-soft">소명진단 완료</p><p className="mt-1 text-xl font-bold text-[#8A6212]">{myStudents.filter((s) => diagMap[s.student_id]?.has("calling")).length}명</p>
               </div>
             </div>
 
             {/* 필터 */}
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/70" />
                 <input type="text" placeholder="학번 또는 이름 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-56 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm" />
               </div>
               <select value={filterDiag} onChange={(e) => setFilterDiag(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
@@ -262,35 +262,35 @@ export default function ProfessorPage() {
             {/* 학생 목록 */}
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-ys-paper">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">학번</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">이름</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">연락처</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">이메일</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">진단현황</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-slate-600">상세</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">학번</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">이름</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">연락처</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">이메일</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">진단현황</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">상세</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {filteredStudents.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">학생이 없습니다.</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-ys-ink-soft">학생이 없습니다.</td></tr>
                   ) : filteredStudents.map((s) => (
-                    <tr key={s.student_id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-sm text-slate-900">{s.student_id}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{s.name ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{s.phone ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{s.email ?? "-"}</td>
+                    <tr key={s.student_id} className="hover:bg-ys-paper">
+                      <td className="px-4 py-3 text-sm text-ys-ink">{s.student_id}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.name ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.phone ?? "-"}</td>
+                      <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.email ?? "-"}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
-                          {diagMap[s.student_id]?.has("core") && <span className="rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">핵심</span>}
-                          {diagMap[s.student_id]?.has("learning") && <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">학습</span>}
-                          {diagMap[s.student_id]?.has("calling") && <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-700">소명</span>}
-                          {!diagMap[s.student_id] && <span className="text-[10px] text-slate-400">미진단</span>}
+                          {diagMap[s.student_id]?.has("core") && <span className="rounded-full bg-ys-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-ys-blue">핵심</span>}
+                          {diagMap[s.student_id]?.has("learning") && <span className="rounded-full bg-ys-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-ys-blue">학습</span>}
+                          {diagMap[s.student_id]?.has("calling") && <span className="rounded-full bg-ys-gold/10 px-1.5 py-0.5 text-[10px] font-medium text-[#8A6212]">소명</span>}
+                          {!diagMap[s.student_id] && <span className="text-[10px] text-ys-ink-soft/70">미진단</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button type="button" onClick={() => viewStudent(s)} className="text-sm font-medium text-blue-600 hover:text-blue-800">상세보기</button>
+                        <button type="button" onClick={() => viewStudent(s)} className="text-sm font-medium text-ys-blue hover:text-ys-blue">상세보기</button>
                       </td>
                     </tr>
                   ))}
@@ -303,7 +303,7 @@ export default function ProfessorPage() {
         {/* === 역량 데이터 (학과장) === */}
         {activeTab === "assessment" && myRole === "department_head" && (
           <div>
-            <h1 className="mb-6 text-xl font-bold text-slate-900">{deptName} 역량 데이터</h1>
+            <h1 className="mb-6 text-xl font-bold text-ys-ink">{deptName} 역량 데이터</h1>
             {/* 유형별 통계 */}
             {["core", "learning", "calling"].map((diagType) => {
               const typeResults = allDiagnosis.filter((d) => d.diagnosis_type === diagType);
@@ -312,27 +312,27 @@ export default function ProfessorPage() {
               return (
                 <div key={diagType} className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-slate-800">{DIAGNOSIS_LABELS[diagType]}</h2>
-                    <div className="flex gap-4 text-sm text-slate-600">
+                    <h2 className="text-base font-semibold text-ys-ink">{DIAGNOSIS_LABELS[diagType]}</h2>
+                    <div className="flex gap-4 text-sm text-ys-ink-soft">
                       <span>참여: <strong>{typeResults.length}명</strong></span>
                       <span>평균: <strong>{avg}점</strong></span>
                     </div>
                   </div>
                   <div className="mt-4 max-h-[300px] overflow-auto">
                     <table className="min-w-full divide-y divide-slate-200">
-                      <thead className="bg-slate-50"><tr>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">학번</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">이름</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">총점</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">진단일</th>
+                      <thead className="bg-ys-paper"><tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">학번</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">이름</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">총점</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-ys-ink-soft">진단일</th>
                       </tr></thead>
                       <tbody className="divide-y divide-slate-100">
                         {typeResults.map((r) => (
-                          <tr key={r.id} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-sm text-slate-900">{r.student_id}</td>
-                            <td className="px-3 py-2 text-sm text-slate-600">{myStudents.find((s) => s.student_id === r.student_id)?.name ?? "-"}</td>
-                            <td className="px-3 py-2 text-sm font-medium text-slate-900">{r.total_score}점</td>
-                            <td className="px-3 py-2 text-sm text-slate-500">{formatDateTimeKorea(r.created_at)}</td>
+                          <tr key={r.id} className="hover:bg-ys-paper">
+                            <td className="px-3 py-2 text-sm text-ys-ink">{r.student_id}</td>
+                            <td className="px-3 py-2 text-sm text-ys-ink-soft">{myStudents.find((s) => s.student_id === r.student_id)?.name ?? "-"}</td>
+                            <td className="px-3 py-2 text-sm font-medium text-ys-ink">{r.total_score}점</td>
+                            <td className="px-3 py-2 text-sm text-ys-ink-soft">{formatDateTimeKorea(r.created_at)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -348,12 +348,12 @@ export default function ProfessorPage() {
         {activeTab === "referral" && (
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <h1 className="text-xl font-bold text-slate-900">리퍼럴</h1>
-              <Link href="/admin/referrals" className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+              <h1 className="text-xl font-bold text-ys-ink">리퍼럴</h1>
+              <Link href="/admin/referrals" className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-navy-soft">
                 <Send className="h-4 w-4" /> 리퍼럴 관리 페이지
               </Link>
             </div>
-            <p className="text-sm text-slate-600">리퍼럴 관리 페이지에서 학생을 센터에 연결하거나, 받은 리퍼럴을 확인할 수 있습니다.</p>
+            <p className="text-sm text-ys-ink-soft">리퍼럴 관리 페이지에서 학생을 센터에 연결하거나, 받은 리퍼럴을 확인할 수 있습니다.</p>
           </div>
         )}
 
@@ -361,7 +361,7 @@ export default function ProfessorPage() {
         {activeTab === "counseling" && (
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <h1 className="text-xl font-bold text-slate-900">내 상담기록</h1>
+              <h1 className="text-xl font-bold text-ys-ink">내 상담기록</h1>
               <button type="button" onClick={() => {
                 let csv = "학생학번,학생이름,날짜,분류,내용,조치계획,후속필요,후속상담일\n";
                 allCounselRecords.forEach((r) => {
@@ -370,19 +370,19 @@ export default function ProfessorPage() {
                 });
                 const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
                 const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my_counseling_records.csv"; a.click();
-              }} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              }} className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">
                 <Download className="h-4 w-4" /> CSV 다운로드
               </button>
             </div>
 
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">전체</p><p className="mt-1 text-xl font-bold text-slate-900">{allCounselRecords.length}건</p></div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-ys-ink-soft">전체</p><p className="mt-1 text-xl font-bold text-ys-ink">{allCounselRecords.length}건</p></div>
               <div className="rounded-xl border border-red-200 bg-red-50 p-4"><p className="text-xs text-red-700">후속 필요</p><p className="mt-1 text-xl font-bold text-red-700">{allCounselRecords.filter((r) => r.follow_up_needed).length}건</p></div>
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4"><p className="text-xs text-blue-700">이번 달</p><p className="mt-1 text-xl font-bold text-blue-700">{allCounselRecords.filter((r) => r.counseling_date?.startsWith(new Date().toISOString().slice(0, 7))).length}건</p></div>
+              <div className="rounded-xl border border-ys-blue/30 bg-ys-blue/10 p-4"><p className="text-xs text-ys-blue">이번 달</p><p className="mt-1 text-xl font-bold text-ys-blue">{allCounselRecords.filter((r) => r.counseling_date?.startsWith(new Date().toISOString().slice(0, 7))).length}건</p></div>
             </div>
 
             {allCounselRecords.length === 0 ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"><p className="text-sm text-slate-500">상담기록이 없습니다. 학생 상세보기에서 상담기록을 작성할 수 있습니다.</p></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center"><p className="text-sm text-ys-ink-soft">상담기록이 없습니다. 학생 상세보기에서 상담기록을 작성할 수 있습니다.</p></div>
             ) : (
               <div className="space-y-3">
                 {allCounselRecords.map((r) => (
@@ -391,12 +391,12 @@ export default function ProfessorPage() {
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-white">{r.student_id} {myStudents.find((s) => s.student_id === r.student_id)?.name ?? ""}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[r.category] ?? "bg-slate-100 text-slate-600"}`}>{r.category}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[r.category] ?? "bg-slate-100 text-ys-ink-soft"}`}>{r.category}</span>
                           {r.follow_up_needed && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
                         </div>
-                        <p className="mt-2 text-sm text-slate-800">{r.content}</p>
-                        {r.action_plan && <p className="mt-1 text-xs text-blue-700">조치: {r.action_plan}</p>}
-                        <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
+                        <p className="mt-2 text-sm text-ys-ink">{r.content}</p>
+                        {r.action_plan && <p className="mt-1 text-xs text-ys-blue">조치: {r.action_plan}</p>}
+                        <div className="mt-2 flex items-center gap-3 text-[10px] text-ys-ink-soft/70">
                           <span>상담일: {r.counseling_date}</span>
                           {r.follow_up_date && <span>후속: {r.follow_up_date}</span>}
                         </div>
@@ -422,18 +422,18 @@ export default function ProfessorPage() {
           <div className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">{selectedStudent.name ?? selectedStudent.student_id}</h3>
-                <p className="text-sm text-slate-500">학번: {selectedStudent.student_id}</p>
-                {selectedStudent.phone && <p className="text-sm text-slate-500">연락처: {selectedStudent.phone}</p>}
-                {selectedStudent.email && <p className="text-sm text-slate-500">이메일: {selectedStudent.email}</p>}
+                <h3 className="text-lg font-semibold text-ys-ink">{selectedStudent.name ?? selectedStudent.student_id}</h3>
+                <p className="text-sm text-ys-ink-soft">학번: {selectedStudent.student_id}</p>
+                {selectedStudent.phone && <p className="text-sm text-ys-ink-soft">연락처: {selectedStudent.phone}</p>}
+                {selectedStudent.email && <p className="text-sm text-ys-ink-soft">이메일: {selectedStudent.email}</p>}
               </div>
-              <button type="button" onClick={() => setSelectedStudent(null)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">닫기</button>
+              <button type="button" onClick={() => setSelectedStudent(null)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-ys-ink-soft hover:bg-ys-paper">닫기</button>
             </div>
 
             {/* 핵심역량 레이더 */}
             {radarData.length > 0 && (
               <div className="mb-6 rounded-xl border border-slate-200 p-4">
-                <h4 className="mb-2 text-sm font-semibold text-slate-700">핵심역량 그래프</h4>
+                <h4 className="mb-2 text-sm font-semibold text-ys-ink">핵심역량 그래프</h4>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
@@ -449,18 +449,18 @@ export default function ProfessorPage() {
 
             {/* 진단 이력 */}
             <div className="mb-6">
-              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><ClipboardCheck className="h-4 w-4" /> 진단 이력</h4>
-              {studentDiag.length === 0 ? <p className="text-sm text-slate-500">진단 이력이 없습니다.</p> : (
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ys-ink"><ClipboardCheck className="h-4 w-4" /> 진단 이력</h4>
+              {studentDiag.length === 0 ? <p className="text-sm text-ys-ink-soft">진단 이력이 없습니다.</p> : (
                 <div className="space-y-2">
                   {studentDiag.map((d) => (
                     <div key={d.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-2">
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${d.diagnosis_type === "core" ? "bg-violet-50 text-violet-700" : d.diagnosis_type === "learning" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${d.diagnosis_type === "core" ? "bg-ys-blue/10 text-ys-blue" : d.diagnosis_type === "learning" ? "bg-ys-blue/10 text-ys-blue" : "bg-ys-gold/15 text-[#8A6212]"}`}>
                           {DIAGNOSIS_LABELS[d.diagnosis_type] ?? d.diagnosis_type}
                         </span>
-                        <span className="text-sm font-medium text-slate-900">{d.total_score}점</span>
+                        <span className="text-sm font-medium text-ys-ink">{d.total_score}점</span>
                       </div>
-                      <span className="text-xs text-slate-500">{formatDateTimeKorea(d.created_at)}</span>
+                      <span className="text-xs text-ys-ink-soft">{formatDateTimeKorea(d.created_at)}</span>
                     </div>
                   ))}
                 </div>
@@ -469,32 +469,32 @@ export default function ProfessorPage() {
 
             {/* 수강 과목 */}
             <div className="mb-4">
-              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><BookOpen className="h-4 w-4" /> 수강 과목 ({studentCourses.length})</h4>
-              {studentCourses.length === 0 ? <p className="text-sm text-slate-500">수강 이력이 없습니다.</p> : (
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ys-ink"><BookOpen className="h-4 w-4" /> 수강 과목 ({studentCourses.length})</h4>
+              {studentCourses.length === 0 ? <p className="text-sm text-ys-ink-soft">수강 이력이 없습니다.</p> : (
                 <div className="overflow-hidden rounded-lg border border-slate-200">
                   <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-ys-paper">
                       <tr>
-                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">과목명</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">교수</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">학점</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">학기</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">성적</th>
-                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-slate-600">상태</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-ys-ink-soft">과목명</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-ys-ink-soft">교수</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-ys-ink-soft">학점</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-ys-ink-soft">학기</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-ys-ink-soft">성적</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase text-ys-ink-soft">상태</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {studentCourses.map((c, i) => {
                         const course = Array.isArray(c.courses) ? (c.courses as any)[0] : c.courses;
                         return (
-                          <tr key={i} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-xs font-medium text-slate-900">{course?.name ?? "-"}</td>
-                            <td className="px-3 py-2 text-xs text-slate-600">{course?.professor ?? "-"}</td>
-                            <td className="px-3 py-2 text-xs text-slate-600">{course?.credit ?? "-"}</td>
-                            <td className="px-3 py-2 text-xs text-slate-600">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
-                            <td className="px-3 py-2 text-xs text-slate-600">{c.grade ?? "-"}</td>
+                          <tr key={i} className="hover:bg-ys-paper">
+                            <td className="px-3 py-2 text-xs font-medium text-ys-ink">{course?.name ?? "-"}</td>
+                            <td className="px-3 py-2 text-xs text-ys-ink-soft">{course?.professor ?? "-"}</td>
+                            <td className="px-3 py-2 text-xs text-ys-ink-soft">{course?.credit ?? "-"}</td>
+                            <td className="px-3 py-2 text-xs text-ys-ink-soft">{c.year ? `${c.year}년 ${c.semester ?? ""}` : "-"}</td>
+                            <td className="px-3 py-2 text-xs text-ys-ink-soft">{c.grade ?? "-"}</td>
                             <td className="px-3 py-2">
-                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${c.status === "완료" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}`}>{c.status}</span>
+                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${c.status === "완료" ? "bg-ys-gold/15 text-[#8A6212]" : "bg-ys-blue/10 text-ys-blue"}`}>{c.status}</span>
                             </td>
                           </tr>
                         );
@@ -507,11 +507,11 @@ export default function ProfessorPage() {
 
             {/* 비교과 */}
             <div>
-              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><Trophy className="h-4 w-4" /> 비교과 ({studentExtra.length})</h4>
-              {studentExtra.length === 0 ? <p className="text-sm text-slate-500">없음</p> : (
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-ys-ink"><Trophy className="h-4 w-4" /> 비교과 ({studentExtra.length})</h4>
+              {studentExtra.length === 0 ? <p className="text-sm text-ys-ink-soft">없음</p> : (
                 <div className="flex flex-wrap gap-1.5">
                   {studentExtra.map((e, i) => (
-                    <span key={i} className={`rounded-full px-2.5 py-1 text-xs font-medium ${e.status === "완료" ? "bg-green-50 text-green-700" : e.status === "참여중" ? "bg-blue-50 text-blue-700" : "bg-yellow-50 text-yellow-700"}`}>
+                    <span key={i} className={`rounded-full px-2.5 py-1 text-xs font-medium ${e.status === "완료" ? "bg-ys-gold/15 text-[#8A6212]" : e.status === "참여중" ? "bg-ys-blue/10 text-ys-blue" : "bg-ys-blue/10 text-ys-blue"}`}>
                       {(Array.isArray(e.extracurricular) ? (e.extracurricular as any)[0] : e.extracurricular)?.name ?? `#${e.extracurricular_id}`}
                     </span>
                   ))}
@@ -522,7 +522,7 @@ export default function ProfessorPage() {
             {/* 상담기록 */}
             <div className="mt-6 border-t border-slate-200 pt-4">
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-slate-700">상담기록 ({counselRecords.length}건)</h4>
+                <h4 className="text-sm font-semibold text-ys-ink">상담기록 ({counselRecords.length}건)</h4>
                 <button type="button" onClick={() => setShowCounselForm(!showCounselForm)}
                   className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
                   + 상담기록 추가
@@ -534,41 +534,41 @@ export default function ProfessorPage() {
                 <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700">분류</label>
+                      <label className="block text-xs font-medium text-ys-ink">분류</label>
                       <select value={counselForm.category} onChange={(e) => setCounselForm({ ...counselForm, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
                         {COUNSEL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div className="flex items-end gap-3">
-                      <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                      <label className="flex items-center gap-1.5 text-xs text-ys-ink">
                         <input type="checkbox" checked={counselForm.follow_up_needed} onChange={(e) => setCounselForm({ ...counselForm, follow_up_needed: e.target.checked })} className="rounded" />
                         후속 상담 필요
                       </label>
-                      <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                      <label className="flex items-center gap-1.5 text-xs text-ys-ink">
                         <input type="checkbox" checked={counselForm.is_private} onChange={(e) => setCounselForm({ ...counselForm, is_private: e.target.checked })} className="rounded" />
                         비공개
                       </label>
                     </div>
                   </div>
                   <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-700">상담 내용 *</label>
+                    <label className="block text-xs font-medium text-ys-ink">상담 내용 *</label>
                     <textarea value={counselForm.content} onChange={(e) => setCounselForm({ ...counselForm, content: e.target.value })} rows={3}
                       placeholder="상담 내용을 기록하세요." className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                   </div>
                   <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-700">조치 계획 (선택)</label>
+                    <label className="block text-xs font-medium text-ys-ink">조치 계획 (선택)</label>
                     <input type="text" value={counselForm.action_plan} onChange={(e) => setCounselForm({ ...counselForm, action_plan: e.target.value })}
                       placeholder="향후 조치 사항" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                   </div>
                   {counselForm.follow_up_needed && (
                     <div className="mt-3">
-                      <label className="block text-xs font-medium text-slate-700">후속 상담일</label>
+                      <label className="block text-xs font-medium text-ys-ink">후속 상담일</label>
                       <input type="date" value={counselForm.follow_up_date} onChange={(e) => setCounselForm({ ...counselForm, follow_up_date: e.target.value })}
                         className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                     </div>
                   )}
                   <div className="mt-3 flex gap-2">
-                    <button type="button" onClick={() => setShowCounselForm(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">취소</button>
+                    <button type="button" onClick={() => setShowCounselForm(false)} className="flex-1 rounded-lg border border-slate-300 py-2 text-xs font-medium text-ys-ink hover:bg-ys-paper">취소</button>
                     <button type="button" onClick={handleSaveCounsel} disabled={counselSaving || !counselForm.content.trim()}
                       className="flex-1 rounded-lg bg-emerald-600 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
                       {counselSaving ? "저장 중..." : "저장"}
@@ -579,17 +579,17 @@ export default function ProfessorPage() {
 
               {/* 상담기록 목록 */}
               {counselRecords.length === 0 ? (
-                <p className="text-sm text-slate-500">상담기록이 없습니다.</p>
+                <p className="text-sm text-ys-ink-soft">상담기록이 없습니다.</p>
               ) : (
                 <div className="space-y-2">
                   {counselRecords.map((cr) => (
                     <div key={cr.id} className="rounded-lg border border-slate-200 p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[cr.category] ?? "bg-slate-100 text-slate-600"}`}>{cr.category}</span>
-                          <span className="text-xs text-slate-500">{cr.counseling_date}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${CATEGORY_COLORS[cr.category] ?? "bg-slate-100 text-ys-ink-soft"}`}>{cr.category}</span>
+                          <span className="text-xs text-ys-ink-soft">{cr.counseling_date}</span>
                           {cr.follow_up_needed && <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">후속 필요</span>}
-                          {cr.is_private && <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500">비공개</span>}
+                          {cr.is_private && <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] text-ys-ink-soft">비공개</span>}
                         </div>
                         {cr.counselor_id === myId && (
                           <button type="button" onClick={async () => {
@@ -599,9 +599,9 @@ export default function ProfessorPage() {
                           }} className="text-red-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
                         )}
                       </div>
-                      <p className="mt-1.5 text-sm text-slate-800">{cr.content}</p>
-                      {cr.action_plan && <p className="mt-1 text-xs text-blue-700">조치: {cr.action_plan}</p>}
-                      {cr.follow_up_date && <p className="mt-0.5 text-[10px] text-slate-500">후속 상담: {cr.follow_up_date}</p>}
+                      <p className="mt-1.5 text-sm text-ys-ink">{cr.content}</p>
+                      {cr.action_plan && <p className="mt-1 text-xs text-ys-blue">조치: {cr.action_plan}</p>}
+                      {cr.follow_up_date && <p className="mt-0.5 text-[10px] text-ys-ink-soft">후속 상담: {cr.follow_up_date}</p>}
                     </div>
                   ))}
                 </div>
@@ -610,7 +610,7 @@ export default function ProfessorPage() {
 
             {/* 리퍼럴 보내기 링크 */}
             <div className="mt-4 border-t border-slate-200 pt-4">
-              <Link href="/admin/referrals" className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+              <Link href="/admin/referrals" className="inline-flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-navy-soft">
                 <Send className="h-4 w-4" /> 이 학생을 센터에 리퍼럴 보내기
               </Link>
             </div>

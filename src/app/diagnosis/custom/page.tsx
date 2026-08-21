@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForStudentId } from "@/lib/supabase";
 
 type Question = {
   id: number;
@@ -38,7 +38,7 @@ export default function CustomDiagnosisPage() {
 
   useEffect(() => {
     (async () => {
-      const sid = await getCurrentStudentId();
+      const sid = await waitForStudentId();
       if (!sid?.trim()) {
         router.push("/login");
         return;
@@ -162,18 +162,18 @@ export default function CustomDiagnosisPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-500">로딩 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-ys-paper">
+        <p className="text-ys-ink-soft">로딩 중...</p>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink">
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">돌아가기</span>
             </Link>
@@ -181,8 +181,8 @@ export default function CustomDiagnosisPage() {
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <p className="text-lg text-slate-500">현재 등록된 추가 설문이 없습니다.</p>
-          <Link href="/diagnosis" className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline">
+          <p className="text-lg text-ys-ink-soft">현재 등록된 추가 설문이 없습니다.</p>
+          <Link href="/diagnosis" className="mt-4 inline-block text-sm font-medium text-ys-blue hover:underline">
             역량진단 목록으로 돌아가기
           </Link>
         </main>
@@ -192,10 +192,10 @@ export default function CustomDiagnosisPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink">
               <ArrowLeft className="h-5 w-5" />
               <span className="text-sm font-medium">돌아가기</span>
             </Link>
@@ -203,19 +203,19 @@ export default function CustomDiagnosisPage() {
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">설문 완료!</h1>
-          <p className="mt-2 text-slate-600">응답이 성공적으로 저장되었습니다.</p>
+          <CheckCircle className="mx-auto h-16 w-16 text-ys-gold" />
+          <h1 className="mt-4 text-2xl font-bold text-ys-ink">설문 완료!</h1>
+          <p className="mt-2 text-ys-ink-soft">응답이 성공적으로 저장되었습니다.</p>
           <div className="mt-8 flex justify-center gap-4">
             <Link
               href="/diagnosis"
-              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-ys-ink hover:bg-ys-paper"
             >
               역량진단 목록
             </Link>
             <Link
               href="/dashboard"
-              className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+              className="rounded-full bg-ys-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-ys-blue/90"
             >
               대시보드로 이동
             </Link>
@@ -239,10 +239,10 @@ export default function CustomDiagnosisPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
+          <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink">
             <ArrowLeft className="h-5 w-5" />
             <span className="text-sm font-medium">돌아가기</span>
           </Link>
@@ -251,13 +251,13 @@ export default function CustomDiagnosisPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">추가 역량진단</h1>
-        <p className="mt-1 text-slate-600">각 문항에 대해 가장 적합한 보기를 선택해 주세요.</p>
+        <h1 className="text-xl font-bold text-ys-ink sm:text-2xl">추가 역량진단</h1>
+        <p className="mt-1 text-ys-ink-soft">각 문항에 대해 가장 적합한 보기를 선택해 주세요.</p>
 
         <div className="mt-8 space-y-10">
           {grouped.map((group, gi) => (
             <div key={gi}>
-              <h2 className="mb-4 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700">
+              <h2 className="mb-4 rounded-lg bg-ys-blue/10 px-4 py-2 text-sm font-semibold text-ys-blue">
                 {group.label}
               </h2>
               <div className="space-y-6">
@@ -268,7 +268,7 @@ export default function CustomDiagnosisPage() {
                       key={q.id}
                       className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
                     >
-                      <p className="mb-4 text-sm font-medium text-slate-900">
+                      <p className="mb-4 text-sm font-medium text-ys-ink">
                         {q.question_order}. {q.question_text}
                       </p>
                       <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -277,8 +277,8 @@ export default function CustomDiagnosisPage() {
                             key={opt.id}
                             className={`flex cursor-pointer items-center justify-center rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition sm:min-w-[4rem] ${
                               answers[q.id] === opt.option_value
-                                ? "border-blue-600 bg-blue-600 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/50"
+                                ? "border-blue-600 bg-ys-blue text-white"
+                                : "border-slate-200 bg-white text-ys-ink hover:border-ys-blue/40 hover:bg-ys-blue/10/50"
                             }`}
                           >
                             <input
@@ -308,7 +308,7 @@ export default function CustomDiagnosisPage() {
 
         <div className="mt-10 flex flex-col items-center gap-4 pb-12">
           {!allAnswered && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ys-ink-soft">
               모든 문항에 응답하면 제출할 수 있습니다.
             </p>
           )}
@@ -316,7 +316,7 @@ export default function CustomDiagnosisPage() {
             type="button"
             onClick={handleSubmit}
             disabled={!allAnswered || isSubmitting}
-            className="w-full max-w-xs rounded-full bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto"
+            className="w-full max-w-xs rounded-full bg-ys-blue px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-ys-blue/90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto"
           >
             {isSubmitting ? "저장 중..." : "제출하기"}
           </button>

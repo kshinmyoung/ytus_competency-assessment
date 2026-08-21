@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { supabase, waitForStudentId } from "@/lib/supabase";
 
 type Question = {
   id: number;
@@ -44,7 +44,7 @@ export default function MajorDiagnosisPage() {
 
   useEffect(() => {
     (async () => {
-      const sid = await getCurrentStudentId();
+      const sid = await waitForStudentId();
       if (!sid?.trim()) { router.push("/login"); return; }
       setStudentId(sid.trim());
 
@@ -153,21 +153,21 @@ export default function MajorDiagnosisPage() {
   };
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-50"><p className="text-slate-500">로딩 중...</p></div>;
+    return <div className="flex min-h-screen items-center justify-center bg-ys-paper"><p className="text-ys-ink-soft">로딩 중...</p></div>;
   }
 
   if (!deptName) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
+            <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
             <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <p className="text-lg text-slate-500">학과가 설정되지 않았습니다. 관리자에게 문의하세요.</p>
-          <Link href="/diagnosis" className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline">돌아가기</Link>
+          <p className="text-lg text-ys-ink-soft">학과가 설정되지 않았습니다. 관리자에게 문의하세요.</p>
+          <Link href="/diagnosis" className="mt-4 inline-block text-sm font-medium text-ys-blue hover:underline">돌아가기</Link>
         </main>
       </div>
     );
@@ -175,16 +175,16 @@ export default function MajorDiagnosisPage() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
+            <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
             <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <p className="text-lg text-slate-500">{deptName} 전공역량진단 문항이 아직 등록되지 않았습니다.</p>
-          <Link href="/diagnosis" className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline">돌아가기</Link>
+          <p className="text-lg text-ys-ink-soft">{deptName} 전공역량진단 문항이 아직 등록되지 않았습니다.</p>
+          <Link href="/diagnosis" className="mt-4 inline-block text-sm font-medium text-ys-blue hover:underline">돌아가기</Link>
         </main>
       </div>
     );
@@ -192,20 +192,20 @@ export default function MajorDiagnosisPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-ys-paper">
         <header className="border-b border-slate-200 bg-white shadow-sm">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
+            <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
             <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">{deptName} 전공역량진단 완료!</h1>
-          <p className="mt-2 text-slate-600">응답이 저장되었습니다.</p>
+          <CheckCircle className="mx-auto h-16 w-16 text-ys-gold" />
+          <h1 className="mt-4 text-2xl font-bold text-ys-ink">{deptName} 전공역량진단 완료!</h1>
+          <p className="mt-2 text-ys-ink-soft">응답이 저장되었습니다.</p>
           <div className="mt-8 flex justify-center gap-4">
-            <Link href="/diagnosis" className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">역량진단 목록</Link>
-            <Link href="/dashboard" className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">대시보드</Link>
+            <Link href="/diagnosis" className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-ys-ink hover:bg-ys-paper">역량진단 목록</Link>
+            <Link href="/dashboard" className="rounded-full bg-ys-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-ys-blue/90">대시보드</Link>
           </div>
         </main>
       </div>
@@ -213,17 +213,17 @@ export default function MajorDiagnosisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/diagnosis" className="flex items-center gap-2 text-slate-600 hover:text-slate-900"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
+          <Link href="/diagnosis" className="flex items-center gap-2 text-ys-ink-soft hover:text-ys-ink"><ArrowLeft className="h-5 w-5" /><span className="text-sm font-medium">돌아가기</span></Link>
           <Image src="/logo.png" alt="YOUNG SHINY" width={212} height={40} className="h-7 w-auto" />
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{deptName} 전공역량진단</h1>
-        <p className="mt-1 text-slate-600">각 문항에 대해 가장 적합한 보기를 선택해 주세요.</p>
+        <h1 className="text-xl font-bold text-ys-ink sm:text-2xl">{deptName} 전공역량진단</h1>
+        <p className="mt-1 text-ys-ink-soft">각 문항에 대해 가장 적합한 보기를 선택해 주세요.</p>
 
         <div className="mt-8 space-y-10">
           {grouped.map((g) => (
@@ -232,14 +232,14 @@ export default function MajorDiagnosisPage() {
                 {g.sub.name}
               </h2>
               {g.questions.length === 0 ? (
-                <p className="py-4 text-center text-sm text-slate-400">문항이 없습니다.</p>
+                <p className="py-4 text-center text-sm text-ys-ink-soft/70">문항이 없습니다.</p>
               ) : (
                 <div className="space-y-6">
                   {g.questions.map((q) => {
                     const opts = optionsMap.get(q.id) ?? [];
                     return (
                       <section key={q.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-                        <p className="mb-4 text-sm font-medium text-slate-900">
+                        <p className="mb-4 text-sm font-medium text-ys-ink">
                           {q.question_order}. {q.question_text}
                         </p>
                         <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -248,7 +248,7 @@ export default function MajorDiagnosisPage() {
                               className={`flex cursor-pointer items-center justify-center rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition sm:min-w-[4rem] ${
                                 answers[q.id] === opt.option_value
                                   ? "border-orange-600 bg-orange-600 text-white"
-                                  : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:bg-orange-50/50"
+                                  : "border-slate-200 bg-white text-ys-ink hover:border-orange-300 hover:bg-orange-50/50"
                               }`}
                             >
                               <input type="radio" name={`q-${q.id}`} value={opt.option_value}
@@ -270,7 +270,7 @@ export default function MajorDiagnosisPage() {
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-4 pb-12">
-          {!allAnswered && <p className="text-sm text-slate-500">모든 문항에 응답하면 제출할 수 있습니다.</p>}
+          {!allAnswered && <p className="text-sm text-ys-ink-soft">모든 문항에 응답하면 제출할 수 있습니다.</p>}
           <button type="button" onClick={handleSubmit} disabled={!allAnswered || isSubmitting}
             className="w-full max-w-xs rounded-full bg-orange-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto">
             {isSubmitting ? "저장 중..." : "제출하기"}

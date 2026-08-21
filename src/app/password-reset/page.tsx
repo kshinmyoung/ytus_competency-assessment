@@ -108,7 +108,7 @@ export default function PasswordResetPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-ys-paper px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
         <div className="mb-8 flex flex-col items-center">
           <Image
@@ -119,10 +119,10 @@ export default function PasswordResetPage() {
             className="h-10 w-auto"
             priority
           />
-          <h1 className="mt-4 text-xl font-semibold text-slate-900">
+          <h1 className="mt-4 text-xl font-semibold text-ys-ink">
             비밀번호 변경
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-ys-ink-soft">
             본인 확인을 위해 학번과 현재(또는 초기) 비밀번호를 입력해 주세요.
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function PasswordResetPage() {
           <div>
             <label
               htmlFor="studentId"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-ys-ink"
             >
               학번 (Student ID)
             </label>
@@ -140,7 +140,7 @@ export default function PasswordResetPage() {
               name="studentId"
               type="text"
               required
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ys-ink shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="예: 20261234"
             />
           </div>
@@ -148,7 +148,7 @@ export default function PasswordResetPage() {
           <div>
             <label
               htmlFor="currentPassword"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-ys-ink"
             >
               현재 비밀번호 (또는 초기 비밀번호)
             </label>
@@ -157,14 +157,14 @@ export default function PasswordResetPage() {
               name="currentPassword"
               type="password"
               required
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ys-ink shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
           <div>
             <label
               htmlFor="newPassword"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-ys-ink"
             >
               새 비밀번호
             </label>
@@ -173,14 +173,14 @@ export default function PasswordResetPage() {
               name="newPassword"
               type="password"
               required
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ys-ink shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-ys-ink"
             >
               새 비밀번호 확인
             </label>
@@ -189,7 +189,7 @@ export default function PasswordResetPage() {
               name="confirmPassword"
               type="password"
               required
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ys-ink shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
@@ -201,13 +201,13 @@ export default function PasswordResetPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-blue-400"
+              className="w-full rounded-full bg-ys-blue px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-ys-blue/90 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-blue-400"
             >
               {isSubmitting ? "저장 중..." : "비밀번호 저장하기"}
             </button>
             <Link
               href="/login"
-              className="w-full rounded-full border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              className="w-full rounded-full border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-ys-ink transition hover:border-slate-400 hover:bg-ys-paper"
             >
               취소
             </Link>
@@ -217,7 +217,7 @@ export default function PasswordResetPage() {
         <div className="mt-8 border-t border-slate-100 pt-4 text-center">
           <Link
             href="/"
-            className="text-xs font-medium text-slate-500 hover:text-slate-700 hover:underline"
+            className="text-xs font-medium text-ys-ink-soft hover:text-ys-ink hover:underline"
           >
             홈으로 돌아가기
           </Link>
