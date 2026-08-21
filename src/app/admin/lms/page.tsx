@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, Film, ListVideo, Plus, Search, Trash2 } from "lucide-react";
+import { BarChart3, Edit3, Film, ListVideo, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
@@ -321,7 +321,14 @@ export default function AdminLmsPage() {
                         className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                       >
                         <ListVideo className="h-3.5 w-3.5" />
-                        콘텐츠 관리
+                        콘텐츠
+                      </Link>
+                      <Link
+                        href={`/admin/lms/${item.id}/progress`}
+                        className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        진도 현황
                       </Link>
                       <button
                         type="button"
