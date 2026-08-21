@@ -75,11 +75,19 @@ export default function LmsWatchPage() {
   const sendingRef = useRef(false);
   const rateRef = useRef(1.0);
   const tokenRef = useRef("");        // 페이지 이탈 시 동기적으로 써야 해서 캐시
-  const resumeAtRef = useRef(0);
-  const resumedRef = useRef(false);
 
   const content = detail?.contents.find((c) => c.contentId === contentId);
   const durationSec = content?.durationSec ?? 0;
+
+  /**
+   * 이어보기 지점.
+   * currentTime 을 loadeddata 에서 설정하면 HLS 의 seekable 범위가 아직 준비되지 않아
+   * 포스터에만 반영되고 재생 시 0 으로 되돌아간다. Cloudflare 의 startTime 파라미터를 쓴다.
+   * 끝까지 본 경우에는 처음부터 시작한다 (끝에서 이어봐야 볼 게 없다).
+   */
+  const resumeAt = content && content.lastPositionSec > 0 && content.lastPositionSec < durationSec - 5
+    ? content.lastPositionSec
+    : 0;
 
   // ---- 데이터 로드 ----
   useEffect(() => {
@@ -94,7 +102,6 @@ export default function LmsWatchPage() {
         if (c) {
           setProgress(c.progress);
           setWatchedSec(c.watchedSec);
-          resumeAtRef.current = c.lastPositionSec;   // 새로고침 시 이어보기 지점
         }
         if (!token.iframeUrl) throw new Error("재생 주소를 확인할 수 없습니다.");
         setIframeUrl(token.iframeUrl);
@@ -177,14 +184,6 @@ export default function LmsWatchPage() {
     const player = window.Stream(iframeRef.current);
     playerRef.current = player;
 
-    const onLoaded = () => {
-      // 새로고침 시 마지막 위치부터 이어보기
-      if (!resumedRef.current && resumeAtRef.current > 0) {
-        resumedRef.current = true;
-        player.currentTime = resumeAtRef.current;
-      }
-    };
-
     const onTimeUpdate = () => {
       const t = player.currentTime;
       if (!Number.isFinite(t)) return;
@@ -232,7 +231,6 @@ export default function LmsWatchPage() {
       setRate(r);
     };
 
-    player.addEventListener("loadeddata", onLoaded);
     player.addEventListener("timeupdate", onTimeUpdate);
     player.addEventListener("pause", onPause);
     player.addEventListener("ended", onEnded);
@@ -360,7 +358,7 @@ export default function LmsWatchPage() {
             <div className="relative aspect-video w-full">
               <iframe
                 ref={iframeRef}
-                src={`${iframeUrl}?preload=auto&letterboxColor=transparent`}
+                src={`${iframeUrl}?preload=auto&letterboxColor=transparent${resumeAt > 0 ? `&startTime=${resumeAt}s` : ""}`}
                 title={content.title}
                 allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
                 allowFullScreen
