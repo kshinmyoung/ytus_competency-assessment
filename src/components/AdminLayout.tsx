@@ -3,7 +3,9 @@
 import {
   BookOpen,
   Calendar,
-  ClipboardCheck,
+  Coins,
+  Gauge,
+  MessageSquareText,
   FileBarChart,
   FileText,
   Film,
@@ -27,14 +29,14 @@ const ADMIN_TABS = [
   { label: "교과목 관리", href: "/admin/courses", icon: BookOpen },
   { label: "비교과 관리", href: "/admin/extracurricular", icon: Trophy },
   { label: "영상 LMS", href: "/admin/lms", icon: Film },
-  { label: "진단 문항 관리", href: "/admin/assessment", icon: ClipboardCheck },
+  { label: "진단 문항 관리", href: "/admin/assessment", icon: Gauge },
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "멘토링 관리", href: "/admin/mentoring", icon: UserCheck },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "상담기록", href: "/admin/counseling", icon: FileText },
-  { label: "설문조사", href: "/admin/survey", icon: ClipboardCheck },
-  { label: "마일리지", href: "/staff", icon: Trophy },
+  { label: "설문조사", href: "/admin/survey", icon: MessageSquareText },
+  { label: "마일리지", href: "/staff", icon: Coins },
   { label: "통합 등록", href: "/admin/import", icon: Upload },
 ];
 
@@ -43,12 +45,12 @@ const CENTER_TABS = [
   { label: "교과목", href: "/admin/courses", icon: BookOpen },
   { label: "비교과", href: "/admin/extracurricular", icon: Trophy },
   { label: "영상 LMS", href: "/admin/lms", icon: Film },
-  { label: "진단 문항", href: "/admin/assessment", icon: ClipboardCheck },
+  { label: "진단 문항", href: "/admin/assessment", icon: Gauge },
   { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "상담기록", href: "/admin/counseling", icon: FileText },
-  { label: "설문조사", href: "/admin/survey", icon: ClipboardCheck },
+  { label: "설문조사", href: "/admin/survey", icon: MessageSquareText },
 ];
 
 const ROLE_LABELS: Record<string, string> = {

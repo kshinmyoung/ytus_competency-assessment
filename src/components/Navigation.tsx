@@ -3,7 +3,8 @@
 import {
   BookOpen,
   Calendar,
-  ClipboardCheck,
+  Gauge,
+  MessageSquareText,
   Home,
   LayoutDashboard,
   LogOut,
@@ -22,13 +23,13 @@ import { getCurrentStudentId, supabase } from "@/lib/supabase";
 
 const studentNav = [
   { label: "홈", href: "/", icon: Home },
-  { label: "역량진단", href: "/diagnosis", icon: ClipboardCheck },
+  { label: "역량진단", href: "/diagnosis", icon: Gauge },
   { label: "교과목", href: "/courses", icon: BookOpen },
   { label: "교과목 로드맵", href: "/roadmap", icon: Map },
   { label: "비교과", href: "/extracurricular", icon: Trophy },
   { label: "AI진로가이드", href: "/ai-guide", icon: Signpost },
   { label: "예약/신청", href: "/reservation", icon: Calendar },
-  { label: "설문조사", href: "/survey", icon: ClipboardCheck },
+  { label: "설문조사", href: "/survey", icon: MessageSquareText },
   { label: "마이페이지", href: "/mypage", icon: User },
 ];
 
