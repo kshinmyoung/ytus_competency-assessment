@@ -34,10 +34,15 @@ type Props = {
   className?: string;
   /** 중심에서 번지는 광원 */
   glow?: boolean;
+  /**
+   * 별과 중심의 빛을 그릴지. 폼 뒤에 배경으로 깔 때는 false 로 두어
+   * 링과 방위선만 남긴다 — 밝은 중심이 글자 뒤에 오면 읽을 수 없다.
+   */
+  star?: boolean;
   title?: string;
 };
 
-export default function CompassRose({ points, className, glow = true, title }: Props) {
+export default function CompassRose({ points, className, glow = true, star = true, title }: Props) {
   const gradientId = "ys-compass-glow";
 
   return (
@@ -91,18 +96,21 @@ export default function CompassRose({ points, className, glow = true, title }: P
         })}
       </g>
 
-      {/* 로고에서 가져온 4방위 별 */}
-      <path d={starPath(122, 89)} fill="var(--ys-blue)" opacity="0.26" />
-      <path
-        d={starPath(122, 89)}
-        fill="none"
-        stroke="var(--ys-gold)"
-        strokeWidth="1.3"
-        opacity="0.8"
-      />
-
-      {/* 내부의 작은 빛 — 로고 안 스파클이 광원의 심이 된다 */}
-      <path d={starPath(38, 28)} fill="var(--ys-light)" />
+      {star && (
+        <>
+          {/* 로고에서 가져온 4방위 별 */}
+          <path d={starPath(122, 89)} fill="var(--ys-blue)" opacity="0.26" />
+          <path
+            d={starPath(122, 89)}
+            fill="none"
+            stroke="var(--ys-gold)"
+            strokeWidth="1.3"
+            opacity="0.8"
+          />
+          {/* 내부의 작은 빛 — 로고 안 스파클이 광원의 심이 된다 */}
+          <path d={starPath(38, 28)} fill="var(--ys-light)" />
+        </>
+      )}
 
       {points?.map((point, i) => {
         // 12시부터 시계방향으로 균등 배치

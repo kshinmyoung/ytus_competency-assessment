@@ -2,15 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import CompassRose from "@/components/CompassRose";
+import YGlyph from "@/components/YGlyph";
 import { supabase } from "@/lib/supabase";
 
-type StudentRow = { student_id: string; name: string | null; role: string | null };
-
 export default function LoginPage() {
-  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,93 +90,114 @@ export default function LoginPage() {
     }
   };
 
+  const fieldClass =
+    "w-full rounded-lg border border-ys-navy-line bg-ys-navy-soft px-3.5 py-2.5 text-[15px] text-white " +
+    "placeholder:text-ys-mist/45 outline-none transition " +
+    "hover:border-ys-mist/45 focus:border-ys-gold";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
-        <div className="mb-8 flex flex-col items-center">
-          <Image
-            src="/logo.png"
-            alt="영남신학대학교 로고"
-            width={180}
-            height={40}
-            className="h-10 w-auto"
-            priority
-          />
-          <h1 className="mt-4 text-xl font-semibold text-slate-900">
-            YOUNG SHINY 로그인
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            학번과 비밀번호를 입력해 주세요.
-          </p>
-        </div>
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-ys-navy px-5 py-10">
+      {/* 배경은 계기판 같은 링만. 별과 광원을 넣으면 폼 글자가 묻힌다 */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 w-[900px] max-w-[190%] -translate-x-1/2 -translate-y-1/2 opacity-[0.28]"
+        aria-hidden="true"
+      >
+        <CompassRose className="h-auto w-full" glow={false} star={false} />
+      </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label
-              htmlFor="studentId"
-              className="block text-sm font-medium text-slate-700"
-            >
-              학번 (Student ID)
-            </label>
-            <input
-              id="studentId"
-              name="studentId"
-              type="text"
-              required
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            />
+      <div className="relative z-10 flex flex-1 items-center justify-center">
+        <div className="ys-rise w-full max-w-sm">
+          <div className="flex flex-col items-center">
+            <Link href="/" aria-label="홈으로">
+              <Image
+                src="/logo.png"
+                alt="영남신학대학교"
+                width={180}
+                height={40}
+                className="h-7 w-auto brightness-0 invert"
+                priority
+              />
+            </Link>
+
+            <p className="font-display mt-7 flex items-baseline text-[27px] font-black leading-[1.05] tracking-[-0.01em] text-white">
+              <span className="sr-only">YOUNG SHINY</span>
+              <span aria-hidden="true" className="flex items-baseline">
+                <YGlyph className="h-[1.06em] w-[0.9em] shrink-0 text-ys-gold" />
+                <span className="text-[0.87em]">OUNG</span>
+                <span className="w-[0.24em]" />
+                <span className="text-[0.87em]">SHIN</span>
+                <YGlyph className="h-[1.06em] w-[0.9em] shrink-0 text-ys-gold" />
+              </span>
+            </p>
+            <p className="mt-2.5 text-[13px] text-ys-mist">영남신학대학교 역량관리시스템</p>
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-slate-700"
+          <form onSubmit={handleLogin} className="mt-10 flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="studentId" className="text-[13px] font-medium text-ys-mist">
+                학번
+              </label>
+              <input
+                id="studentId"
+                name="studentId"
+                type="text"
+                required
+                autoComplete="username"
+                placeholder="예: 22406004"
+                className={fieldClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="password" className="text-[13px] font-medium text-ys-mist">
+                비밀번호
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className={fieldClass}
+              />
+            </div>
+
+            {errorMessage && (
+              <p
+                role="alert"
+                className="rounded-lg border border-red-400/30 bg-red-500/10 px-3.5 py-2.5 text-[13px] text-red-300"
+              >
+                {errorMessage}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-1 rounded-full bg-ys-gold px-4 py-3.5 text-[15px] font-semibold text-ys-navy transition hover:bg-ys-light disabled:cursor-not-allowed disabled:opacity-55"
             >
-              비밀번호 (Password)
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            />
-          </div>
+              {isSubmitting ? "로그인 중..." : "로그인"}
+            </button>
+          </form>
 
-          {errorMessage && (
-            <p className="text-xs font-medium text-red-500">{errorMessage}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-2 w-full rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-blue-400"
-          >
-            {isSubmitting ? "로그인 중..." : "로그인"}
-          </button>
-
-          <div className="mt-3 flex justify-between text-xs text-slate-500">
-            <Link
-              href="/password-reset"
-              className="text-blue-600 hover:text-blue-700 hover:underline"
-            >
-              비밀번호 변경하기
+          <div className="mt-7 flex items-center justify-center gap-5 text-[12.5px]">
+            <Link href="/password-reset" className="text-ys-mist transition hover:text-ys-gold">
+              비밀번호 변경
+            </Link>
+            <span className="h-3 w-px bg-ys-navy-line" aria-hidden="true" />
+            <Link href="/" className="text-ys-mist transition hover:text-ys-gold">
+              홈으로
             </Link>
           </div>
-        </form>
-
-        <div className="mt-8 border-t border-slate-100 pt-4 text-center">
-          <Link
-            href="/"
-            className="text-xs font-medium text-slate-500 hover:text-slate-700 hover:underline"
-          >
-            홈으로 돌아가기
-          </Link>
         </div>
       </div>
+
+      <p className="relative z-10 mt-10 text-center text-[11.5px] leading-relaxed text-ys-mist/50">
+        주의 말씀은 내 발에 등이요 내 길에 빛이니이다
+        <span className="font-data ml-2 text-[10px] tracking-wide text-ys-mist/35">
+          PSALM 119:105
+        </span>
+      </p>
     </div>
   );
 }
-
-
-
