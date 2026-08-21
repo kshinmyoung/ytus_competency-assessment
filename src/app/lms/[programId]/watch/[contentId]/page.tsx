@@ -300,17 +300,17 @@ export default function LmsWatchPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <p className="text-sm text-slate-400">불러오는 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-ys-navy">
+        <p className="text-sm text-ys-mist">불러오는 중...</p>
       </div>
     );
   }
 
   if (error || !detail || !content) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-950 px-6">
-        <p className="text-center text-sm text-slate-300">{error || "콘텐츠를 찾을 수 없습니다."}</p>
-        <Link href={`/lms/${programId}`} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ys-navy px-6">
+        <p className="text-center text-sm text-ys-mist">{error || "콘텐츠를 찾을 수 없습니다."}</p>
+        <Link href={`/lms/${programId}`} className="rounded-lg bg-ys-navy px-4 py-2 text-sm font-medium text-white hover:bg-ys-navy-soft">
           커리큘럼으로 돌아가기
         </Link>
       </div>
@@ -329,21 +329,21 @@ export default function LmsWatchPage() {
             <Link
               href={`/lms/${programId}/watch/${c.contentId}`}
               className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition ${
-                isCurrent ? "bg-blue-600/20 text-white" : "text-slate-300 hover:bg-white/5"
+                isCurrent ? "bg-ys-blue/25 text-white" : "text-ys-mist hover:bg-white/5"
               }`}
             >
               <span className="w-5 shrink-0 text-center">
                 {shownProgress >= detail.program.minProgress ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <CheckCircle2 className="h-4 w-4 text-ys-gold" />
                 ) : isCurrent ? (
-                  <PlayCircle className="h-4 w-4 text-blue-400" />
+                  <PlayCircle className="h-4 w-4 text-ys-sky" />
                 ) : (
-                  <span className="text-xs text-slate-500">{idx + 1}</span>
+                  <span className="text-xs text-ys-mist/70">{idx + 1}</span>
                 )}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{c.title}</span>
-                <span className="mt-0.5 block text-[11px] text-slate-500">
+                <span className="mt-0.5 block text-[11px] text-ys-mist/70">
                   {formatClock(c.durationSec)} · 진도 {shownProgress}%{!c.isRequired && " · 선택"}
                 </span>
               </span>
@@ -355,7 +355,7 @@ export default function LmsWatchPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-ys-navy">
       {/* 이 페이지에서만 Stream SDK 를 로드한다 (hls.js 는 쓰지 않는다) */}
       <Script
         src="https://embed.cloudflarestream.com/embed/sdk.latest.js"
@@ -368,14 +368,14 @@ export default function LmsWatchPage() {
           <header className="flex items-center gap-3 px-4 py-3">
             <Link
               href={`/lms/${programId}`}
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-ys-mist hover:bg-white/5 hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
               나가기
             </Link>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-white">{content.title}</p>
-              <p className="truncate text-[11px] text-slate-500">{detail.program.name}</p>
+              <p className="truncate text-[11px] text-ys-mist/70">{detail.program.name}</p>
             </div>
           </header>
 
@@ -400,23 +400,23 @@ export default function LmsWatchPage() {
           {/* 진도 — 서버 응답값 그대로 표시 */}
           <div className="px-4 pt-3">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
-              <span className="text-slate-500">
+              <span className="text-ys-mist/70">
                 진도 {formatClock(watchedSec)} / {formatClock(durationSec)} · 이수 기준 {detail.program.minProgress}%
               </span>
-              <span className={`font-semibold ${passed ? "text-emerald-400" : "text-slate-300"}`}>
+              <span className={`font-semibold ${passed ? "text-ys-gold" : "text-ys-mist"}`}>
                 {progress}%{passed && " · 완료"}
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className={`h-full rounded-full transition-all ${passed ? "bg-emerald-500" : "bg-blue-500"}`}
+                className={`h-full rounded-full transition-all ${passed ? "bg-ys-gold" : "bg-ys-gold"}`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <span className="text-[11px] text-slate-500">재생 속도</span>
+            <span className="text-[11px] text-ys-mist/70">재생 속도</span>
             <div className="flex gap-1">
               {PLAYBACK_RATES.map((r) => (
                 <button
@@ -424,30 +424,30 @@ export default function LmsWatchPage() {
                   type="button"
                   onClick={() => changeRate(r)}
                   className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
-                    rate === r ? "bg-blue-600 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"
+                    rate === r ? "bg-ys-gold text-ys-navy" : "bg-white/5 text-ys-mist hover:bg-white/10"
                   }`}
                 >
                   {r}x
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-500">건너뛴 구간은 진도에 포함되지 않습니다.</p>
-            {notice && <p className="text-[11px] text-amber-400">{notice}</p>}
+            <p className="text-[11px] text-ys-mist/70">건너뛴 구간은 진도에 포함되지 않습니다.</p>
+            {notice && <p className="text-[11px] text-ys-gold">{notice}</p>}
           </div>
         </div>
 
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-white/10 p-4 lg:block">
-          <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-ys-navy-line p-4 lg:block">
+          <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-ys-mist/70">
             커리큘럼 · 필수 {detail.requiredPassed}/{detail.requiredTotal}
           </p>
           {curriculum}
         </aside>
 
-        <div className="border-t border-white/10 lg:hidden">
+        <div className="border-t border-ys-navy-line lg:hidden">
           <button
             type="button"
             onClick={() => setCurriculumOpen((v) => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-300"
+            className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-ys-mist"
           >
             <span>커리큘럼 · 필수 {detail.requiredPassed}/{detail.requiredTotal}</span>
             <ChevronUp className={`h-4 w-4 transition-transform ${curriculumOpen ? "" : "rotate-180"}`} />
@@ -462,19 +462,19 @@ export default function LmsWatchPage() {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-xl">
             {completion.status === "completed" && (
               <>
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-ys-gold/12">
+                  <CheckCircle2 className="h-6 w-6 text-ys-gold" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900">이수 완료</h3>
-                <p className="mt-1.5 text-sm text-slate-600">
+                <h3 className="text-base font-bold text-ys-ink">이수 완료</h3>
+                <p className="mt-1.5 text-sm text-ys-ink-soft">
                   {detail.program.name} 과정을 이수했습니다.
                 </p>
-                <div className="mt-4 space-y-1 rounded-lg bg-slate-50 px-4 py-3 text-left text-xs text-slate-600">
-                  <p>수료번호 <span className="font-medium text-slate-900">{completion.certificate_no}</span></p>
-                  <p>최종 진도 <span className="font-medium text-slate-900">{completion.final_progress}%</span></p>
+                <div className="mt-4 space-y-1 rounded-lg bg-slate-50 px-4 py-3 text-left text-xs text-ys-ink-soft">
+                  <p>수료번호 <span className="font-medium text-ys-ink">{completion.certificate_no}</span></p>
+                  <p>최종 진도 <span className="font-medium text-ys-ink">{completion.final_progress}%</span></p>
                   {/* 마일리지는 내국인에게만 표시한다 */}
                   {detail.studentType === "domestic" && (completion.mileage_granted ?? 0) > 0 && (
-                    <p>마일리지 <span className="font-medium text-blue-700">{completion.mileage_granted}점 지급</span></p>
+                    <p>마일리지 <span className="font-medium text-ys-blue">{completion.mileage_granted}점 지급</span></p>
                   )}
                 </div>
                 {certError && <p className="mt-3 text-xs text-red-600">{certError}</p>}
@@ -487,14 +487,14 @@ export default function LmsWatchPage() {
                         try { await openCertificate(completion.certificate_no!); }
                         catch (e) { setCertError(e instanceof Error ? e.message : "수료증 열기 실패"); }
                       }}
-                      className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-slate-50"
                     >
                       수료증 보기
                     </button>
                   )}
                   <Link
                     href={`/lms/${programId}`}
-                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    className="flex-1 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
                   >
                     확인
                   </Link>
@@ -504,12 +504,12 @@ export default function LmsWatchPage() {
 
             {completion.status === "already_completed" && (
               <>
-                <h3 className="text-base font-bold text-slate-900">이미 이수한 과정입니다</h3>
-                <p className="mt-1.5 text-sm text-slate-600">추가로 처리할 내용이 없습니다.</p>
+                <h3 className="text-base font-bold text-ys-ink">이미 이수한 과정입니다</h3>
+                <p className="mt-1.5 text-sm text-ys-ink-soft">추가로 처리할 내용이 없습니다.</p>
                 <button
                   type="button"
                   onClick={() => setCompletion(null)}
-                  className="mt-5 w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900"
+                  className="mt-5 w-full rounded-lg bg-ys-navy px-4 py-2 text-sm font-medium text-white hover:bg-ys-navy-soft"
                 >
                   닫기
                 </button>
@@ -518,21 +518,21 @@ export default function LmsWatchPage() {
 
             {completion.status === "survey_required" && (
               <>
-                <h3 className="text-base font-bold text-slate-900">설문 제출이 필요합니다</h3>
-                <p className="mt-1.5 text-sm text-slate-600">
+                <h3 className="text-base font-bold text-ys-ink">설문 제출이 필요합니다</h3>
+                <p className="mt-1.5 text-sm text-ys-ink-soft">
                   진도는 모두 채웠습니다. 만족도 설문을 제출하면 이수가 확정됩니다.
                 </p>
                 <div className="mt-5 flex gap-2">
                   <button
                     type="button"
                     onClick={() => setCompletion(null)}
-                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-slate-50"
                   >
                     나중에
                   </button>
                   <Link
                     href="/survey"
-                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    className="flex-1 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
                   >
                     설문 하러 가기
                   </Link>

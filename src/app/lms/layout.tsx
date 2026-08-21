@@ -25,7 +25,7 @@ export default function LmsLayout({ children }: { children: React.ReactNode }) {
   if (isPlayerRoute(pathname)) return <>{children}</>;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ys-paper">
       {/* 전역 헤더는 그대로 유지한다 */}
       <Navigation />
 
@@ -34,7 +34,7 @@ export default function LmsLayout({ children }: { children: React.ReactNode }) {
         <aside className="hidden w-52 shrink-0 lg:block">
           <div className="sticky top-20 space-y-6">
             <div>
-              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="mb-2 px-3 text-[11px] font-semibold text-ys-ink-soft/80">
                 영상 학습
               </p>
               <nav className="space-y-1">
@@ -46,7 +46,7 @@ export default function LmsLayout({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                        isActive ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-white hover:text-slate-900"
+                        isActive ? "bg-ys-blue/10 text-ys-blue" : "text-ys-ink-soft hover:bg-white hover:text-ys-ink"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ export default function LmsLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div>
-              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="mb-2 px-3 text-[11px] font-semibold text-ys-ink-soft/80">
                 바로가기
               </p>
               <nav className="space-y-1">
@@ -68,7 +68,7 @@ export default function LmsLayout({ children }: { children: React.ReactNode }) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900"
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ys-ink-soft transition hover:bg-white hover:text-ys-ink"
                     >
                       <Icon className="h-4 w-4" />
                       {item.label}

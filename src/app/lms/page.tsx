@@ -45,13 +45,13 @@ export default function LmsHomePage() {
   const visible = buckets[tab];
 
   if (loading) {
-    return <p className="py-16 text-center text-sm text-slate-500">불러오는 중...</p>;
+    return <p className="py-16 text-center text-sm text-ys-ink-soft">불러오는 중...</p>;
   }
 
   if (error) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-sm text-slate-600">{error}</p>
+        <p className="text-sm text-ys-ink-soft">{error}</p>
       </div>
     );
   }
@@ -59,8 +59,8 @@ export default function LmsHomePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-slate-900">영상 학습</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-xl font-bold text-ys-ink">영상 학습</h1>
+        <p className="mt-1 text-sm text-ys-ink-soft">
           신청한 영상 비교과를 온라인으로 수강하고 이수할 수 있습니다.
         </p>
       </div>
@@ -74,12 +74,12 @@ export default function LmsHomePage() {
             onClick={() => setTab(t.key)}
             className={`rounded-xl border p-4 text-left transition ${
               tab === t.key
-                ? "border-blue-300 bg-blue-50"
+                ? "border-ys-blue/40 bg-ys-blue/10"
                 : "border-slate-200 bg-white hover:border-slate-300"
             }`}
           >
-            <p className="text-xs font-medium text-slate-500">{t.label}</p>
-            <p className={`mt-1 text-2xl font-bold ${tab === t.key ? "text-blue-700" : "text-slate-900"}`}>
+            <p className="text-xs font-medium text-ys-ink-soft">{t.label}</p>
+            <p className={`mt-1 text-2xl font-bold ${tab === t.key ? "text-ys-blue" : "text-ys-ink"}`}>
               {buckets[t.key].length}
             </p>
           </button>
@@ -88,14 +88,14 @@ export default function LmsHomePage() {
 
       {visible.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-          <Film className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-          <p className="text-sm text-slate-500">
+          <Film className="mx-auto mb-3 h-8 w-8 text-ys-ink-soft/50" />
+          <p className="text-sm text-ys-ink-soft">
             {tab === "learning" && "신청한 영상 프로그램이 없습니다."}
             {tab === "available" && "신청 가능한 영상 프로그램이 없습니다."}
             {tab === "completed" && "이수 완료한 영상 프로그램이 없습니다."}
           </p>
           {tab === "available" && (
-            <Link href="/extracurricular" className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/extracurricular" className="mt-3 inline-block text-sm font-medium text-ys-blue hover:text-ys-blue">
               비교과 신청 페이지로 이동
             </Link>
           )}
@@ -106,24 +106,24 @@ export default function LmsHomePage() {
             <Link
               key={p.id}
               href={`/lms/${p.id}`}
-              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow"
+              className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-ys-blue/40 hover:shadow"
             >
               <div className="mb-2 flex items-start justify-between gap-3">
-                <h2 className="text-sm font-bold text-slate-900 group-hover:text-blue-700">{p.name}</h2>
+                <h2 className="text-sm font-bold text-ys-ink group-hover:text-ys-blue">{p.name}</h2>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                  p.status === "이수완료" ? "bg-emerald-50 text-emerald-700"
-                    : p.status === "학습중" ? "bg-blue-50 text-blue-700"
-                    : "bg-slate-100 text-slate-600"
+                  p.status === "이수완료" ? "bg-ys-gold/12 text-ys-ink"
+                    : p.status === "학습중" ? "bg-ys-blue/10 text-ys-blue"
+                    : "bg-slate-100 text-ys-ink-soft"
                 }`}>
                   {p.enrolled ? p.status : "미신청"}
                 </span>
               </div>
 
               {p.description && (
-                <p className="mb-3 line-clamp-2 text-xs text-slate-500">{p.description}</p>
+                <p className="mb-3 line-clamp-2 text-xs text-ys-ink-soft">{p.description}</p>
               )}
 
-              <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+              <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-ys-ink-soft">
                 <span className="flex items-center gap-1">
                   <ListVideo className="h-3.5 w-3.5" />
                   콘텐츠 {p.contentCount}개
@@ -144,22 +144,22 @@ export default function LmsHomePage() {
               {p.enrolled ? (
                 <div className="mt-auto">
                   <div className="mb-1 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-500">진도율</span>
-                    <span className="font-semibold text-slate-700">{p.progress}%</span>
+                    <span className="text-ys-ink-soft">진도율</span>
+                    <span className="font-semibold text-ys-ink">{p.progress}%</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className={`h-full rounded-full ${p.status === "이수완료" ? "bg-emerald-500" : "bg-blue-500"}`}
+                      className={`h-full rounded-full ${p.status === "이수완료" ? "bg-ys-gold" : "bg-ys-blue"}`}
                       style={{ width: `${Math.min(p.progress, 100)}%` }}
                     />
                   </div>
-                  <p className="mt-2 flex items-center gap-1 text-[11px] font-medium text-blue-600">
+                  <p className="mt-2 flex items-center gap-1 text-[11px] font-medium text-ys-blue">
                     <PlayCircle className="h-3.5 w-3.5" />
                     {p.status === "이수완료" ? "다시 보기" : p.watchedSec > 0 ? "이어서 학습하기" : "학습 시작"}
                   </p>
                 </div>
               ) : (
-                <p className="mt-auto text-[11px] text-slate-400">
+                <p className="mt-auto text-[11px] text-ys-ink-soft/70">
                   신청 후 학습할 수 있습니다. 이수 기준 진도 {p.minProgress}%
                 </p>
               )}
