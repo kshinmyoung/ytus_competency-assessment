@@ -5,12 +5,15 @@ import {
   BookOpen,
   ClipboardCheck,
   Compass,
+  PlayCircle,
   Sparkles,
   Trophy,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { lmsGet, formatClock } from "@/lib/lms-client";
 import Navigation from "@/components/Navigation";
 import {
   Legend,
@@ -35,6 +38,25 @@ const CORE_COMPETENCIES = [
   { key: "glocal", label: "글로컬역량" },
   { key: "creative", label: "창의융합역량" },
 ];
+
+/**
+ * diagnosis_results.scores 의 키를 core_competencies.id 로 잇는다.
+ * 진단은 창의/융합을 'creative' 하나로 묶어 측정하므로 두 역량(3,4) 모두에 대응시킨다.
+ */
+const CORE_KEY_TO_IDS: Record<string, number[]> = {
+  spiritual: [1],   // 영성역량
+  reflection: [2],  // 기독교적 성찰역량
+  creative: [3, 4], // 창의수행역량 + 융합사고역량
+  empathy: [5],     // 공감소통역량
+  glocal: [6],      // 글로컬시민역량
+};
+
+type ResumeCard = {
+  programId: number; programName: string; contentId: number; contentTitle: string;
+  durationSec: number; progress: number; lastPositionSec: number; href: string;
+};
+
+type RecommendedProgram = { id: number; name: string; description: string | null };
 
 const diagnosisCards = [
   {
@@ -70,6 +92,9 @@ export default function DashboardPage() {
   const [recentCourses, setRecentCourses] = useState<{ name: string }[]>([]);
   const [recentExtra, setRecentExtra] = useState<{ name: string }[]>([]);
   const [mileage, setMileage] = useState(0);
+  const [resume, setResume] = useState<ResumeCard | null>(null);
+  const [recommended, setRecommended] = useState<RecommendedProgram[]>([]);
+  const [studentType, setStudentType] = useState("domestic");
 
   useEffect(() => {
     (async () => {
@@ -79,11 +104,13 @@ export default function DashboardPage() {
       // 학생 정보 + 학과
       const { data: student } = await supabase
         .from("students")
-        .select("name, department_id")
+        .select("name, department_id, student_type")
         .eq("student_id", studentId.trim())
         .maybeSingle();
 
       if (student?.name) setUserName(student.name);
+      const myType = (student?.student_type ?? "domestic").trim();
+      setStudentType(myType);
 
       // 학과명
       if (student?.department_id) {
@@ -169,6 +196,35 @@ export default function DashboardPage() {
         .select("points")
         .eq("student_id", studentId.trim());
       setMileage((mileageData ?? []).reduce((sum: number, m: any) => sum + (m.points ?? 0), 0));
+
+      // 이어보기 (설계서 11.3)
+      try {
+        const r = await lmsGet<{ resume: ResumeCard | null }>("/api/lms/resume");
+        setResume(r.resume);
+      } catch {
+        // 이어보기 실패는 대시보드 전체를 막지 않는다
+      }
+
+      // 하위 2개 역량과 매칭되는 영상 프로그램 추천 — 내국인만 (설계서 11.3)
+      if (myType === "domestic" && coreResult?.scores) {
+        const scores = coreResult.scores as Record<string, number>;
+        const weakKeys = Object.entries(scores)
+          .sort((a, b) => a[1] - b[1])
+          .slice(0, 2)
+          .map(([k]) => k);
+        const wantedIds = weakKeys.flatMap((k) => CORE_KEY_TO_IDS[k] ?? []);
+        if (wantedIds.length > 0) {
+          const { data: progs } = await supabase
+            .from("extracurricular")
+            .select("id, name, description, core_competency_tags")
+            .eq("is_active", true)
+            .in("delivery_type", ["video", "hybrid"])
+            .in("target_audience", ["all", myType])
+            .overlaps("core_competency_tags", wantedIds)
+            .limit(3);
+          setRecommended((progs ?? []).map((p) => ({ id: p.id, name: p.name, description: p.description })));
+        }
+      }
     })();
   }, []);
 
@@ -198,6 +254,63 @@ export default function DashboardPage() {
             <p className="text-2xl font-bold text-amber-700">{mileage}<span className="ml-1 text-sm font-normal">점</span></p>
           </div>
         </div>
+
+        {/* 이어보기 (설계서 11.3) */}
+        {resume && (
+          <div className="mb-8">
+            <Link
+              href={resume.href}
+              className="group flex flex-wrap items-center gap-4 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 shadow-sm transition hover:shadow-md"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+                <PlayCircle className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-blue-700">이어서 학습하기</p>
+                <p className="truncate text-sm font-semibold text-slate-900">{resume.contentTitle}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">
+                  {resume.programName} · {formatClock(resume.lastPositionSec)}부터 · 진도 {resume.progress}%
+                </p>
+                <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/70">
+                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min(resume.progress, 100)}%` }} />
+                </div>
+              </div>
+              <span className="inline-flex items-center text-xs font-medium text-blue-600 group-hover:underline">
+                이어보기 <ArrowRight className="ml-1 h-3 w-3" />
+              </span>
+            </Link>
+          </div>
+        )}
+
+        {/* 취약 역량 기반 영상 프로그램 추천 — 내국인만 (설계서 11.3) */}
+        {studentType === "domestic" && recommended.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-4 text-base font-semibold text-slate-800">
+              내 역량에 맞는 영상 프로그램
+              <span className="ml-2 text-xs font-normal text-slate-500">낮은 역량 2개 기준 추천</span>
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {recommended.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/lms/${p.id}`}
+                  className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                >
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                    <Video className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-900">{p.name}</h3>
+                  {p.description && (
+                    <p className="mt-1 flex-1 line-clamp-2 text-xs text-slate-500">{p.description}</p>
+                  )}
+                  <span className="mt-3 inline-flex items-center text-xs font-medium text-blue-600 group-hover:underline">
+                    학습하기 <ArrowRight className="ml-1 h-3 w-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Charts row */}
         <div className="mb-8 grid gap-6 lg:grid-cols-2">

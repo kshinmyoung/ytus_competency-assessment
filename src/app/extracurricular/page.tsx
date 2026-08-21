@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar, Filter, Send, Tag, Trophy } from "lucide-react";
+import { Calendar, Filter, PlayCircle, Send, Tag, Trophy, Video } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
@@ -17,6 +18,7 @@ type Extra = {
   end_date: string | null;
   max_participants: number | null;
   registration_open: boolean;
+  delivery_type: string;
   core_competency_tags: number[];
   major_competency_tags: number[];
 };
@@ -188,7 +190,16 @@ export default function ExtracurricularPage() {
                   className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
                 >
                   <div className="mb-2 flex items-start justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">{item.name}</h3>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      {/* 영상형 프로그램 표시 (설계서 11.3) */}
+                      {item.delivery_type === "video" && (
+                        <span className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-violet-50 px-1.5 py-0.5 align-middle text-[10px] font-medium text-violet-700">
+                          <Video className="h-2.5 w-2.5" />
+                          영상
+                        </span>
+                      )}
+                      {item.name}
+                    </h3>
                     {item.category && (
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
                         {item.category}
@@ -257,6 +268,16 @@ export default function ExtracurricularPage() {
                         )}
                         {myStatus.reflection && (
                           <span className="text-xs text-green-600">소감 작성완료</span>
+                        )}
+                        {/* 영상형은 신청 후 바로 학습으로 이동 (status 는 '신청' 그대로 둔다) */}
+                        {["video", "hybrid"].includes(item.delivery_type) && (
+                          <Link
+                            href={`/lms/${item.id}`}
+                            className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                          >
+                            <PlayCircle className="h-3 w-3" />
+                            학습 시작
+                          </Link>
                         )}
                       </>
                     ) : item.registration_open ? (
