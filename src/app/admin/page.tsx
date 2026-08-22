@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTimeKorea } from "@/lib/date";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { normalizeHeader, parseCsvRows } from "@/lib/csv";
 import AdminLayout from "@/components/AdminLayout";
 
 type Student = {
@@ -67,71 +68,83 @@ function getScoreRows(diagnosisType: string, scores: Record<string, number> | nu
     .filter((r) => r.label);
 }
 
-/** CSV 한 줄 파싱 (쉼표 구분, 따옴표 안의 쉼표 허용) */
-function parseCsvLine(line: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      inQuotes = !inQuotes;
-    } else if (c === "," && !inQuotes) {
-      out.push(cur.trim());
-      cur = "";
-    } else {
-      cur += c;
-    }
-  }
-  out.push(cur.trim());
-  return out;
-}
-
 type CsvStudentRow = {
   student_id: string; password: string; name: string; role: string;
   department_id: string; grade_year: string; admission_year: string; phone: string; email: string;
 };
 
-/** CSV 텍스트에서 학생 정보 추출 (첫 줄 헤더)
- *  헤더: student_id, password, name, role, department_id, grade_year, admission_year, phone, email */
-function parseCsvToStudents(csvText: string): CsvStudentRow[] {
-  const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
-  const header = parseCsvLine(lines[0]).map((h) => h.toLowerCase().replace(/\s/g, "_"));
-  const col = (key: string) => {
-    const i = header.indexOf(key);
-    if (i >= 0) return i;
-    const alt = header.find((h) => h.includes(key));
-    return alt ? header.indexOf(alt) : -1;
-  };
-  const sidx = col("student_id") >= 0 ? col("student_id") : 0;
-  const pidx = col("password") >= 0 ? col("password") : 1;
-  const nidx = col("name") >= 0 ? col("name") : 2;
+type CsvParseResult = {
+  rows: CsvStudentRow[];
+  /** 열을 알아보지 못했을 때의 안내. 있으면 업로드를 중단한다. */
+  error?: string;
+  /** 건너뛴 행 (행번호와 이유) */
+  skipped: string[];
+};
+
+/**
+ * CSV 텍스트에서 학생 정보 추출.
+ * 헤더: student_id, password, name, role, department_id, grade_year, admission_year, phone, email
+ * (학번/비밀번호/이름 … 같은 한글 헤더도 lib/csv 의 별칭표가 받아준다)
+ *
+ * 예전에는 헤더를 못 알아보면 "0번째가 학번, 1번째가 비밀번호, 2번째가 이름"으로
+ * 자리만 보고 넘어갔다. 그래서 헤더가 `학번,이름,비밀번호` 순이면 이름 칸에
+ * 비밀번호가, 비밀번호 칸에 이름이 조용히 들어갔다. 자리 추측을 없애고,
+ * 못 알아보면 무엇이 없는지 알려주고 멈춘다.
+ */
+function parseCsvToStudents(csvText: string): CsvParseResult {
+  const rows = parseCsvRows(csvText);
+  if (rows.length < 2) return { rows: [], skipped: [], error: "헤더 줄과 데이터가 모두 필요합니다." };
+
+  const header = rows[0].map(normalizeHeader);
+  const col = (key: string) => header.indexOf(key);
+
+  const sidx = col("student_id");
+  const pidx = col("password");
+  const missing: string[] = [];
+  if (sidx < 0) missing.push("student_id(학번)");
+  if (pidx < 0) missing.push("password(비밀번호)");
+  if (missing.length > 0) {
+    return {
+      rows: [], skipped: [],
+      error: `필수 열을 찾지 못했습니다: ${missing.join(", ")}\n\n`
+        + `읽어들인 헤더: ${header.join(", ")}\n\n`
+        + `첫 줄에 헤더가 있어야 합니다. 예) student_id,password,name,role`,
+    };
+  }
+
+  const nidx = col("name");
   const ridx = col("role");
   const didx = col("department_id");
   const gidx = col("grade_year");
   const aidx = col("admission_year");
   const phidx = col("phone");
   const eidx = col("email");
-  const rows: CsvStudentRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const c = parseCsvLine(lines[i]);
-    const student_id = (c[sidx] ?? "").trim();
-    const password = (c[pidx] ?? "").trim();
-    if (!student_id || !password) continue;
-    rows.push({
+
+  const out: CsvStudentRow[] = [];
+  const skipped: string[] = [];
+  const at = (c: string[], i: number) => (i >= 0 ? (c[i] ?? "").trim() : "");
+
+  rows.slice(1).forEach((c, i) => {
+    const lineNo = i + 2; // 헤더가 1행
+    const student_id = at(c, sidx);
+    const password = at(c, pidx);
+    // 조용히 버리지 않고 무엇을 건너뛰었는지 남긴다
+    if (!student_id) { skipped.push(`${lineNo}행: 학번 없음`); return; }
+    if (!password) { skipped.push(`${lineNo}행: ${student_id} — 비밀번호 없음`); return; }
+    out.push({
       student_id,
       password,
-      name: (c[nidx] ?? "").trim(),
-      role: ridx >= 0 ? (c[ridx] ?? "student").trim() || "student" : "student",
-      department_id: didx >= 0 ? (c[didx] ?? "").trim() : "",
-      grade_year: gidx >= 0 ? (c[gidx] ?? "").trim() : "",
-      admission_year: aidx >= 0 ? (c[aidx] ?? "").trim() : "",
-      phone: phidx >= 0 ? (c[phidx] ?? "").trim() : "",
-      email: eidx >= 0 ? (c[eidx] ?? "").trim() : "",
+      name: at(c, nidx),
+      role: at(c, ridx) || "student",
+      department_id: at(c, didx),
+      grade_year: at(c, gidx),
+      admission_year: at(c, aidx),
+      phone: at(c, phidx),
+      email: at(c, eidx),
     });
-  }
-  return rows;
+  });
+
+  return { rows: out, skipped };
 }
 
 export default function AdminPage() {
@@ -372,11 +385,29 @@ export default function AdminPage() {
       return;
     }
     const text = await file.text();
-    const rows = parseCsvToStudents(text);
-    if (rows.length === 0) {
-      alert("유효한 학생 데이터가 없습니다. 헤더: student_id, password, name, role");
+    const parsed = parseCsvToStudents(text);
+    if (parsed.error) {
+      alert(parsed.error);
       e.target.value = "";
       return;
+    }
+    const rows = parsed.rows;
+    if (rows.length === 0) {
+      alert(
+        "등록할 학생이 없습니다.\n\n"
+        + (parsed.skipped.length > 0 ? `건너뛴 행:\n${parsed.skipped.join("\n")}` : "데이터 줄이 없습니다."),
+      );
+      e.target.value = "";
+      return;
+    }
+    // 건너뛴 행이 있으면 진행 전에 알린다. 예전에는 말없이 사라졌다.
+    if (parsed.skipped.length > 0) {
+      const ok = confirm(
+        `${parsed.skipped.length}개 행을 건너뜁니다:\n${parsed.skipped.slice(0, 10).join("\n")}`
+        + (parsed.skipped.length > 10 ? `\n… 외 ${parsed.skipped.length - 10}건` : "")
+        + `\n\n나머지 ${rows.length}명을 등록할까요?`,
+      );
+      if (!ok) { e.target.value = ""; return; }
     }
     setIsBulkProcessing(true);
     setBulkProgress({ total: rows.length, current: 0, success: 0, failed: 0, failedIds: [], done: false });
