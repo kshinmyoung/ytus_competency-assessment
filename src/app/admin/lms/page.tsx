@@ -4,7 +4,7 @@ import { BarChart3, Edit3, Film, ListVideo, Plus, Search, Trash2 } from "lucide-
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { ORGANIZER_OPTIONS } from "@/lib/extracurricular";
+import { CATEGORY_OPTIONS, ORGANIZER_OPTIONS, isEtcCategory } from "@/lib/extracurricular";
 import { canManageLms } from "@/lib/auth/lms-permissions";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
@@ -80,6 +80,8 @@ export default function AdminLmsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  // '기타'를 골라 직접 입력하는 중인지. form.category 에는 입력한 값이 그대로 들어간다.
+  const [categoryEtc, setCategoryEtc] = useState(false);
   const [error, setError] = useState("");
 
   // 영상형은 정원 무제한이므로 입력란을 비활성화한다
@@ -143,6 +145,7 @@ export default function AdminLmsPage() {
 
   const handleEdit = (item: VideoProgram) => {
     setEditingId(item.id);
+    setCategoryEtc(isEtcCategory(item.category));
     setForm({
       name: item.name,
       category: item.category ?? "",
@@ -263,7 +266,7 @@ export default function AdminLmsPage() {
           </div>
           <button
             type="button"
-            onClick={() => { setEditingId(null); setForm(emptyForm); setError(""); setShowForm(true); }}
+            onClick={() => { setEditingId(null); setForm(emptyForm); setCategoryEtc(false); setError(""); setShowForm(true); }}
             className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
           >
             <Plus className="h-4 w-4" />
@@ -380,12 +383,29 @@ export default function AdminLmsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ys-ink-soft">카테고리</label>
-                  <input
-                    type="text"
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  />
+                  <select
+                    value={categoryEtc ? "기타" : form.category}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      // '기타'는 저장되는 값이 아니라 직접 입력을 여는 스위치다
+                      setCategoryEtc(v === "기타");
+                      setForm({ ...form, category: v === "기타" ? "" : v });
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="">선택 안 함</option>
+                    {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <option value="기타">기타 (직접 입력)</option>
+                  </select>
+                  {categoryEtc && (
+                    <input
+                      type="text"
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                      placeholder="카테고리를 입력하세요"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mt-2"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ys-ink-soft">주관 부서</label>

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { parseCsv } from "@/lib/csv";
 import AdminLayout from "@/components/AdminLayout";
-import { ORGANIZER_OPTIONS } from "@/lib/extracurricular";
+import { CATEGORY_OPTIONS, ORGANIZER_OPTIONS, isEtcCategory } from "@/lib/extracurricular";
 
 type CoreComp = { id: number; name: string; color_code: string };
 type MajorComp = { id: number; name: string; department_id: number };
@@ -58,6 +58,8 @@ export default function AdminExtracurricularPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  // '기타'를 골라 직접 입력하는 중인지. form.category 에는 입력한 값이 그대로 들어간다.
+  const [categoryEtc, setCategoryEtc] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [showParticipants, setShowParticipants] = useState<Extra | null>(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
@@ -216,6 +218,7 @@ export default function AdminExtracurricularPage() {
 
   const handleEdit = (item: Extra) => {
     setEditingId(item.id);
+    setCategoryEtc(isEtcCategory(item.category));
     setForm({
       name: item.name,
       category: item.category ?? "",
@@ -340,7 +343,7 @@ export default function AdminExtracurricularPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ys-ink-soft/70" />
             <input type="text" placeholder="프로그램명 검색..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-56 rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm" />
           </div>
-          <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(true); }} className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
+          <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm); setCategoryEtc(false); setShowForm(true); }} className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
             <Plus className="h-4 w-4" />
             프로그램 추가
           </button>
@@ -475,7 +478,32 @@ export default function AdminExtracurricularPage() {
             <form onSubmit={handleSave} className="mt-4 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div><label className="block text-sm font-medium text-ys-ink">프로그램명 *</label><input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
-                <div><label className="block text-sm font-medium text-ys-ink">카테고리</label><input type="text" placeholder="예: 특강, 캠프, 봉사" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
+                <div>
+                  <label className="block text-sm font-medium text-ys-ink">카테고리</label>
+                  <select
+                    value={categoryEtc ? "기타" : form.category}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      // '기타'는 저장되는 값이 아니라 직접 입력을 여는 스위치다
+                      setCategoryEtc(v === "기타");
+                      setForm({ ...form, category: v === "기타" ? "" : v });
+                    }}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="">선택 안 함</option>
+                    {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <option value="기타">기타 (직접 입력)</option>
+                  </select>
+                  {categoryEtc && (
+                    <input
+                      type="text"
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                      placeholder="카테고리를 입력하세요"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    />
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-ys-ink">주관</label>
                   <select
