@@ -4,6 +4,7 @@ import { BarChart3, Edit3, Film, ListVideo, Plus, Search, Trash2 } from "lucide-
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { ORGANIZER_OPTIONS } from "@/lib/extracurricular";
 import { canManageLms } from "@/lib/auth/lms-permissions";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
@@ -388,12 +389,18 @@ export default function AdminLmsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ys-ink-soft">주관 부서</label>
-                  <input
-                    type="text"
+                  <select
                     value={form.organizer}
                     onChange={(e) => setForm({ ...form, organizer: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  />
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">선택 안 함</option>
+                    {ORGANIZER_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    {/* 예전에 자유 입력으로 들어간 값은 지우지 않고 그대로 보여준다 */}
+                    {form.organizer && !ORGANIZER_OPTIONS.includes(form.organizer) && (
+                      <option value={form.organizer}>{form.organizer} (기존 값)</option>
+                    )}
+                  </select>
                 </div>
               </div>
 

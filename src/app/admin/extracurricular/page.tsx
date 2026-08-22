@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { parseCsv } from "@/lib/csv";
 import AdminLayout from "@/components/AdminLayout";
+import { ORGANIZER_OPTIONS } from "@/lib/extracurricular";
 
 type CoreComp = { id: number; name: string; color_code: string };
 type MajorComp = { id: number; name: string; department_id: number };
@@ -475,7 +476,21 @@ export default function AdminExtracurricularPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div><label className="block text-sm font-medium text-ys-ink">프로그램명 *</label><input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
                 <div><label className="block text-sm font-medium text-ys-ink">카테고리</label><input type="text" placeholder="예: 특강, 캠프, 봉사" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
-                <div><label className="block text-sm font-medium text-ys-ink">주관</label><input type="text" value={form.organizer} onChange={(e) => setForm({ ...form, organizer: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
+                <div>
+                  <label className="block text-sm font-medium text-ys-ink">주관</label>
+                  <select
+                    value={form.organizer}
+                    onChange={(e) => setForm({ ...form, organizer: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">선택 안 함</option>
+                    {ORGANIZER_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                    {/* 예전에 자유 입력으로 들어간 값은 지우지 않고 그대로 보여준다 */}
+                    {form.organizer && !ORGANIZER_OPTIONS.includes(form.organizer) && (
+                      <option value={form.organizer}>{form.organizer} (기존 값)</option>
+                    )}
+                  </select>
+                </div>
                 <div><label className="block text-sm font-medium text-ys-ink">최대 인원</label><input type="number" value={form.max_participants ?? ""} onChange={(e) => setForm({ ...form, max_participants: e.target.value ? Number(e.target.value) : null })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
                 <div>
                   <label className="block text-sm font-medium text-ys-ink">이수 마일리지</label>

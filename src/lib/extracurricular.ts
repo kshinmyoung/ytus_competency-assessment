@@ -25,6 +25,12 @@ export const ORGANIZER_GROUPS: { key: OrganizerGroupKey; label: string }[] = [
 ];
 
 /**
+ * 프로그램 등록 폼의 '주관' 선택지.
+ * 목록의 2단 분류와 같은 값을 쓰므로 자유 입력 때처럼 표기가 어긋나지 않는다.
+ */
+export const ORGANIZER_OPTIONS = ORGANIZER_GROUPS.map((g) => g.label);
+
+/**
  * 영상(video)은 온라인, 대면(offline)은 대면.
  * hybrid 는 실제로 둘 다이므로 양쪽 목록에 모두 나온다.
  */
