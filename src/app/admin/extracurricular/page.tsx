@@ -19,6 +19,7 @@ type Extra = {
   max_participants: number | null;
   is_active: boolean;
   registration_open: boolean;
+  completion_mileage: number;
   core_competency_tags: number[];
   major_competency_tags: number[];
 };
@@ -28,6 +29,9 @@ type Participant = {
   reflection: string | null;
   students: { name: string | null } | null;
 };
+
+/** 비교과 이수 마일리지 기본값. 지금까지 코드에 박혀 있던 값이다. */
+const DEFAULT_MILEAGE = 10;
 
 const emptyForm = {
   name: "",
@@ -39,6 +43,7 @@ const emptyForm = {
   max_participants: null as number | null,
   is_active: true,
   registration_open: false,
+  completion_mileage: DEFAULT_MILEAGE,
   core_competency_tags: [] as number[],
   major_competency_tags: [] as number[],
 };
@@ -56,7 +61,7 @@ export default function AdminExtracurricularPage() {
   const [showParticipants, setShowParticipants] = useState<Extra | null>(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [showStudentCsv, setShowStudentCsv] = useState(false);
-  const [csvResult, setCsvResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [csvResult, setCsvResult] = useState<{ success: number; failed: number; awarded?: number; errors: string[] } | null>(null);
   const [csvProcessing, setCsvProcessing] = useState(false);
   const csvRef = useRef<HTMLInputElement>(null);
   const studentCsvRef = useRef<HTMLInputElement>(null);
@@ -84,8 +89,46 @@ export default function AdminExtracurricularPage() {
     return items.filter((i) => i.name.toLowerCase().includes(q) || (i.category ?? "").toLowerCase().includes(q));
   }, [items, search]);
 
+  /**
+   * 비교과 마일리지 지급. 참여자 CSV와 학생-비교과 연결 CSV가 함께 쓴다.
+   *
+   * 규칙은 영상 프로그램과 같다.
+   *  - 완료 처리된 경우에만 지급한다 (신청·참여중은 지급하지 않는다)
+   *  - 내국인에게만 지급한다
+   *  - 점수는 프로그램에 설정된 completion_mileage 를 쓴다
+   *  - 같은 프로그램에 두 번 지급하지 않는다
+   *
+   * 지급됐으면 true.
+   */
+  const awardMileage = async (studentId: string, extraId: number, status: string): Promise<boolean> => {
+    if (status !== "완료") return false;
+
+    const program = items.find((i) => i.id === extraId);
+    const points = program?.completion_mileage ?? 0;
+    if (points <= 0) return false;
+
+    const { data: student } = await supabase
+      .from("students").select("student_type").eq("student_id", studentId).maybeSingle();
+    if ((student?.student_type ?? "domestic").trim() !== "domestic") return false;
+
+    const { data: existMile } = await supabase
+      .from("mileage_records").select("id")
+      .eq("student_id", studentId).eq("source_type", "extracurricular").eq("source_id", extraId)
+      .maybeSingle();
+    if (existMile) return false;
+
+    const { error } = await supabase.from("mileage_records").insert({
+      student_id: studentId,
+      points,
+      reason: `비교과 이수: ${program?.name ?? extraId}`,
+      source_type: "extracurricular",
+      source_id: extraId,
+    });
+    return !error;
+  };
+
   // CSV 일괄 비교과 등록
-  // 헤더: name,category,organizer,description,start_date,end_date,max_participants
+  // 헤더: name,category,organizer,description,start_date,end_date,max_participants,completion_mileage
   const handleExtraCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -108,6 +151,9 @@ export default function AdminExtracurricularPage() {
         start_date: row.start_date || null,
         end_date: row.end_date || null,
         max_participants: Number(row.max_participants) || null,
+        completion_mileage: row.completion_mileage !== undefined && row.completion_mileage !== ""
+          ? Number(row.completion_mileage) || 0
+          : DEFAULT_MILEAGE,
         is_active: true,
         registration_open: (row.registration_open ?? "").toLowerCase() === "true",
       });
@@ -133,6 +179,7 @@ export default function AdminExtracurricularPage() {
     setCsvProcessing(true);
     setCsvResult(null);
     let success = 0;
+    let awarded = 0;
     const errors: string[] = [];
 
     const nameMap: Record<string, number> = {};
@@ -154,10 +201,14 @@ export default function AdminExtracurricularPage() {
         completed_at: status === "완료" ? new Date().toISOString() : null,
       }, { onConflict: "student_id,extracurricular_id" });
 
-      if (error) { errors.push(`${row.student_id}: ${error.message}`); } else { success++; }
+      if (error) { errors.push(`${row.student_id}: ${error.message}`); continue; }
+      success++;
+
+      // 참여자 CSV 와 같은 규칙으로 지급한다. 두 경로가 다르게 동작하면 안 된다.
+      if (await awardMileage(row.student_id, extraId, status)) awarded++;
     }
 
-    setCsvResult({ success, failed: errors.length, errors });
+    setCsvResult({ success, failed: errors.length, awarded, errors });
     setCsvProcessing(false);
     e.target.value = "";
   };
@@ -174,6 +225,7 @@ export default function AdminExtracurricularPage() {
       max_participants: item.max_participants,
       is_active: item.is_active,
       registration_open: item.registration_open,
+      completion_mileage: item.completion_mileage ?? DEFAULT_MILEAGE,
       core_competency_tags: item.core_competency_tags ?? [],
       major_competency_tags: item.major_competency_tags ?? [],
     });
@@ -195,6 +247,7 @@ export default function AdminExtracurricularPage() {
       max_participants: form.max_participants,
       is_active: form.is_active,
       registration_open: form.registration_open,
+      completion_mileage: Number(form.completion_mileage) || 0,
       core_competency_tags: form.core_competency_tags,
       major_competency_tags: form.major_competency_tags,
     };
@@ -220,7 +273,7 @@ export default function AdminExtracurricularPage() {
 
   // 참여자 CSV 일괄 등록
   const participantCsvRef = useRef<HTMLInputElement>(null);
-  const [participantCsvResult, setParticipantCsvResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [participantCsvResult, setParticipantCsvResult] = useState<{ success: number; failed: number; awarded: number; errors: string[] } | null>(null);
   const [participantCsvProcessing, setParticipantCsvProcessing] = useState(false);
 
   const handleParticipantCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,6 +286,7 @@ export default function AdminExtracurricularPage() {
     setParticipantCsvProcessing(true);
     setParticipantCsvResult(null);
     let success = 0;
+    let awarded = 0;
     const errors: string[] = [];
 
     for (const row of rows) {
@@ -245,18 +299,13 @@ export default function AdminExtracurricularPage() {
         status,
         completed_at: status === "완료" ? new Date().toISOString() : null,
       }, { onConflict: "student_id,extracurricular_id" });
-      if (error) { errors.push(`${sid}: ${error.message}`); }
-      else {
-        // 마일리지 10점 (중복 방지)
-        const { data: existMile } = await supabase.from("mileage_records").select("id").eq("student_id", sid).eq("source_type", "extracurricular").eq("source_id", showParticipants.id).maybeSingle();
-        if (!existMile) {
-          await supabase.from("mileage_records").insert({ student_id: sid, points: 10, reason: `비교과 신청: ${showParticipants.name}`, source_type: "extracurricular", source_id: showParticipants.id });
-        }
-        success++;
-      }
+      if (error) { errors.push(`${sid}: ${error.message}`); continue; }
+      success++;
+
+      if (await awardMileage(sid, showParticipants.id, status)) awarded++;
     }
 
-    setParticipantCsvResult({ success, failed: errors.length, errors });
+    setParticipantCsvResult({ success, failed: errors.length, awarded, errors });
     setParticipantCsvProcessing(false);
     // 목록 새로고침
     const { data } = await supabase.from("student_extracurricular").select("student_id, status, reflection, students(name)").eq("extracurricular_id", showParticipants.id).order("created_at", { ascending: false });
@@ -310,6 +359,7 @@ export default function AdminExtracurricularPage() {
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">프로그램명</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">카테고리</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">기간</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">마일리지</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">역량 태그</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-ys-ink-soft">상태</th>
               <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-ys-ink-soft">관리</th>
@@ -317,13 +367,14 @@ export default function AdminExtracurricularPage() {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {filtered.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-ys-ink-soft">프로그램이 없습니다.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-ys-ink-soft">프로그램이 없습니다.</td></tr>
             ) : (
               filtered.map((item) => (
                 <tr key={item.id} className="hover:bg-ys-paper">
                   <td className="px-4 py-3 text-sm font-medium text-ys-ink">{item.name}</td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{item.category ?? "-"}</td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{item.start_date ?? "-"}{item.end_date ? ` ~ ${item.end_date}` : ""}</td>
+                  <td className="px-4 py-3 text-right text-sm text-ys-ink-soft">{item.completion_mileage > 0 ? `${item.completion_mileage}점` : "-"}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {(item.core_competency_tags ?? []).map((id) => {
@@ -375,6 +426,7 @@ export default function AdminExtracurricularPage() {
             {participantCsvResult && (
               <div className="mt-3 rounded-lg border border-slate-200 bg-ys-paper p-3">
                 <p className="text-sm">성공: <strong className="text-[#8A6212]">{participantCsvResult.success}명</strong>, 실패: <strong className="text-red-600">{participantCsvResult.failed}명</strong></p>
+                <p className="mt-0.5 text-xs text-ys-ink-soft">마일리지 지급: {participantCsvResult.awarded}명 (완료 처리된 내국인만)</p>
                 {participantCsvResult.errors.length > 0 && (
                   <div className="mt-1 max-h-20 overflow-auto text-xs text-red-600">{participantCsvResult.errors.map((err, i) => <p key={i}>{err}</p>)}</div>
                 )}
@@ -425,6 +477,11 @@ export default function AdminExtracurricularPage() {
                 <div><label className="block text-sm font-medium text-ys-ink">카테고리</label><input type="text" placeholder="예: 특강, 캠프, 봉사" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
                 <div><label className="block text-sm font-medium text-ys-ink">주관</label><input type="text" value={form.organizer} onChange={(e) => setForm({ ...form, organizer: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
                 <div><label className="block text-sm font-medium text-ys-ink">최대 인원</label><input type="number" value={form.max_participants ?? ""} onChange={(e) => setForm({ ...form, max_participants: e.target.value ? Number(e.target.value) : null })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
+                <div>
+                  <label className="block text-sm font-medium text-ys-ink">이수 마일리지</label>
+                  <input type="number" min={0} value={form.completion_mileage} onChange={(e) => setForm({ ...form, completion_mileage: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <p className="mt-1 text-[11px] text-ys-ink-soft/70">완료 처리 시 지급됩니다. 유학생은 지급되지 않습니다.</p>
+                </div>
                 <div><label className="block text-sm font-medium text-ys-ink">시작일</label><input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
                 <div><label className="block text-sm font-medium text-ys-ink">종료일</label><input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></div>
               </div>
@@ -468,7 +525,8 @@ export default function AdminExtracurricularPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <input ref={csvRef} type="file" accept=".csv" className="hidden" onChange={handleExtraCsv} />
             <h3 className="text-lg font-semibold text-ys-ink">비교과 CSV 일괄 등록</h3>
-            <p className="mt-1 text-sm text-ys-ink-soft">헤더: name, category, organizer, description, start_date, end_date, max_participants, registration_open</p>
+            <p className="mt-1 text-sm text-ys-ink-soft">헤더: name, category, organizer, description, start_date, end_date, max_participants, registration_open, completion_mileage</p>
+            <p className="mt-1 text-xs text-ys-ink-soft/70">completion_mileage 를 비워두면 기본 10점으로 등록됩니다.</p>
             {csvProcessing && <p className="mt-3 text-sm text-ys-blue">처리 중...</p>}
             {csvResult && (
               <div className="mt-3 rounded-lg border border-slate-200 bg-ys-paper p-3">
@@ -504,6 +562,9 @@ export default function AdminExtracurricularPage() {
             {csvResult && (
               <div className="mt-3 rounded-lg border border-slate-200 bg-ys-paper p-3">
                 <p className="text-sm">성공: <strong className="text-[#8A6212]">{csvResult.success}건</strong>, 실패: <strong className="text-red-600">{csvResult.failed}건</strong></p>
+                {csvResult.awarded !== undefined && (
+                  <p className="mt-0.5 text-xs text-ys-ink-soft">마일리지 지급: {csvResult.awarded}건 (완료 처리된 내국인만)</p>
+                )}
                 {csvResult.errors.length > 0 && (
                   <div className="mt-2 max-h-32 overflow-auto text-xs text-red-600">
                     {csvResult.errors.map((e, i) => <p key={i}>{e}</p>)}

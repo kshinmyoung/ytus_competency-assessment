@@ -39,6 +39,9 @@ const DEFAULT_RULE: CompletionRule = {
   survey_id: null,
 };
 
+/** 이수 마일리지 기본값. 대면 비교과와 같은 값을 쓴다. */
+const DEFAULT_MILEAGE = 10;
+
 const emptyForm = {
   name: "",
   category: "",
@@ -46,7 +49,7 @@ const emptyForm = {
   description: "",
   delivery_type: "video",
   target_audience: "all",
-  completion_mileage: 0,
+  completion_mileage: DEFAULT_MILEAGE,
   max_participants: null as number | null,
   is_active: true,
   registration_open: false,
