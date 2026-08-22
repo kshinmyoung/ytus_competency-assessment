@@ -3,6 +3,7 @@
 import { CheckCircle, Download, Upload, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { awardExtracurricularMileage } from "@/lib/extracurricular";
 import { parseCsv } from "@/lib/csv";
 import AdminLayout from "@/components/AdminLayout";
 
@@ -265,6 +266,8 @@ export default function AdminImportPage() {
           }, { onConflict: "student_id,extracurricular_id" });
           ok = !error;
           if (error) errors.push(`${row.student_id}: ${error.message}`);
+          // 비교과 관리 화면의 CSV 와 같은 규칙으로 지급한다
+          else await awardExtracurricularMileage(row.student_id, extraId, status);
         }
 
         else if (activeTab === "mentoring") {

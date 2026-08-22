@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { parseCsv } from "@/lib/csv";
 import AdminLayout from "@/components/AdminLayout";
-import { CATEGORY_OPTIONS, ORGANIZER_OPTIONS, isEtcCategory } from "@/lib/extracurricular";
+import { CATEGORY_OPTIONS, ORGANIZER_OPTIONS, awardExtracurricularMileage, isEtcCategory } from "@/lib/extracurricular";
 
 type CoreComp = { id: number; name: string; color_code: string };
 type MajorComp = { id: number; name: string; department_id: number };
@@ -92,44 +92,6 @@ export default function AdminExtracurricularPage() {
     return items.filter((i) => i.name.toLowerCase().includes(q) || (i.category ?? "").toLowerCase().includes(q));
   }, [items, search]);
 
-  /**
-   * 비교과 마일리지 지급. 참여자 CSV와 학생-비교과 연결 CSV가 함께 쓴다.
-   *
-   * 규칙은 영상 프로그램과 같다.
-   *  - 완료 처리된 경우에만 지급한다 (신청·참여중은 지급하지 않는다)
-   *  - 내국인에게만 지급한다
-   *  - 점수는 프로그램에 설정된 completion_mileage 를 쓴다
-   *  - 같은 프로그램에 두 번 지급하지 않는다
-   *
-   * 지급됐으면 true.
-   */
-  const awardMileage = async (studentId: string, extraId: number, status: string): Promise<boolean> => {
-    if (status !== "완료") return false;
-
-    const program = items.find((i) => i.id === extraId);
-    const points = program?.completion_mileage ?? 0;
-    if (points <= 0) return false;
-
-    const { data: student } = await supabase
-      .from("students").select("student_type").eq("student_id", studentId).maybeSingle();
-    if ((student?.student_type ?? "domestic").trim() !== "domestic") return false;
-
-    const { data: existMile } = await supabase
-      .from("mileage_records").select("id")
-      .eq("student_id", studentId).eq("source_type", "extracurricular").eq("source_id", extraId)
-      .maybeSingle();
-    if (existMile) return false;
-
-    const { error } = await supabase.from("mileage_records").insert({
-      student_id: studentId,
-      points,
-      reason: `비교과 이수: ${program?.name ?? extraId}`,
-      source_type: "extracurricular",
-      source_id: extraId,
-    });
-    return !error;
-  };
-
   // CSV 일괄 비교과 등록
   // 헤더: name,category,organizer,description,start_date,end_date,max_participants,completion_mileage
   const handleExtraCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,7 +170,7 @@ export default function AdminExtracurricularPage() {
       success++;
 
       // 참여자 CSV 와 같은 규칙으로 지급한다. 두 경로가 다르게 동작하면 안 된다.
-      if (await awardMileage(row.student_id, extraId, status)) awarded++;
+      if (await awardExtracurricularMileage(row.student_id, extraId, status)) awarded++;
     }
 
     setCsvResult({ success, failed: errors.length, awarded, errors });
@@ -306,7 +268,7 @@ export default function AdminExtracurricularPage() {
       if (error) { errors.push(`${sid}: ${error.message}`); continue; }
       success++;
 
-      if (await awardMileage(sid, showParticipants.id, status)) awarded++;
+      if (await awardExtracurricularMileage(sid, showParticipants.id, status)) awarded++;
     }
 
     setParticipantCsvResult({ success, failed: errors.length, awarded, errors });

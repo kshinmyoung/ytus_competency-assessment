@@ -141,9 +141,8 @@ export default function ReservationPage() {
     });
     if (!error) {
       setMyExtras((prev) => new Map(prev).set(extraId, { extracurricular_id: extraId, status: "신청" }));
-      // 마일리지 10점 부여
-      const extraName = extras.find((e) => e.id === extraId)?.name ?? "";
-      await supabase.from("mileage_records").insert({ student_id: studentId, points: 10, reason: `비교과 신청: ${extraName}`, source_type: "extracurricular", source_id: extraId });
+      // 마일리지는 여기서 주지 않는다. 이수 마일리지는 관리자가 완료 처리할 때만 지급한다
+      // (lib/extracurricular.ts 의 awardExtracurricularMileage).
     } else { alert(error.message); }
     setExtraSubmitting(false);
   };

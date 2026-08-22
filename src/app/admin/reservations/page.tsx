@@ -200,12 +200,8 @@ export default function AdminReservationsPage() {
       status: "신청",
     }, { onConflict: "student_id,extracurricular_id" });
     if (error) { alert(error.message); } else {
-      // 마일리지 10점 (중복 방지)
-      const { data: existMile } = await supabase.from("mileage_records").select("id").eq("student_id", addExtraForm.student_id).eq("source_type", "extracurricular").eq("source_id", addExtraForm.extracurricular_id).maybeSingle();
-      if (!existMile) {
-        const exName = extraList.find((e) => e.id === addExtraForm.extracurricular_id)?.name ?? "";
-        await supabase.from("mileage_records").insert({ student_id: addExtraForm.student_id, points: 10, reason: `비교과 신청: ${exName}`, source_type: "extracurricular", source_id: addExtraForm.extracurricular_id });
-      }
+      // 여기서는 '신청' 상태로만 넣는다. 마일리지는 완료 처리 시점에 지급한다
+      // (lib/extracurricular.ts 의 awardExtracurricularMileage).
       setShowAddExtra(false);
       setAddExtraForm({ student_id: "", extracurricular_id: 0 });
       setAddExtraSearch("");
