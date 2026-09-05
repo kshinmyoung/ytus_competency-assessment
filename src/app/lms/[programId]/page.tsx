@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { formatClock, formatDuration, lmsGet, openCertificate, type LmsProgramDetail } from "@/lib/lms-client";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import ProgramBoard from "./ProgramBoard";
 
 export default function LmsProgramPage() {
   const params = useParams();
@@ -243,6 +244,9 @@ export default function LmsProgramPage() {
           신청하면 콘텐츠를 재생할 수 있습니다.
         </p>
       )}
+
+      {/* 의견 게시판 — 프로그램에 딸려 있으므로 별도 개설 없이 항상 자리한다 */}
+      <ProgramBoard programId={programId} />
     </div>
   );
 }

@@ -71,6 +71,37 @@ export type LmsProgramDetail = {
   contents: LmsContent[];
 };
 
+export type LmsPost = {
+  id: number;
+  parentId: number | null;
+  title: string | null;
+  body: string;
+  isSecret: boolean;
+  /** 비밀글이라 본문이 가려진 상태 */
+  masked: boolean;
+  deleted: boolean;
+  isMine: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  authorName: string;
+  authorRole: string;
+  isManagerPost: boolean;
+  replyCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsPostList = {
+  program: { id: number; name: string };
+  canManage: boolean;
+  page: number;
+  size: number;
+  total: number;
+  posts: LmsPost[];
+};
+
+export type LmsReplyList = { postId: number; replies: LmsPost[] };
+
 async function authHeaders(): Promise<Record<string, string>> {
   // 페이지 진입 직후에는 세션 복원이 끝나지 않았을 수 있다
   const token = await waitForAccessToken();
@@ -91,6 +122,24 @@ export async function lmsPost<T>(path: string, payload: unknown): Promise<T> {
     headers: await authHeaders(),
     body: JSON.stringify(payload),
   });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? "요청에 실패했습니다.");
+  return body as T;
+}
+
+export async function lmsPatch<T>(path: string, payload: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "PATCH",
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? "요청에 실패했습니다.");
+  return body as T;
+}
+
+export async function lmsDelete<T>(path: string): Promise<T> {
+  const res = await fetch(path, { method: "DELETE", headers: await authHeaders() });
   const body = await res.json();
   if (!res.ok) throw new Error(body.error ?? "요청에 실패했습니다.");
   return body as T;
