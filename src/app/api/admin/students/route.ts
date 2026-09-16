@@ -4,6 +4,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { findAuthUserIdByEmail } from "@/lib/auth/admin-users";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
     const { admin } = result;
     const { data: students, error: listError } = await admin
       .from("students")
-      .select("student_id, name, password, role, student_type, department_id, grade_year, admission_year, phone, email")
+      .select("student_id, name, role, student_type, department_id, grade_year, admission_year, phone, email")
       .order("student_id");
     if (listError) {
       return NextResponse.json({ error: listError.message }, { status: 500 });
@@ -83,6 +84,21 @@ export async function PATCH(request: Request) {
     if (Object.keys(payload).length === 0) {
       return NextResponse.json({ error: "수정할 필드가 없습니다." }, { status: 400 });
     }
+    // 비밀번호는 Auth 가 원본이다. students.password 만 고치면 학생은 예전 비밀번호로 로그인한다.
+    if (payload.password) {
+      const email = `${student_id}@temp.com`;
+      const authUserId = await findAuthUserIdByEmail(admin, email);
+      if (!authUserId) {
+        return NextResponse.json({ error: "이 학번의 로그인 계정을 찾을 수 없습니다." }, { status: 404 });
+      }
+      const { error: authError } = await admin.auth.admin.updateUserById(authUserId, {
+        password: payload.password,
+      });
+      if (authError) {
+        return NextResponse.json({ error: "비밀번호 변경 실패: " + authError.message }, { status: 400 });
+      }
+    }
+
     const { error } = await admin.from("students").update(payload).eq("student_id", student_id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

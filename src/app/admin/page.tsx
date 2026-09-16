@@ -11,7 +11,8 @@ import AdminLayout from "@/components/AdminLayout";
 type Student = {
   student_id: string;
   name: string | null;
-  password: string | null;
+  /** 발급 당시의 초기 비밀번호 사본. 본인이 바꾸면 비워진다. 목록 API 는 내려보내지 않는다. */
+  password?: string | null;
   role: string | null;
   student_type: string | null;
   department_id: number | null;
@@ -268,6 +269,8 @@ export default function AdminPage() {
           student_id: newStudent.student_id.trim(),
           name: newStudent.name.trim(),
           password: newStudent.password.trim(),
+          // 한 명씩 추가하며 비밀번호를 직접 적은 경우다. 이미 있는 계정이면 초기화로 본다.
+          resetPassword: true,
           role: newStudent.role,
           department_id: newStudent.department_id ? Number(newStudent.department_id) : null,
           grade_year: newStudent.grade_year ? Number(newStudent.grade_year) : null,

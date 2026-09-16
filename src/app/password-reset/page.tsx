@@ -7,101 +7,56 @@ import { useState, type FormEvent } from "react";
 
 import { supabase } from "@/lib/supabase";
 
-type StudentRow = {
-  student_id: string;
-  password: string | null;
-  [key: string]: unknown;
-};
-
-function getErrorMessage(err: { message?: string; details?: string; hint?: string }): string {
-  const msg = err.message ?? "알 수 없는 오류";
-  const details = (err as { details?: string }).details;
-  const hint = (err as { hint?: string }).hint;
-  const parts = [msg];
-  if (details) parts.push(`상세: ${details}`);
-  if (hint) parts.push(`참고: ${hint}`);
-  return parts.join("\n");
-}
-
 export default function PasswordResetPage() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * 비밀번호 변경은 서버 라우트가 처리한다.
+   * 로그인은 Supabase Auth 가 하므로 students.password 만 고치면 로그인 비밀번호는 그대로다.
+   */
   const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
-    setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
     const studentId = String(formData.get("studentId") ?? "").trim();
-    const currentPassword = String(formData.get("currentPassword") ?? "").trim();
-    const newPassword = String(formData.get("newPassword") ?? "").trim();
-    const confirmPassword = String(formData.get("confirmPassword") ?? "").trim();
+    // 비밀번호는 공백도 값이므로 trim 하지 않는다
+    const currentPassword = String(formData.get("currentPassword") ?? "");
+    const newPassword = String(formData.get("newPassword") ?? "");
+    const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
     if (!studentId || !currentPassword || !newPassword || !confirmPassword) {
       setErrorMessage("모든 필드를 입력해 주세요.");
-      setIsSubmitting(false);
       return;
     }
-
     if (newPassword !== confirmPassword) {
       setErrorMessage("새 비밀번호와 확인 비밀번호가 일치하지 않습니다.");
-      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      // Step 1: 학생 조회 (student_id는 String으로 비교)
-      const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .eq("student_id", String(studentId));
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId, currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
 
-      if (error) {
-        console.error("Supabase 비밀번호 확인 오류:", {
-          message: error.message,
-          details: (error as { details?: string }).details,
-          hint: (error as { hint?: string }).hint,
-        });
-        alert("조회 중 오류가 발생했습니다.\n\n에러 내용: " + getErrorMessage(error));
-        setErrorMessage("학생 정보를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+      if (!res.ok) {
+        setErrorMessage(data.error ?? "비밀번호를 변경하지 못했습니다.");
         return;
       }
 
-      const student = Array.isArray(data) ? data[0] : null;
-
-      // Step 2: 현재 비밀번호 일치 여부 JS 비교
-      if (!student || student.password == null || student.password !== currentPassword) {
-        alert("현재 비밀번호가 일치하지 않습니다.");
-        setErrorMessage("현재 비밀번호가 일치하지 않습니다.");
-        return;
-      }
-
-      // Step 3: 비밀번호 업데이트 (student_id로 조건 지정)
-      const { error: updateError } = await supabase
-        .from("students")
-        .update({ password: newPassword })
-        .eq("student_id", String(studentId));
-
-      if (updateError) {
-        console.error("Supabase 비밀번호 업데이트 오류:", {
-          message: updateError.message,
-          details: (updateError as { details?: string }).details,
-          hint: (updateError as { hint?: string }).hint,
-        });
-        alert("비밀번호 저장 중 오류가 발생했습니다.\n\n에러 내용: " + getErrorMessage(updateError));
-        setErrorMessage("비밀번호를 저장하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
-        return;
-      }
-
-      alert("비밀번호가 성공적으로 변경되었습니다.");
+      // 예전 비밀번호로 열린 세션은 서버에서 끊었다. 이 브라우저에 남은 것도 정리한다.
+      await supabase.auth.signOut();
+      alert("비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해 주세요.");
       router.push("/login");
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
       console.error("비밀번호 변경 처리 중 예외:", err);
-      alert("예기치 않은 오류가 발생했습니다.\n\n에러 내용: " + message);
-      setErrorMessage("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+      setErrorMessage("네트워크 오류로 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -175,6 +130,7 @@ export default function PasswordResetPage() {
               required
               className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ys-ink shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
+            <p className="mt-1 text-xs text-ys-ink-soft">8자 이상으로 정해 주세요.</p>
           </div>
 
           <div>

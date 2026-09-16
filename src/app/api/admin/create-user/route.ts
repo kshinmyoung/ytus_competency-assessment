@@ -5,6 +5,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { findAuthUserIdByEmail } from "@/lib/auth/admin-users";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
     const admission_year = typeof body.admission_year === "number" ? body.admission_year : null;
     const phone = typeof body.phone === "string" ? body.phone.trim() : null;
     const email_field = typeof body.email === "string" ? body.email.trim() : null;
+    // 이미 있는 계정의 비밀번호는 건드리지 않는다. CSV 를 다시 올렸다고 해서
+    // 본인이 바꾼 비밀번호가 초기값으로 되돌아가면 안 된다.
+    // 관리자가 한 명을 콕 집어 초기화할 때만 true 로 보낸다.
+    const resetPassword = body.resetPassword === true;
 
     if (!student_id || !password) {
       return NextResponse.json(
@@ -42,22 +47,28 @@ export async function POST(request: Request) {
 
     const email = `${student_id}@temp.com`;
 
-    // 1단계: Auth 계정 생성 또는 기존 계정 업데이트
-    let authUserId: string | undefined;
-    const { data: authUser, error: authError } = await admin.auth.admin.createUser({
+    // 1단계: Auth 계정 생성. 이미 있으면 그대로 두고 프로필만 갱신한다.
+    let existed = false;
+    let passwordReset = false;
+    const { error: authError } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
     });
 
     if (authError) {
-      // 이미 등록된 경우 기존 계정 찾아서 비밀번호 업데이트
       if (authError.message.includes("already been registered")) {
-        const { data: { users } } = await admin.auth.admin.listUsers();
-        const existing = users.find((u) => u.email === email);
-        if (existing) {
-          await admin.auth.admin.updateUserById(existing.id, { password });
-          authUserId = existing.id;
+        const existingId = await findAuthUserIdByEmail(admin, email);
+        if (existingId) {
+          existed = true;
+          // 명시적으로 요청했을 때만 비밀번호를 초기화한다
+          if (resetPassword) {
+            const { error: resetError } = await admin.auth.admin.updateUserById(existingId, { password });
+            if (resetError) {
+              return NextResponse.json({ error: "비밀번호 초기화 실패: " + resetError.message, step: "auth" }, { status: 400 });
+            }
+            passwordReset = true;
+          }
         } else {
           return NextResponse.json({ error: "기존 Auth 계정을 찾을 수 없습니다.", step: "auth" }, { status: 400 });
         }
@@ -65,17 +76,17 @@ export async function POST(request: Request) {
         console.error("[create-user] Auth 생성 실패:", authError.message, { student_id, email });
         return NextResponse.json({ error: "Auth 계정 생성 실패: " + authError.message, step: "auth" }, { status: 400 });
       }
-    } else {
-      authUserId = authUser.user?.id;
     }
 
     // 2단계: students 테이블에 upsert (기존이면 업데이트)
     const payload: Record<string, unknown> = {
       student_id,
-      password,
       name: name || null,
       role: role || "student",
     };
+    // students.password 는 초기 비밀번호 사본이다. 실제 비밀번호를 바꿀 때만 같이 쓴다.
+    // 그냥 덮어쓰면 본인이 바꾼 계정의 사본이 초기값으로 되살아나 관리자를 헷갈리게 한다.
+    if (!existed || passwordReset) payload.password = password;
     if (department_id !== null) payload.department_id = department_id;
     if (grade_year !== null) payload.grade_year = grade_year;
     if (admission_year !== null) payload.admission_year = admission_year;
@@ -96,6 +107,8 @@ export async function POST(request: Request) {
       success: true,
       student_id,
       email,
+      existed,
+      passwordReset,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "알 수 없는 오류";
