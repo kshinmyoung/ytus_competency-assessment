@@ -60,6 +60,7 @@ export type LmsProgramDetail = {
     registrationOpen: boolean;
     completionMileage: number;
     minProgress: number;
+    requiresSurvey: boolean;
   };
   enrolled: boolean;
   enrolledStatus: string | null;
@@ -101,6 +102,24 @@ export type LmsPostList = {
 };
 
 export type LmsReplyList = { postId: number; replies: LmsPost[] };
+
+export type LmsSurveyQuestion = {
+  id: number;
+  text: string;
+  /** likert(1~5) · text · choice */
+  type: string;
+  options: string[] | null;
+  order: number;
+  required: boolean;
+};
+
+export type LmsSurvey = {
+  surveyId: number | null;
+  title?: string;
+  description?: string | null;
+  submitted?: boolean;
+  questions: LmsSurveyQuestion[];
+};
 
 async function authHeaders(): Promise<Record<string, string>> {
   // 페이지 진입 직후에는 세션 복원이 끝나지 않았을 수 있다

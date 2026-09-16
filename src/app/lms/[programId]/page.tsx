@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { formatClock, formatDuration, lmsGet, openCertificate, type LmsProgramDetail } from "@/lib/lms-client";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import LmsSurveyModal from "@/components/LmsSurveyModal";
 import ProgramBoard from "./ProgramBoard";
 
 export default function LmsProgramPage() {
@@ -17,6 +18,7 @@ export default function LmsProgramPage() {
   const [error, setError] = useState("");
   const [enrolling, setEnrolling] = useState(false);
   const [certError, setCertError] = useState("");
+  const [surveyOpen, setSurveyOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -159,6 +161,31 @@ export default function LmsProgramPage() {
           </div>
         )}
       </div>
+
+      {/* 진도는 다 채웠는데 설문이 남은 경우. 시청 화면을 닫고 나가도 여기서 이어서 낼 수 있다. */}
+      {enrolled && !completion && program.requiresSurvey && requiredTotal > 0 && requiredPassed === requiredTotal && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ys-blue/30 bg-ys-blue/5 px-5 py-4">
+          <div>
+            <p className="text-sm font-medium text-ys-ink">이수 설문이 남았습니다</p>
+            <p className="mt-0.5 text-xs text-ys-ink-soft">영상은 모두 시청했습니다. 설문을 제출하면 이수가 확정됩니다.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSurveyOpen(true)}
+            className="shrink-0 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
+          >
+            설문 제출하기
+          </button>
+        </div>
+      )}
+
+      {surveyOpen && (
+        <LmsSurveyModal
+          programId={programId}
+          onCompleted={async () => { setSurveyOpen(false); await load(); }}
+          onClose={() => setSurveyOpen(false)}
+        />
+      )}
 
       {/* 커리큘럼 */}
       <h2 className="mb-3 text-sm font-bold text-ys-ink">커리큘럼</h2>

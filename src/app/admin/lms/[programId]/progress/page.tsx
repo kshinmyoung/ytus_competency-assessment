@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, Download, RotateCcw, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardList, Download, RotateCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { canManageLms, canViewLmsProgress } from "@/lib/auth/lms-permissions";
-import { downloadXLSX } from "@/lib/export";
+import { downloadCSV, downloadXLSX } from "@/lib/export";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
 type ContentCol = { contentId: number; title: string; durationSec: number; isRequired: boolean };
@@ -83,6 +83,20 @@ export default function AdminLmsProgressPage() {
     setNotice(count === 0 ? "내보낼 수강생이 없습니다." : `엑셀 ${count}개 파일을 내려받았습니다.`);
   };
 
+  /** 이수 설문 결과 CSV. 미제출자도 행으로 남겨 누가 안 냈는지 보이게 한다. */
+  const handleSurveyExport = async () => {
+    setNotice("");
+    const res = await fetch(`/api/admin/lms/survey-export?programId=${programId}`, { headers: await authHeaders() });
+    const body = await res.json();
+    if (!res.ok) { setNotice(body.error ?? "내보내기에 실패했습니다."); return; }
+    if (!body.surveyLinked) { setNotice("이 프로그램에는 연결된 이수 설문이 없습니다."); return; }
+    if (!body.rows?.length) { setNotice("내보낼 수강생이 없습니다."); return; }
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safeName = String(body.programName ?? "program").replace(/[\\/:*?"<>|]/g, "_");
+    downloadCSV(body.rows, `${safeName}_설문결과_${stamp}.csv`);
+    setNotice(`설문 결과 CSV를 내려받았습니다. (제출 ${body.submitted ?? 0}명 / 수강생 ${body.rows.length}명)`);
+  };
+
   const handleApprove = async (row: Row) => {
     if (!confirm(`${row.name || row.studentId} 학생의 이수를 승인하시겠습니까?`)) return;
     setBusy(row.studentId); setNotice("");
@@ -149,14 +163,24 @@ export default function AdminLmsProgressPage() {
               {data.program.completionMileage > 0 && ` · 이수 마일리지 ${data.program.completionMileage}점(내국인)`}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
-          >
-            <Download className="h-4 w-4" />
-            엑셀 다운로드
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
+            >
+              <Download className="h-4 w-4" />
+              엑셀 다운로드
+            </button>
+            <button
+              type="button"
+              onClick={handleSurveyExport}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper"
+            >
+              <ClipboardList className="h-4 w-4" />
+              설문 결과 CSV
+            </button>
+          </div>
         </div>
       </div>
 

@@ -17,6 +17,9 @@ type CompletionRule = {
 
 type CoreComp = { id: number; name: string; color_code: string };
 
+/** 이수 설문 후보. 설문조사 관리에서 만든 설문을 그대로 쓴다. */
+type SurveyOption = { id: number; title: string; org_name: string; is_active: boolean };
+
 type VideoProgram = {
   id: number;
   name: string;
@@ -56,6 +59,7 @@ const emptyForm = {
   registration_open: false,
   min_progress: 90,
   core_competency_tags: [] as number[],
+  survey_id: null as number | null,
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -73,6 +77,7 @@ const DELIVERY_LABELS: Record<string, string> = {
 export default function AdminLmsPage() {
   const [items, setItems] = useState<VideoProgram[]>([]);
   const [coreComps, setCoreComps] = useState<CoreComp[]>([]);
+  const [surveys, setSurveys] = useState<SurveyOption[]>([]);
   const [contentCounts, setContentCounts] = useState<Record<number, number>>({});
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [search, setSearch] = useState("");
@@ -133,6 +138,12 @@ export default function AdminLmsPage() {
       // 비교과 관리 화면과 동일하게 핵심역량 목록을 불러온다
       const { data: comps } = await supabase.from("core_competencies").select("id, name, color_code").order("id");
       setCoreComps(comps ?? []);
+      // 비활성 설문도 함께 받는다. 연결해 둔 설문이 비활성이 됐을 때 선택이 조용히 풀리면 안 된다.
+      const { data: surveyRows } = await supabase
+        .from("surveys")
+        .select("id, title, org_name, is_active")
+        .order("created_at", { ascending: false });
+      setSurveys(surveyRows ?? []);
       await load();
     })();
   }, []);
@@ -159,6 +170,7 @@ export default function AdminLmsPage() {
       registration_open: item.registration_open,
       min_progress: item.completion_rule?.min_progress ?? 90,
       core_competency_tags: item.core_competency_tags ?? [],
+      survey_id: item.completion_rule?.survey_id ?? null,
     });
     setError("");
     setShowForm(true);
@@ -187,6 +199,9 @@ export default function AdminLmsPage() {
       completion_rule: {
         ...DEFAULT_RULE,
         min_progress: Number(form.min_progress) || 90,
+        // 설문을 고르면 그 자체가 이수 조건이 된다. 별도 체크박스를 두지 않는다.
+        require_survey: form.survey_id !== null,
+        survey_id: form.survey_id,
       },
     };
 
@@ -308,7 +323,12 @@ export default function AdminLmsPage() {
                   </td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{AUDIENCE_LABELS[item.target_audience] ?? item.target_audience}</td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{contentCounts[item.id] ?? 0}개</td>
-                  <td className="px-4 py-3 text-sm text-ys-ink-soft">진도 {item.completion_rule?.min_progress ?? 90}%</td>
+                  <td className="px-4 py-3 text-sm text-ys-ink-soft">
+                      진도 {item.completion_rule?.min_progress ?? 90}%
+                      {item.completion_rule?.require_survey && (
+                        <span className="ml-1.5 rounded-full bg-ys-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-ys-blue">설문</span>
+                      )}
+                    </td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">
                     {item.completion_mileage > 0 ? `${item.completion_mileage}점` : "-"}
                   </td>
@@ -500,6 +520,26 @@ export default function AdminLmsPage() {
                     {capacityDisabled ? "영상형은 정원 무제한" : "비워두면 무제한"}
                   </p>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">이수 설문</label>
+                <select
+                  value={form.survey_id ?? ""}
+                  onChange={(e) => setForm({ ...form, survey_id: e.target.value === "" ? null : Number(e.target.value) })}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                >
+                  <option value="">사용 안 함</option>
+                  {surveys.map((sv) => (
+                    <option key={sv.id} value={sv.id}>
+                      {sv.title} ({sv.org_name}){sv.is_active ? "" : " · 비활성"}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-ys-ink-soft/70">
+                  설문을 고르면 마지막 영상을 다 본 직후 그 자리에서 설문이 열리고, 제출해야 이수가 확정됩니다.
+                  문항은 <Link href="/admin/survey" className="text-ys-blue hover:underline">설문조사 관리</Link>에서 만듭니다.
+                </p>
               </div>
 
               <div>

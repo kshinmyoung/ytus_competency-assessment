@@ -85,6 +85,8 @@ export async function GET(request: Request, { params }: Params) {
         registrationOpen: program.registration_open,
         completionMileage: studentType === "domestic" ? program.completion_mileage : 0,
         minProgress,
+        // 진도를 다 채운 뒤에도 설문이 남았는지 화면이 알아야 한다
+        requiresSurvey: Boolean(program.completion_rule?.require_survey && program.completion_rule?.survey_id),
       },
       enrolled: Boolean(enrollRes.data),
       enrolledStatus: enrollRes.data?.status ?? null,

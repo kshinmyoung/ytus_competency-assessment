@@ -10,6 +10,7 @@ import {
   type CompleteResult, type LmsProgramDetail,
 } from "@/lib/lms-client";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
+import LmsSurveyModal from "@/components/LmsSurveyModal";
 
 /** 설계서 9.1 — 배속 상한 1.5. 이 세 개만 노출한다. */
 const PLAYBACK_RATES = [1.0, 1.25, 1.5];
@@ -456,8 +457,17 @@ export default function LmsWatchPage() {
         </div>
       </div>
 
+      {/* 이수 설문 — 설문 목록으로 보내지 않고 영상을 본 자리에서 바로 받는다 */}
+      {completion?.status === "survey_required" && (
+        <LmsSurveyModal
+          programId={programId}
+          onCompleted={(result) => setCompletion(result)}
+          onClose={() => setCompletion(null)}
+        />
+      )}
+
       {/* 이수 결과 모달 */}
-      {completion && (
+      {completion && completion.status !== "survey_required" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-xl">
             {completion.status === "completed" && (
@@ -513,30 +523,6 @@ export default function LmsWatchPage() {
                 >
                   닫기
                 </button>
-              </>
-            )}
-
-            {completion.status === "survey_required" && (
-              <>
-                <h3 className="text-base font-bold text-ys-ink">설문 제출이 필요합니다</h3>
-                <p className="mt-1.5 text-sm text-ys-ink-soft">
-                  진도는 모두 채웠습니다. 만족도 설문을 제출하면 이수가 확정됩니다.
-                </p>
-                <div className="mt-5 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCompletion(null)}
-                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ys-ink hover:bg-slate-50"
-                  >
-                    나중에
-                  </button>
-                  <Link
-                    href="/survey"
-                    className="flex-1 rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-ys-blue/90"
-                  >
-                    설문 하러 가기
-                  </Link>
-                </div>
               </>
             )}
           </div>
