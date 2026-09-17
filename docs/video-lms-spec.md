@@ -145,6 +145,12 @@ where is_active = true
   and (target_audience = 'all' or target_audience = {학생의 student_type})
 ```
 
+> **2026-09-17 변경 (마이그레이션 017)** — 시청 대상에 `professor` 를 추가했다.
+> 값은 `all`(전체) / `professor`(교수) / `domestic`(학생) / `international`(유학생) 네 가지다.
+> `professor` 는 `students.role` 로, `domestic`·`international` 은 기존대로 `students.student_type` 으로 판정한다.
+> 학생 대상(`domestic`·`international`) 프로그램은 교수에게 노출하지 않는다.
+> 판정은 `lib/auth/lms-api.ts` 의 `audienceMatches(target, studentType, role)` 한 곳에서만 한다.
+
 **정원**: `delivery_type='video'`이면 `capacity`를 무시한다. 관리자 폼에서 입력란 비활성화, 신청 API에서 정원 체크 생략.
 
 ### 4.3 마이그레이션 003: 역량 항목 대상 구분

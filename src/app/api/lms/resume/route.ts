@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     // 최근 시청 순으로 몇 건만 본다 (이수 기준 미달인 것 중 첫 건을 고른다)
     const { data: rows, error } = await admin
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       if (!content) continue;
       const program = programById.get(content.extracurricular_id);
       if (!program || !program.is_active) continue;
-      if (!audienceMatches(program.target_audience, studentType)) continue;
+      if (!audienceMatches(program.target_audience, studentType, role)) continue;
       if (completed.has(program.id)) continue;
 
       const minProgress = program.completion_rule?.min_progress ?? 90;

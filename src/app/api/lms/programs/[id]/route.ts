@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     const programId = Number((await params).id);
     if (!programId) return NextResponse.json({ error: "잘못된 프로그램 ID 입니다." }, { status: 400 });
@@ -27,7 +27,7 @@ export async function GET(request: Request, { params }: Params) {
     if (!program || !program.is_active) {
       return NextResponse.json({ error: "프로그램을 찾을 수 없습니다." }, { status: 404 });
     }
-    if (!audienceMatches(program.target_audience, studentType)) {
+    if (!audienceMatches(program.target_audience, studentType, role)) {
       return NextResponse.json({ error: "수강 대상이 아닌 프로그램입니다." }, { status: 403 });
     }
 

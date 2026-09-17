@@ -21,13 +21,13 @@ export async function POST(request: Request) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     const body = await request.json();
     const contentId = Number(body.contentId);
     if (!contentId) return NextResponse.json({ error: "contentId가 필요합니다." }, { status: 400 });
 
-    const access = await assertContentAccess(admin, studentId, studentType, contentId);
+    const access = await assertContentAccess(admin, studentId, studentType, role, contentId);
     if (access instanceof NextResponse) return access;
 
     const segments = Array.isArray(body.segments) ? body.segments : [];

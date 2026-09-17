@@ -55,9 +55,13 @@ export default function ExtracurricularPage() {
 
       // 설계서 4.2 목록 필터: 학생 유형에 맞는 프로그램만 노출한다
       const { data: me } = sid
-        ? await supabase.from("students").select("student_type").eq("student_id", sid.trim()).maybeSingle()
+        ? await supabase.from("students").select("student_type, role").eq("student_id", sid.trim()).maybeSingle()
         : { data: null };
       const studentType = (me?.student_type ?? "domestic").trim();
+      // 대상 구분: 전체 / 교수 / 학생 / 유학생. 교수에게는 학생 대상 프로그램을 보여주지 않는다.
+      const audiences = (me?.role ?? "").trim().toLowerCase() === "professor"
+        ? ["all", "professor"]
+        : ["all", studentType];
 
       const [coreRes, majorRes, extraRes] = await Promise.all([
         supabase.from("core_competencies").select("*").order("id"),
@@ -66,7 +70,7 @@ export default function ExtracurricularPage() {
           .from("extracurricular")
           .select("*")
           .eq("is_active", true)
-          .in("target_audience", ["all", studentType])
+          .in("target_audience", audiences)
           .order("start_date", { ascending: false }),
       ]);
 

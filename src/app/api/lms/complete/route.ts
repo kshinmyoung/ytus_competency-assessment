@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     const body = await request.json();
     const programId = Number(body.programId);
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     if (!program || !program.is_active) {
       return NextResponse.json({ error: "프로그램을 찾을 수 없습니다." }, { status: 404 });
     }
-    if (!audienceMatches(program.target_audience, studentType)) {
+    if (!audienceMatches(program.target_audience, studentType, role)) {
       return NextResponse.json({ error: "수강 대상이 아닌 프로그램입니다." }, { status: 403 });
     }
 

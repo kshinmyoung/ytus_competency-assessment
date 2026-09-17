@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     // 1) 대상이 맞는 활성 영상형 프로그램
     const { data: programs, error: progError } = await admin
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       .order("id", { ascending: false });
     if (progError) return NextResponse.json({ error: progError.message }, { status: 500 });
 
-    const visible = (programs ?? []).filter((p) => audienceMatches(p.target_audience, studentType));
+    const visible = (programs ?? []).filter((p) => audienceMatches(p.target_audience, studentType, role));
     if (visible.length === 0) return NextResponse.json({ studentType, programs: [] });
 
     const ids = visible.map((p) => p.id);

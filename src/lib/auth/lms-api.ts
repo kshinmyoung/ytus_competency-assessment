@@ -112,9 +112,21 @@ export async function assertStudent(request: Request): Promise<StudentSession | 
   return { ...session, studentType: (row.student_type ?? "domestic").trim() };
 }
 
-/** 프로그램 대상(target_audience)과 학생 유형이 맞는지 */
-export function audienceMatches(targetAudience: string, studentType: string): boolean {
-  return targetAudience === "all" || targetAudience === studentType;
+/**
+ * 프로그램 시청 대상 확인.
+ *   all(전체) · professor(교수) · domestic(학생) · international(유학생)
+ * 교수 여부는 students.role, 학생·유학생 구분은 students.student_type 으로 본다.
+ * 학생 대상 프로그램은 교수에게 노출하지 않는다.
+ */
+export function audienceMatches(targetAudience: string, studentType: string, role?: string | null): boolean {
+  const target = (targetAudience ?? "all").trim();
+  if (target === "all") return true;
+
+  const isProfessor = (role ?? "").trim().toLowerCase() === "professor";
+  if (target === "professor") return isProfessor;
+  if (isProfessor) return false;
+
+  return target === (studentType ?? "").trim();
 }
 
 export type ContentAccess = {
@@ -131,6 +143,7 @@ export async function assertContentAccess(
   admin: ReturnType<typeof getAdminClient>,
   studentId: string,
   studentType: string,
+  role: string,
   contentId: number,
 ): Promise<ContentAccess | NextResponse> {
   const { data: content, error } = await admin
@@ -160,7 +173,7 @@ export async function assertContentAccess(
     return NextResponse.json({ error: "신청하지 않은 프로그램입니다." }, { status: 403 });
   }
 
-  if (!audienceMatches(program.target_audience, studentType)) {
+  if (!audienceMatches(program.target_audience, studentType, role)) {
     return NextResponse.json({ error: "수강 대상이 아닌 프로그램입니다." }, { status: 403 });
   }
 

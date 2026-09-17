@@ -75,7 +75,7 @@ export async function assertBoardAccess(
   const enrolled = Boolean(enrollment);
 
   if (!canManage) {
-    if (!audienceMatches(program.target_audience, studentType)) {
+    if (!audienceMatches(program.target_audience, studentType, role)) {
       return NextResponse.json({ error: "수강 대상이 아닌 프로그램입니다." }, { status: 403 });
     }
     if (!enrolled) {

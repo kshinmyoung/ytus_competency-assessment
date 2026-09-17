@@ -22,6 +22,7 @@ async function resolveProgramSurvey(
   admin: LmsSession["admin"],
   studentId: string,
   studentType: string,
+  role: string,
   programId: number,
 ): Promise<ProgramSurvey | null | NextResponse> {
   if (!programId) return NextResponse.json({ error: "programId가 필요합니다." }, { status: 400 });
@@ -35,7 +36,7 @@ async function resolveProgramSurvey(
   if (!program || !program.is_active) {
     return NextResponse.json({ error: "프로그램을 찾을 수 없습니다." }, { status: 404 });
   }
-  if (!audienceMatches(program.target_audience, studentType)) {
+  if (!audienceMatches(program.target_audience, studentType, role)) {
     return NextResponse.json({ error: "수강 대상이 아닌 프로그램입니다." }, { status: 403 });
   }
 
@@ -58,12 +59,12 @@ export async function GET(request: Request) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     const { searchParams } = new URL(request.url);
     const programId = Number(searchParams.get("programId"));
 
-    const resolved = await resolveProgramSurvey(admin, studentId, studentType, programId);
+    const resolved = await resolveProgramSurvey(admin, studentId, studentType, role, programId);
     if (resolved instanceof NextResponse) return resolved;
     if (!resolved) return NextResponse.json({ surveyId: null, questions: [] });
 
@@ -100,12 +101,12 @@ export async function POST(request: Request) {
   try {
     const result = await assertStudent(request);
     if (result instanceof NextResponse) return result;
-    const { admin, studentId, studentType } = result;
+    const { admin, studentId, studentType, role } = result;
 
     const body = await request.json();
     const programId = Number(body.programId);
 
-    const resolved = await resolveProgramSurvey(admin, studentId, studentType, programId);
+    const resolved = await resolveProgramSurvey(admin, studentId, studentType, role, programId);
     if (resolved instanceof NextResponse) return resolved;
     if (!resolved) return NextResponse.json({ error: "이 프로그램에는 이수 설문이 없습니다." }, { status: 400 });
 
