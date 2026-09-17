@@ -1,9 +1,10 @@
 "use client";
 
-import { Edit3, Eye, Plus, Search, Trash2, Upload, Users } from "lucide-react";
+import { Download, Edit3, Eye, Plus, Search, Trash2, Upload, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { parseCsv } from "@/lib/csv";
+import { downloadCSV } from "@/lib/export";
 import AdminLayout from "@/components/AdminLayout";
 import { CATEGORY_OPTIONS, ORGANIZER_OPTIONS, awardExtracurricularMileage, isEtcCategory } from "@/lib/extracurricular";
 
@@ -30,6 +31,17 @@ type Participant = {
   reflection: string | null;
   students: { name: string | null } | null;
 };
+
+/** CSV 내보내기용. 화면 표시보다 필요한 열이 많다. */
+type ParticipantRow = Participant & {
+  created_at: string | null;
+  completed_at: string | null;
+  students:
+    | { name: string | null; department_id: number | null; grade_year: number | null; student_type: string | null }
+    | null;
+};
+
+const TYPE_LABEL: Record<string, string> = { domestic: "내국인", international: "유학생" };
 
 /** 비교과 이수 마일리지 기본값. 지금까지 코드에 박혀 있던 값이다. */
 const DEFAULT_MILEAGE = 10;
@@ -62,6 +74,7 @@ export default function AdminExtracurricularPage() {
   const [categoryEtc, setCategoryEtc] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [showParticipants, setShowParticipants] = useState<Extra | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [showStudentCsv, setShowStudentCsv] = useState(false);
   const [csvResult, setCsvResult] = useState<{ success: number; failed: number; awarded?: number; errors: string[] } | null>(null);
@@ -289,6 +302,52 @@ export default function AdminExtracurricularPage() {
     setShowParticipants(item);
   };
 
+  /**
+   * 프로그램별 신청자 CSV.
+   * 실적 확인이 목적이므로 학번·이름에 더해 상태와 이수·마일리지까지 한 줄에 담는다.
+   */
+  const downloadParticipants = async (item: Extra) => {
+    setDownloadingId(item.id);
+    const [rowRes, deptRes, mileageRes] = await Promise.all([
+      supabase
+        .from("student_extracurricular")
+        .select("student_id, status, reflection, created_at, completed_at, students(name, department_id, grade_year, student_type)")
+        .eq("extracurricular_id", item.id)
+        .order("created_at", { ascending: false }),
+      supabase.from("departments").select("id, name"),
+      // 이 프로그램으로 지급된 마일리지 (lib/extracurricular 가 source_type·source_id 로 남긴다)
+      supabase.from("mileage_records").select("student_id, points")
+        .eq("source_type", "extracurricular").eq("source_id", item.id),
+    ]);
+    setDownloadingId(null);
+
+    const rows = (rowRes.data ?? []) as unknown as ParticipantRow[];
+    if (rows.length === 0) {
+      alert("신청한 학생이 없습니다.");
+      return;
+    }
+
+    const deptName = new Map((deptRes.data ?? []).map((d) => [d.id, d.name as string]));
+    const mileageBy = new Map((mileageRes.data ?? []).map((m) => [m.student_id as string, m.points as number]));
+
+    const csvRows = rows.map((r) => ({
+      학번: r.student_id,
+      이름: r.students?.name ?? "",
+      학과: r.students?.department_id ? deptName.get(r.students.department_id) ?? "" : "",
+      학년: r.students?.grade_year ?? "",
+      학생유형: TYPE_LABEL[(r.students?.student_type ?? "domestic").trim()] ?? "",
+      상태: r.status,
+      신청일: r.created_at ? String(r.created_at).slice(0, 10) : "",
+      이수일: r.completed_at ? String(r.completed_at).slice(0, 10) : "",
+      마일리지: mileageBy.get(r.student_id) ?? 0,
+      소감: r.reflection ?? "",
+    }));
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safeName = item.name.replace(/[\\/:*?"<>|]/g, "_");
+    downloadCSV(csvRows, `${safeName}_신청자_${stamp}.csv`);
+  };
+
   const toggleTag = (field: "core_competency_tags" | "major_competency_tags", id: number) => {
     setForm((prev) => {
       const current = prev[field];
@@ -363,6 +422,15 @@ export default function AdminExtracurricularPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
                     <button type="button" onClick={() => viewParticipants(item)} className="mr-2 text-sm text-ys-ink-soft hover:text-ys-ink"><Eye className="inline h-4 w-4" /></button>
+                    <button
+                      type="button"
+                      onClick={() => downloadParticipants(item)}
+                      disabled={downloadingId === item.id}
+                      title="신청자 CSV"
+                      className="mr-2 text-sm text-ys-ink-soft hover:text-ys-ink disabled:opacity-40"
+                    >
+                      <Download className="inline h-4 w-4" />
+                    </button>
                     <button type="button" onClick={() => handleEdit(item)} className="mr-2 text-sm text-ys-blue hover:text-ys-blue"><Edit3 className="inline h-4 w-4" /></button>
                     <button type="button" onClick={() => handleDelete(item.id)} className="text-sm text-red-600 hover:text-red-800"><Trash2 className="inline h-4 w-4" /></button>
                   </td>
@@ -383,11 +451,18 @@ export default function AdminExtracurricularPage() {
                 <h3 className="text-lg font-semibold text-ys-ink">참여 학생 현황</h3>
                 <p className="mt-1 text-sm text-ys-ink-soft">{showParticipants.name} · {participants.length}명</p>
               </div>
-              <button type="button" onClick={() => { setParticipantCsvResult(null); participantCsvRef.current?.click(); }}
-                disabled={participantCsvProcessing}
-                className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-3 py-2 text-xs font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50">
-                <Upload className="h-3 w-3" /> {participantCsvProcessing ? "처리 중..." : "인원 CSV 등록"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => downloadParticipants(showParticipants)}
+                  disabled={downloadingId === showParticipants.id}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-ys-ink hover:bg-ys-paper disabled:opacity-50">
+                  <Download className="h-3 w-3" /> 신청자 CSV
+                </button>
+                <button type="button" onClick={() => { setParticipantCsvResult(null); participantCsvRef.current?.click(); }}
+                  disabled={participantCsvProcessing}
+                  className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-3 py-2 text-xs font-medium text-white hover:bg-ys-blue/90 disabled:opacity-50">
+                  <Upload className="h-3 w-3" /> {participantCsvProcessing ? "처리 중..." : "인원 CSV 등록"}
+                </button>
+              </div>
             </div>
             {participantCsvResult && (
               <div className="mt-3 rounded-lg border border-slate-200 bg-ys-paper p-3">
