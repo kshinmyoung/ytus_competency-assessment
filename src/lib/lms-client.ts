@@ -182,18 +182,28 @@ export type CompleteResult = {
  * 인증 요청으로 받아 새 창에 그려준다.
  */
 export async function openCertificate(certificateNo: string): Promise<void> {
-  const res = await fetch(`/api/lms/certificate/${encodeURIComponent(certificateNo)}`, {
-    headers: await authHeaders(),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.error ?? "수료증을 불러오지 못했습니다.");
-  }
-  const html = await res.text();
+  // 창은 클릭 직후(사용자 제스처 안에서) 먼저 연다.
+  // fetch 를 기다린 뒤에 열면 브라우저가 팝업으로 보고 막는다.
   const win = window.open("", "_blank");
   if (!win) throw new Error("팝업이 차단되었습니다. 팝업을 허용해 주세요.");
-  win.document.write(html);
-  win.document.close();
+  win.document.write("<!doctype html><meta charset='utf-8'><p style='font-family:sans-serif;padding:24px;color:#46586F'>수료증을 불러오는 중...</p>");
+
+  try {
+    const res = await fetch(`/api/lms/certificate/${encodeURIComponent(certificateNo)}`, {
+      headers: await authHeaders(),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error ?? "수료증을 불러오지 못했습니다.");
+    }
+    const html = await res.text();
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  } catch (e) {
+    win.close();
+    throw e;
+  }
 }
 
 /** 초 → "1시간 23분" / "5분 12초" */
