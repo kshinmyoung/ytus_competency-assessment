@@ -216,7 +216,7 @@ export default function DashboardPage() {
             .eq("is_active", true)
             .in("delivery_type", ["video", "hybrid"])
             // 추천은 내국인 학생 동선이다. 대상이 학생인 프로그램만 본다.
-            .in("target_audience", ["all", myType])
+            .in("target_audience", ["all", "student", myType])
             .overlaps("core_competency_tags", wantedIds)
             .limit(3);
           setRecommended((progs ?? []).map((p) => ({ id: p.id, name: p.name, description: p.description })));

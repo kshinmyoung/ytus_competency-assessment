@@ -6,7 +6,7 @@
  * 신청 여부·진도·이수 상태를 함께 내려보낸다.
  */
 import { NextResponse } from "next/server";
-import { assertStudent, audienceMatches, deriveStatus, lmsErrorResponse } from "@/lib/auth/lms-api";
+import { assertStudent, audienceMatches, deriveStatus, earnsMileage, lmsErrorResponse } from "@/lib/auth/lms-api";
 
 export async function GET(request: Request) {
   try {
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
         thumbnailUrl: p.thumbnail_url,
         registrationOpen: p.registration_open,
         // 마일리지는 내국인에게만 지급되므로 유학생에게는 노출하지 않는다
-        completionMileage: studentType === "domestic" ? p.completion_mileage : 0,
+        completionMileage: earnsMileage(studentType, role) ? p.completion_mileage : 0,
         minProgress: p.completion_rule?.min_progress ?? 90,
         contentCount: own.length,
         requiredCount: required.length,

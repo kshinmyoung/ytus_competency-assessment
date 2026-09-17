@@ -78,7 +78,7 @@ export function resolveOrganizerGroup(organizer: string | null | undefined): Org
  *
  * 규칙은 영상 프로그램의 lms_finalize_completion 과 같다.
  *  - 완료 처리된 경우에만 지급한다 (신청·참여중은 지급하지 않는다)
- *  - 내국인에게만 지급한다
+ *  - 내국인 '학생' 에게만 지급한다 (교수·직원 제외)
  *  - 점수는 프로그램에 설정된 completion_mileage 를 쓴다
  *  - 같은 프로그램에 두 번 지급하지 않는다
  *
@@ -97,8 +97,10 @@ export async function awardExtracurricularMileage(
   if (points <= 0) return false;
 
   const { data: student } = await supabase
-    .from("students").select("student_type").eq("student_id", studentId).maybeSingle();
+    .from("students").select("student_type, role").eq("student_id", studentId).maybeSingle();
   if ((student?.student_type ?? "domestic").trim() !== "domestic") return false;
+  // 마일리지는 학생 실적이다. 교수·직원은 이수해도 지급하지 않는다.
+  if ((student?.role ?? "student").trim().toLowerCase() !== "student") return false;
 
   const { data: existing } = await supabase
     .from("mileage_records").select("id")

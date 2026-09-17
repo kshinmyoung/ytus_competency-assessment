@@ -114,9 +114,9 @@ export async function assertStudent(request: Request): Promise<StudentSession | 
 
 /**
  * 프로그램 시청 대상 확인.
- *   all(전체) · professor(교수) · domestic(학생) · international(유학생)
- * 교수 여부는 students.role, 학생·유학생 구분은 students.student_type 으로 본다.
- * 학생 대상 프로그램은 교수에게 노출하지 않는다.
+ *   all(전체) · professor(교수) · student(학생 전체) · domestic(내국인 학생) · international(유학생)
+ * 교수 여부는 students.role, 내국인·유학생 구분은 students.student_type 으로 본다.
+ * 학생 대상 프로그램(student·domestic·international)은 교수에게 노출하지 않는다.
  */
 export function audienceMatches(targetAudience: string, studentType: string, role?: string | null): boolean {
   const target = (targetAudience ?? "all").trim();
@@ -126,7 +126,15 @@ export function audienceMatches(targetAudience: string, studentType: string, rol
   if (target === "professor") return isProfessor;
   if (isProfessor) return false;
 
+  // 내국인·유학생을 함께 대상으로 하는 프로그램
+  if (target === "student") return true;
+
   return target === (studentType ?? "").trim();
+}
+
+/** 마일리지 대상인지. 학생 실적이므로 교수·직원에게는 지급하지 않는다. */
+export function earnsMileage(studentType: string, role?: string | null): boolean {
+  return (studentType ?? "").trim() === "domestic" && (role ?? "").trim().toLowerCase() === "student";
 }
 
 export type ContentAccess = {

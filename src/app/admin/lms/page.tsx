@@ -65,7 +65,8 @@ const emptyForm = {
 const AUDIENCE_LABELS: Record<string, string> = {
   all: "전체",
   professor: "교수",
-  domestic: "학생",
+  student: "학생 전체",
+  domestic: "내국인 학생",
   international: "유학생",
 };
 
@@ -474,9 +475,10 @@ export default function AdminLmsPage() {
                     onChange={(e) => setForm({ ...form, target_audience: e.target.value })}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   >
-                    <option value="all">전체</option>
+                    <option value="all">전체 (교수 + 학생)</option>
                     <option value="professor">교수</option>
-                    <option value="domestic">학생</option>
+                    <option value="student">학생 전체 (내국인 + 유학생)</option>
+                    <option value="domestic">내국인 학생</option>
                     <option value="international">유학생</option>
                   </select>
                 </div>

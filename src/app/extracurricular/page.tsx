@@ -61,7 +61,7 @@ export default function ExtracurricularPage() {
       // 대상 구분: 전체 / 교수 / 학생 / 유학생. 교수에게는 학생 대상 프로그램을 보여주지 않는다.
       const audiences = (me?.role ?? "").trim().toLowerCase() === "professor"
         ? ["all", "professor"]
-        : ["all", studentType];
+        : ["all", "student", studentType];
 
       const [coreRes, majorRes, extraRes] = await Promise.all([
         supabase.from("core_competencies").select("*").order("id"),

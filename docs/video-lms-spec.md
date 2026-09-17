@@ -145,11 +145,18 @@ where is_active = true
   and (target_audience = 'all' or target_audience = {학생의 student_type})
 ```
 
-> **2026-09-17 변경 (마이그레이션 017)** — 시청 대상에 `professor` 를 추가했다.
-> 값은 `all`(전체) / `professor`(교수) / `domestic`(학생) / `international`(유학생) 네 가지다.
+> **2026-09-17 변경 (마이그레이션 017·018)** — 시청 대상을 다섯 가지로 늘렸다.
+> `all`(전체) / `professor`(교수) / `student`(학생 전체: 내국인+유학생) /
+> `domestic`(내국인 학생) / `international`(유학생)
 > `professor` 는 `students.role` 로, `domestic`·`international` 은 기존대로 `students.student_type` 으로 판정한다.
-> 학생 대상(`domestic`·`international`) 프로그램은 교수에게 노출하지 않는다.
+> `student` 는 교수가 아닌 사람 전부다 — 내국인과 유학생을 함께 받는 프로그램이 많아서 둘을 묶는 값이 필요했다.
+> 학생 대상(`student`·`domestic`·`international`) 프로그램은 교수에게 노출하지 않는다.
 > 판정은 `lib/auth/lms-api.ts` 의 `audienceMatches(target, studentType, role)` 한 곳에서만 한다.
+>
+> **마일리지 (마이그레이션 019)** — 마일리지는 학생 실적이다.
+> `student_type='domestic'` 에 더해 `role='student'` 인 경우에만 지급한다. 교수·직원은 이수해도 받지 않는다.
+> 판정은 `lms_finalize_completion`(영상)과 `lib/extracurricular.ts` 의 `awardExtracurricularMileage`(대면) 두 곳이
+> 같은 규칙을 쓴다. 화면에 보여주는 예상 점수는 `earnsMileage(studentType, role)` 로 맞춘다.
 
 **정원**: `delivery_type='video'`이면 `capacity`를 무시한다. 관리자 폼에서 입력란 비활성화, 신청 API에서 정원 체크 생략.
 

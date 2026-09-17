@@ -5,7 +5,7 @@
  * 콘텐츠별 진도 + 이수 상태. 대상이 맞지 않거나 비활성 프로그램은 내려보내지 않는다.
  */
 import { NextResponse } from "next/server";
-import { assertStudent, audienceMatches, deriveStatus, lmsErrorResponse } from "@/lib/auth/lms-api";
+import { assertStudent, audienceMatches, deriveStatus, earnsMileage, lmsErrorResponse } from "@/lib/auth/lms-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -83,7 +83,7 @@ export async function GET(request: Request, { params }: Params) {
         targetAudience: program.target_audience,
         thumbnailUrl: program.thumbnail_url,
         registrationOpen: program.registration_open,
-        completionMileage: studentType === "domestic" ? program.completion_mileage : 0,
+        completionMileage: earnsMileage(studentType, role) ? program.completion_mileage : 0,
         minProgress,
         // 진도를 다 채운 뒤에도 설문이 남았는지 화면이 알아야 한다
         requiresSurvey: Boolean(program.completion_rule?.require_survey && program.completion_rule?.survey_id),
