@@ -15,6 +15,13 @@ const ORG_TYPES = [
 ];
 const LIKERT = ["", "전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"];
 
+/** 담당자가 찾는 말(객관식/주관식)로 먼저 적는다 */
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  likert: "객관식 · 5점 척도",
+  choice: "객관식 · 선택형",
+  text: "주관식 · 서술형",
+};
+
 export default function AdminSurveyPage() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [filterOrg, setFilterOrg] = useState("all");
@@ -28,6 +35,7 @@ export default function AdminSurveyPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qForm, setQForm] = useState({ question_text: "", question_type: "likert", options: "", question_order: 0, is_required: true });
   const [editingQId, setEditingQId] = useState<number | null>(null);
+  const [qError, setQError] = useState("");
 
   // 응답 조회
   const [showResponses, setShowResponses] = useState<Survey | null>(null);
@@ -78,24 +86,54 @@ export default function AdminSurveyPage() {
     setQuestions((data ?? []) as Question[]);
     setQForm({ question_text: "", question_type: "likert", options: "", question_order: (data ?? []).length + 1, is_required: true });
     setEditingQId(null);
+    setQError("");
   };
 
   const handleSaveQ = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showQuestions || !qForm.question_text.trim()) return;
+    setQError("");
+
+    // 선택형인데 선택지가 없으면 학생 화면에 고를 것이 없는 문항이 만들어진다
+    const options = qForm.options.split(",").map((o: string) => o.trim()).filter(Boolean);
+    if (qForm.question_type === "choice" && options.length < 2) {
+      setQError("선택형 문항은 선택지를 2개 이상 쉼표로 구분해 입력해 주세요.");
+      return;
+    }
+
     const payload = {
       survey_id: showQuestions.id, question_text: qForm.question_text.trim(), question_type: qForm.question_type,
-      options: qForm.question_type === "choice" && qForm.options ? qForm.options.split(",").map((o: string) => o.trim()).filter(Boolean) : null,
+      options: qForm.question_type === "choice" ? options : null,
       question_order: qForm.question_order, is_required: qForm.is_required,
     };
-    if (editingQId) { await supabase.from("survey_questions").update(payload).eq("id", editingQId); }
-    else { await supabase.from("survey_questions").insert(payload); }
+    // 저장 실패를 삼키면 담당자는 문항이 안 생긴 이유를 알 수 없다
+    const { error } = editingQId
+      ? await supabase.from("survey_questions").update(payload).eq("id", editingQId)
+      : await supabase.from("survey_questions").insert(payload);
+    if (error) { setQError(error.message); return; }
+
     await openQuestions(showQuestions);
+  };
+
+  /** 기존 문항을 폼으로 불러온다. 오타 하나 때문에 지웠다 다시 만들지 않도록. */
+  const handleEditQ = (q: Question) => {
+    setEditingQId(q.id);
+    setQError("");
+    setQForm({
+      question_text: q.question_text,
+      question_type: q.question_type,
+      options: Array.isArray(q.options) ? (q.options as string[]).join(", ") : "",
+      question_order: q.question_order,
+      is_required: q.is_required,
+    });
   };
 
   const handleDeleteQ = async (id: number) => {
     if (!showQuestions) return;
-    await supabase.from("survey_questions").delete().eq("id", id);
+    if (!confirm("이 문항을 삭제할까요? 이미 받은 응답에서도 보이지 않게 됩니다.")) return;
+    const { error } = await supabase.from("survey_questions").delete().eq("id", id);
+    if (error) { setQError(error.message); return; }
+    if (editingQId === id) setEditingQId(null);
     await openQuestions(showQuestions);
   };
 
@@ -215,24 +253,40 @@ export default function AdminSurveyPage() {
             {/* 문항 목록 */}
             <div className="mt-4 space-y-2">
               {questions.map((q) => (
-                <div key={q.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                  <div>
-                    <p className="text-sm text-ys-ink">{q.question_order}. {q.question_text}</p>
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] text-ys-ink-soft">{q.question_type === "likert" ? "5점 척도" : q.question_type === "text" ? "서술형" : "선택형"}</span>
+                <div key={q.id} className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2 ${editingQId === q.id ? "border-ys-blue bg-ys-blue/5" : "border-slate-200"}`}>
+                  <div className="min-w-0">
+                    <p className="text-sm text-ys-ink">{q.question_order}. {q.question_text}{q.is_required && <span className="ml-1 text-red-500">*</span>}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] text-ys-ink-soft">
+                        {QUESTION_TYPE_LABELS[q.question_type] ?? q.question_type}
+                      </span>
+                      {q.question_type === "choice" && Array.isArray(q.options) && (
+                        <span className="text-[10px] text-ys-ink-soft/70">{(q.options as string[]).join(" / ")}</span>
+                      )}
+                    </div>
                   </div>
-                  <button type="button" onClick={() => handleDeleteQ(q.id)} className="text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button type="button" onClick={() => handleEditQ(q)} className="text-ys-ink-soft hover:text-ys-blue" title="문항 수정">
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => handleDeleteQ(q.id)} className="text-red-400 hover:text-red-600" title="문항 삭제">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
 
             {/* 문항 추가 */}
             <form onSubmit={handleSaveQ} className="mt-4 rounded-lg border border-ys-blue/30 bg-ys-blue/10 p-4">
-              <p className="mb-2 text-xs font-semibold text-ys-blue">문항 추가</p>
+              <p className="mb-2 text-xs font-semibold text-ys-blue">{editingQId ? "문항 수정" : "문항 추가"}</p>
               <div className="space-y-3">
                 <input type="text" value={qForm.question_text} onChange={(e) => setQForm({ ...qForm, question_text: e.target.value })} placeholder="문항 내용" required className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 <div className="grid grid-cols-3 gap-2">
                   <select value={qForm.question_type} onChange={(e) => setQForm({ ...qForm, question_type: e.target.value })} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                    <option value="likert">5점 척도</option><option value="text">서술형</option><option value="choice">선택형</option>
+                    <option value="likert">객관식 · 5점 척도</option>
+                    <option value="choice">객관식 · 선택형</option>
+                    <option value="text">주관식 · 서술형</option>
                   </select>
                   <input type="number" value={qForm.question_order} onChange={(e) => setQForm({ ...qForm, question_order: Number(e.target.value) })} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="순서" />
                   <label className="flex items-center gap-1 text-xs text-ys-ink"><input type="checkbox" checked={qForm.is_required} onChange={(e) => setQForm({ ...qForm, is_required: e.target.checked })} className="rounded" /> 필수</label>
@@ -240,7 +294,24 @@ export default function AdminSurveyPage() {
                 {qForm.question_type === "choice" && (
                   <input type="text" value={qForm.options} onChange={(e) => setQForm({ ...qForm, options: e.target.value })} placeholder="선택지 (쉼표 구분: 예, 아니오, 모르겠다)" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 )}
-                <button type="submit" className="w-full rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90">문항 추가</button>
+                {qForm.question_type === "text" && (
+                  <p className="text-[11px] text-ys-ink-soft/70">학생 화면에 자유 입력칸이 나옵니다. 선택지는 필요 없습니다.</p>
+                )}
+                {qError && <p className="text-xs text-red-600">{qError}</p>}
+                <div className="flex gap-2">
+                  <button type="submit" className="flex-1 rounded-lg bg-ys-blue py-2 text-sm font-medium text-white hover:bg-ys-blue/90">
+                    {editingQId ? "문항 수정" : "문항 추가"}
+                  </button>
+                  {editingQId && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditingQId(null); setQError(""); setQForm({ question_text: "", question_type: "likert", options: "", question_order: questions.length + 1, is_required: true }); }}
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-ys-ink-soft hover:bg-ys-paper"
+                    >
+                      취소
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
             <button type="button" onClick={() => setShowQuestions(null)} className="mt-4 w-full rounded-lg border border-slate-300 py-2 text-sm font-medium text-ys-ink hover:bg-ys-paper">닫기</button>
