@@ -10,7 +10,7 @@ type Question = { id: number; survey_id: number; question_text: string; question
 type Response = { id: number; survey_id: number; student_id: string; answers: Record<number, any>; submitted_at: string };
 
 const ORG_TYPES = [
-  { type: "department", orgs: ["교무처", "기획처", "사무처", "학생실천처"] },
+  { type: "department", orgs: ["교무처", "기획처", "사무처", "학생실천처", "도서관"] },
   { type: "center", orgs: ["교수학습지원센터", "취창업진로지원센터", "학생생활상담센터"] },
 ];
 const LIKERT = ["", "전혀 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"];

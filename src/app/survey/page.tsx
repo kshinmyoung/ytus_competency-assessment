@@ -13,6 +13,7 @@ const ORG_LABELS: Record<string, { label: string; color: string; bg: string }> =
   기획처: { label: "기획처", color: "text-ys-blue", bg: "bg-ys-blue/10" },
   사무처: { label: "사무처", color: "text-ys-ink", bg: "bg-slate-100" },
   학생실천처: { label: "학생실천처", color: "text-[#8A6212]", bg: "bg-ys-gold/10" },
+  도서관: { label: "도서관", color: "text-emerald-700", bg: "bg-emerald-50" },
   교수학습지원센터: { label: "교수학습지원센터", color: "text-emerald-700", bg: "bg-emerald-50" },
   취창업진로지원센터: { label: "취창업진로지원센터", color: "text-ys-blue", bg: "bg-ys-blue/10" },
   학생생활상담센터: { label: "학생생활상담센터", color: "text-ys-blue", bg: "bg-ys-blue/10" },
