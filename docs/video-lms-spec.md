@@ -211,6 +211,36 @@ alter table public.extracurricular_contents enable row level security;
 
 **`duration_sec`는 수기 입력받지 않는다.** video uid 등록 시 Cloudflare API에서 조회해 자동 저장한다. 이 값이 진도율 분모이므로 오타 하나로 이수 판정이 전부 틀어진다.
 
+> **2026-09-25 변경 (마이그레이션 `lms_content_attachments`)** — 콘텐츠별 첨부 자료를 **파일 업로드**로 바꿨다.
+> `attachment_url`(관리자가 URL을 붙여넣는 단일 칸)은 쓰지 않는다. 값이 전부 NULL이었고 컬럼은 그대로 남겨 두되 코드에서 참조하지 않는다.
+>
+> ```sql
+> create table public.content_attachments (
+>   id bigserial primary key,
+>   content_id bigint not null references public.extracurricular_contents(id) on delete cascade,
+>   file_name text not null,          -- 원본 파일명. 다운로드 시 이 이름으로 내려준다
+>   storage_path text not null unique,-- 경로에는 uuid 를 쓴다 (한글·공백·중복 회피)
+>   mime_type text not null default 'application/octet-stream',
+>   size_bytes bigint not null check (size_bytes > 0),
+>   sort_order int not null default 0,
+>   uploaded_by text references public.students(student_id),
+>   created_at timestamptz not null default now()
+> );
+> ```
+>
+> 파일 실체는 **비공개 버킷 `lms-attachments`** (파일당 20MB)에 둔다. 다른 LMS 테이블과 같이 RLS 를 켜고 정책은 두지 않는다.
+>
+> **파일은 Route Handler 를 통과하지 않는다.** Vercel 요청 본문 한도가 4.5MB라 20MB 자료가 서버를 거치면 실패한다.
+> 서버가 `createSignedUploadUrl` 로 **경로를 정해** 서명 URL 을 주고, 브라우저가 Storage 로 직접 올린 뒤 등록만 서버에 맡긴다.
+> 등록 시 `storage.info()` 로 **실제 크기·MIME 을 다시 확인**한다 — 클라이언트가 보고한 값은 믿지 않는다.
+>
+> 허용 목록은 MIME 이 아니라 **확장자**로 판정한다 (`lib/lms-attachments.ts`). `.hwp` 는 브라우저가 MIME 을
+> `application/octet-stream` 이나 빈 값으로 보내는 경우가 많아 MIME 으로 막으면 한글 문서가 반려된다.
+>
+> 다운로드는 **2분짜리 서명 URL** 로만 나간다. 학생 경로(`/api/lms/attachments/[id]`)는 영상 재생과 똑같이
+> `assertContentAccess` 를 거친다 — 신청하지 않았거나 수강 대상이 아니면 자료도 받을 수 없다.
+> 관리자는 프로그램을 신청하지 않으므로 관리 권한으로 판정하는 별도 경로(`/api/admin/lms/attachments/[id]`)를 쓴다.
+
 ### 5.2 마이그레이션 005: 자막 (구조만)
 
 ```sql

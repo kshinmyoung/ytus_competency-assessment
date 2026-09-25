@@ -34,7 +34,6 @@ export async function PATCH(request: Request, { params }: Params) {
     if (typeof body.contentGroup === "string") payload.content_group = body.contentGroup.trim() || null;
     if (body.contentOrder !== undefined) payload.content_order = Number(body.contentOrder) || 0;
     if (typeof body.isRequired === "boolean") payload.is_required = body.isRequired;
-    if (typeof body.attachmentUrl === "string") payload.attachment_url = body.attachmentUrl.trim() || null;
 
     let securityApplied: boolean | null = null;
     let securityError: string | null = null;

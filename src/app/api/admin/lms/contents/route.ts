@@ -96,7 +96,6 @@ export async function POST(request: Request) {
         content_group: typeof body.contentGroup === "string" ? body.contentGroup.trim() || null : null,
         content_order: Number(body.contentOrder) || 0,
         is_required: body.isRequired !== false,
-        attachment_url: typeof body.attachmentUrl === "string" ? body.attachmentUrl.trim() || null : null,
       })
       .select()
       .single();

@@ -4,6 +4,7 @@
  * LMS 데이터는 RLS 정책이 없는 테이블을 쓰므로 반드시 /api/lms/* 를 경유한다.
  * 진도율 등 계산값은 서버 응답을 그대로 쓰고 클라이언트에서 다시 계산하지 않는다.
  */
+import type { LmsAttachment } from "@/lib/lms-attachments";
 import { waitForAccessToken } from "@/lib/supabase";
 
 export type LmsStatus = "신청" | "학습중" | "이수완료";
@@ -39,7 +40,7 @@ export type LmsContent = {
   language: string;
   contentOrder: number;
   isRequired: boolean;
-  attachmentUrl: string | null;
+  attachments: LmsAttachment[];
   progress: number;
   watchedSec: number;
   lastPositionSec: number;
@@ -226,4 +227,20 @@ export function formatClock(sec: number): string {
   const mm = String(m).padStart(2, "0");
   const ss = String(s).padStart(2, "0");
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+}
+
+/**
+ * 첨부 자료 내려받기.
+ * 버킷이 비공개라 링크로 바로 열 수 없고, 인증 요청으로 2분짜리 서명 URL 을 받아서 연다.
+ * 서명 URL 이 Content-Disposition: attachment 로 내려오므로 a.click() 만으로
+ * 페이지를 떠나지 않고 저장된다 (새 창을 열지 않아 팝업 차단에도 걸리지 않는다).
+ */
+export async function downloadAttachment(attachmentId: number): Promise<void> {
+  const { url } = await lmsGet<{ url: string; fileName: string }>(`/api/lms/attachments/${attachmentId}`);
+  const a = document.createElement("a");
+  a.href = url;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }

@@ -1,14 +1,15 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, ChevronUp, PlayCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronUp, Download, Paperclip, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  formatClock, lmsGet, lmsPost, openCertificate,
+  downloadAttachment, formatClock, lmsGet, lmsPost, openCertificate,
   type CompleteResult, type LmsProgramDetail,
 } from "@/lib/lms-client";
+import { formatFileSize, type LmsAttachment } from "@/lib/lms-attachments";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 import LmsSurveyModal from "@/components/LmsSurveyModal";
 
@@ -85,9 +86,19 @@ export default function LmsWatchPage() {
   const completeTriedRef = useRef(false);
   const [completion, setCompletion] = useState<CompleteResult | null>(null);
   const [certError, setCertError] = useState("");
+  const [fileError, setFileError] = useState("");
 
   const content = detail?.contents.find((c) => c.contentId === contentId);
   const durationSec = content?.durationSec ?? 0;
+
+  const handleDownload = async (attachment: LmsAttachment) => {
+    setFileError("");
+    try {
+      await downloadAttachment(attachment.id);
+    } catch (e) {
+      setFileError(e instanceof Error ? e.message : "자료를 받지 못했습니다.");
+    }
+  };
 
   /**
    * 이어보기 지점.
@@ -435,6 +446,31 @@ export default function LmsWatchPage() {
             <p className="text-[11px] text-ys-mist/70">건너뛴 구간은 진도에 포함되지 않습니다.</p>
             {notice && <p className="text-[11px] text-ys-gold">{notice}</p>}
           </div>
+
+          {/* 이 영상의 첨부 자료. 보면서 바로 받을 수 있어야 해서 재생 화면에도 둔다 */}
+          {content.attachments.length > 0 && (
+            <div className="border-t border-ys-navy-line px-4 py-3">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ys-mist/70">
+                <Paperclip className="h-3.5 w-3.5" />
+                첨부 자료
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {content.attachments.map((file) => (
+                  <button
+                    key={file.id}
+                    type="button"
+                    onClick={() => handleDownload(file)}
+                    className="flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs text-ys-mist transition hover:bg-white/10 hover:text-white"
+                  >
+                    <Download className="h-3.5 w-3.5 shrink-0" />
+                    <span className="max-w-[16rem] truncate">{file.fileName}</span>
+                    <span className="text-ys-mist/60">{formatFileSize(file.sizeBytes)}</span>
+                  </button>
+                ))}
+              </div>
+              {fileError && <p className="mt-2 text-[11px] text-red-400">{fileError}</p>}
+            </div>
+          )}
         </div>
 
         <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-ys-navy-line p-4 lg:block">

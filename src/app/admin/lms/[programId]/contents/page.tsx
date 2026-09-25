@@ -1,12 +1,15 @@
 "use client";
 
-import { ArrowLeft, Edit3, Eye, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Edit3, Eye, Paperclip, Plus, Trash2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Script from "next/script";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { canManageLms } from "@/lib/auth/lms-permissions";
+import {
+  ALLOWED_ATTACHMENT_EXTS, ATTACHMENT_BUCKET, attachmentRejectReason, formatFileSize,
+} from "@/lib/lms-attachments";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 
 type Content = {
@@ -21,8 +24,19 @@ type Content = {
   content_group: string | null;
   content_order: number;
   is_required: boolean;
-  attachment_url: string | null;
 };
+
+type Attachment = {
+  id: number;
+  content_id: number;
+  file_name: string;
+  size_bytes: number;
+  mime_type: string;
+  created_at: string;
+};
+
+/** 파일 선택 창에 뜨는 확장자 목록 */
+const ATTACHMENT_ACCEPT = ALLOWED_ATTACHMENT_EXTS.map((e) => `.${e}`).join(",");
 
 const emptyForm = {
   title: "",
@@ -32,7 +46,6 @@ const emptyForm = {
   contentGroup: "",
   contentOrder: 0,
   isRequired: true,
-  attachmentUrl: "",
 };
 
 function formatDuration(sec: number): string {
@@ -65,17 +78,35 @@ export default function AdminLmsContentsPage() {
   const [preview, setPreview] = useState<{ content: Content; iframeUrl: string; allowedOrigins: string[] } | null>(null);
   const [previewError, setPreviewError] = useState("");
 
+  // 첨부 자료 — 콘텐츠 id 로 묶어둔다
+  const [attachments, setAttachments] = useState<Record<number, Attachment[]>>({});
+  const [uploadingFor, setUploadingFor] = useState<number | null>(null);
+  const [attachError, setAttachError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetRef = useRef<number | null>(null);
+
   const authHeaders = useCallback(async () => {
     const token = await waitForAccessToken();
     return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
   }, []);
 
+  const loadAttachments = useCallback(async () => {
+    const headers = await authHeaders();
+    const res = await fetch(`/api/admin/lms/attachments?programId=${programId}`, { headers });
+    if (!res.ok) return;
+    const rows: Attachment[] = await res.json();
+    const grouped: Record<number, Attachment[]> = {};
+    for (const row of rows) (grouped[row.content_id] ??= []).push(row);
+    setAttachments(grouped);
+  }, [authHeaders, programId]);
+
   const loadContents = useCallback(async () => {
     const headers = await authHeaders();
     const res = await fetch(`/api/admin/lms/contents?programId=${programId}`, { headers });
     if (res.ok) setContents(await res.json());
+    await loadAttachments();
     setLoading(false);
-  }, [authHeaders, programId]);
+  }, [authHeaders, loadAttachments, programId]);
 
   useEffect(() => {
     (async () => {
@@ -108,7 +139,6 @@ export default function AdminLmsContentsPage() {
       contentGroup: item.content_group ?? "",
       contentOrder: item.content_order,
       isRequired: item.is_required,
-      attachmentUrl: item.attachment_url ?? "",
     });
     setError("");
     setNotice("");
@@ -161,6 +191,86 @@ export default function AdminLmsContentsPage() {
     const body = await res.json();
     if (!res.ok) { alert(body.error ?? "삭제에 실패했습니다."); return; }
     await loadContents();
+  };
+
+  const pickFiles = (contentId: number) => {
+    setAttachError("");
+    uploadTargetRef.current = contentId;
+    fileInputRef.current?.click();
+  };
+
+  /**
+   * 파일은 Route Handler 를 거치지 않는다. Vercel 요청 본문 한도(4.5MB)에 걸리기 때문에
+   * 서버에서 받은 서명 URL 로 Storage 에 직접 올리고, 끝난 뒤 등록만 서버에 맡긴다.
+   * 여러 개를 골랐을 때 하나가 실패해도 나머지는 계속 올린다.
+   */
+  const handleFilesChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const contentId = uploadTargetRef.current;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";   // 같은 파일을 다시 골라도 change 가 뜨도록 비운다
+    if (!contentId || files.length === 0) return;
+
+    setUploadingFor(contentId);
+    setAttachError("");
+    const failed: string[] = [];
+
+    for (const file of files) {
+      // 올리기 전에 거르면 20MB 를 헛되이 전송하지 않는다. 서버도 같은 기준으로 다시 본다.
+      const reject = attachmentRejectReason(file.name, file.size);
+      if (reject) { failed.push(`${file.name} — ${reject}`); continue; }
+
+      try {
+        const headers = await authHeaders();
+        const urlRes = await fetch("/api/admin/lms/attachments/upload-url", {
+          method: "POST", headers,
+          body: JSON.stringify({ contentId, fileName: file.name, sizeBytes: file.size }),
+        });
+        const urlBody = await urlRes.json();
+        if (!urlRes.ok) throw new Error(urlBody.error ?? "업로드 준비에 실패했습니다.");
+
+        const { error: uploadError } = await supabase.storage
+          .from(ATTACHMENT_BUCKET)
+          .uploadToSignedUrl(urlBody.path, urlBody.token, file, { contentType: file.type || undefined });
+        if (uploadError) throw new Error(uploadError.message);
+
+        const saveRes = await fetch("/api/admin/lms/attachments", {
+          method: "POST", headers,
+          body: JSON.stringify({ contentId, path: urlBody.path, fileName: file.name }),
+        });
+        const saveBody = await saveRes.json();
+        if (!saveRes.ok) throw new Error(saveBody.error ?? "등록에 실패했습니다.");
+      } catch (err) {
+        failed.push(`${file.name} — ${err instanceof Error ? err.message : "업로드 실패"}`);
+      }
+    }
+
+    setUploadingFor(null);
+    if (failed.length) setAttachError(failed.join(" / "));
+    await loadAttachments();
+  };
+
+  const handleAttachmentDelete = async (file: Attachment) => {
+    if (!confirm(`'${file.file_name}' 을(를) 삭제하시겠습니까?`)) return;
+    const headers = await authHeaders();
+    const res = await fetch(`/api/admin/lms/attachments/${file.id}`, { method: "DELETE", headers });
+    const body = await res.json();
+    if (!res.ok) { alert(body.error ?? "삭제에 실패했습니다."); return; }
+    await loadAttachments();
+  };
+
+  /** 비공개 버킷이라 링크로 바로 열 수 없다. 짧은 서명 URL 을 받아서 연다. */
+  const handleAttachmentDownload = async (file: Attachment) => {
+    setAttachError("");
+    const headers = await authHeaders();
+    const res = await fetch(`/api/admin/lms/attachments/${file.id}`, { headers });
+    const body = await res.json();
+    if (!res.ok) { setAttachError(body.error ?? "파일을 불러오지 못했습니다."); return; }
+    const link = document.createElement("a");
+    link.href = body.url;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   const openPreview = async (item: Content) => {
@@ -221,6 +331,17 @@ export default function AdminLmsContentsPage() {
 
       {notice && <p className="mb-4 rounded-lg bg-ys-blue/10 px-3 py-2 text-xs text-ys-blue">{notice}</p>}
       {previewError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{previewError}</p>}
+      {attachError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{attachError}</p>}
+
+      {/* 업로드 창은 하나만 두고 어느 콘텐츠에 붙일지는 uploadTargetRef 로 기억한다 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={ATTACHMENT_ACCEPT}
+        onChange={handleFilesChosen}
+        className="hidden"
+      />
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
         <table className="min-w-full divide-y divide-slate-200">
@@ -244,7 +365,46 @@ export default function AdminLmsContentsPage() {
               contents.map((item) => (
                 <tr key={item.id} className="hover:bg-ys-paper">
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{item.content_order}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-ys-ink">{item.title}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-ys-ink">
+                    {item.title}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <Paperclip className="h-3 w-3 shrink-0 text-ys-ink-soft/50" />
+                      {(attachments[item.id] ?? []).map((file) => (
+                        <span
+                          key={file.id}
+                          className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-normal"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleAttachmentDownload(file)}
+                            className="flex items-center gap-1 text-ys-ink hover:text-ys-blue"
+                            title="받아보기"
+                          >
+                            <Download className="h-3 w-3 shrink-0" />
+                            <span className="max-w-[16rem] truncate">{file.file_name}</span>
+                          </button>
+                          <span className="text-ys-ink-soft/60">{formatFileSize(file.size_bytes)}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleAttachmentDelete(file)}
+                            className="text-ys-ink-soft/50 hover:text-red-600"
+                            title="첨부 삭제"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => pickFiles(item.id)}
+                        disabled={uploadingFor !== null}
+                        className="flex items-center gap-1 rounded-md border border-dashed border-slate-300 px-1.5 py-0.5 text-[11px] font-normal text-ys-ink-soft hover:border-ys-blue hover:text-ys-blue disabled:opacity-50"
+                      >
+                        <Upload className="h-3 w-3" />
+                        {uploadingFor === item.id ? "올리는 중..." : "자료 추가"}
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-ys-ink-soft">{item.source_ref}</td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{formatDuration(item.duration_sec)}</td>
                   <td className="px-4 py-3 text-sm text-ys-ink-soft">{item.language}</td>
@@ -349,14 +509,11 @@ export default function AdminLmsContentsPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ys-ink-soft">첨부 자료 URL</label>
-                <input
-                  type="url" value={form.attachmentUrl}
-                  onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
+              {editingId && (
+                <p className="rounded-lg bg-ys-paper px-3 py-2 text-[11px] text-ys-ink-soft">
+                  첨부 자료는 목록에서 영상 아래 &lsquo;자료 추가&rsquo; 로 올립니다.
+                </p>
+              )}
 
               <label className="flex items-center gap-2 text-sm text-ys-ink">
                 <input

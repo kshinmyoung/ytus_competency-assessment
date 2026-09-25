@@ -6,6 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { assertStudent, audienceMatches, deriveStatus, earnsMileage, lmsErrorResponse } from "@/lib/auth/lms-api";
+import type { LmsAttachment } from "@/lib/lms-attachments";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -43,6 +44,24 @@ export async function GET(request: Request, { params }: Params) {
       ? await admin.from("video_progress").select("content_id, watched_sec, progress, last_position_sec, completed_at").eq("student_id", studentId).in("content_id", contentIds)
       : { data: [] as { content_id: number; watched_sec: number; progress: number; last_position_sec: number; completed_at: string | null }[] };
 
+    // 첨부 자료는 목록만 내려보낸다. 실제 파일은 /api/lms/attachments/[id] 의 서명 URL 로만 나간다.
+    const { data: attachmentRows } = contentIds.length
+      ? await admin.from("content_attachments").select("id, content_id, file_name, size_bytes, mime_type, created_at").in("content_id", contentIds).order("sort_order").order("id")
+      : { data: [] as { id: number; content_id: number; file_name: string; size_bytes: number; mime_type: string; created_at: string }[] };
+
+    const attachmentsByContent = new Map<number, LmsAttachment[]>();
+    for (const a of attachmentRows ?? []) {
+      const list = attachmentsByContent.get(a.content_id) ?? [];
+      list.push({
+        id: a.id,
+        fileName: a.file_name,
+        sizeBytes: Number(a.size_bytes),
+        mimeType: a.mime_type,
+        createdAt: a.created_at,
+      });
+      attachmentsByContent.set(a.content_id, list);
+    }
+
     const progressByContent = new Map((progressRows ?? []).map((p) => [p.content_id, p]));
     const minProgress = program.completion_rule?.min_progress ?? 90;
 
@@ -57,7 +76,7 @@ export async function GET(request: Request, { params }: Params) {
         language: c.language,
         contentOrder: c.content_order,
         isRequired: c.is_required,
-        attachmentUrl: c.attachment_url,
+        attachments: attachmentsByContent.get(c.id) ?? [],
         progress: Number(vp?.progress ?? 0),
         watchedSec: Number(vp?.watched_sec ?? 0),
         lastPositionSec: Number(vp?.last_position_sec ?? 0),

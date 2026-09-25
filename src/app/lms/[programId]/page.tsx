@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowLeft, Award, CheckCircle2, Clock, FileDown, Lock, PlayCircle } from "lucide-react";
+import { ArrowLeft, Award, CheckCircle2, Clock, Download, FileDown, Lock, Paperclip, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { formatClock, formatDuration, lmsGet, openCertificate, type LmsProgramDetail } from "@/lib/lms-client";
+import { downloadAttachment, formatClock, formatDuration, lmsGet, openCertificate, type LmsProgramDetail } from "@/lib/lms-client";
+import { formatFileSize, type LmsAttachment } from "@/lib/lms-attachments";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import LmsSurveyModal from "@/components/LmsSurveyModal";
 import ProgramBoard from "./ProgramBoard";
@@ -19,6 +20,16 @@ export default function LmsProgramPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [certError, setCertError] = useState("");
   const [surveyOpen, setSurveyOpen] = useState(false);
+  const [fileError, setFileError] = useState("");
+
+  const handleDownload = async (attachment: LmsAttachment) => {
+    setFileError("");
+    try {
+      await downloadAttachment(attachment.id);
+    } catch (e) {
+      setFileError(e instanceof Error ? e.message : "자료를 받지 못했습니다.");
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -236,28 +247,52 @@ export default function LmsProgramPage() {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3">
-                  {c.attachmentUrl && (
-                    <span className="text-ys-ink-soft/70" title="첨부 자료">
-                      <FileDown className="h-4 w-4" />
-                    </span>
-                  )}
                   <span className="text-xs text-ys-ink-soft/70">{formatClock(c.durationSec)}</span>
                 </div>
               </>
             );
 
             return (
-              <li key={c.contentId}>
+              <li
+                key={c.contentId}
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-ys-blue/40 hover:shadow"
+              >
                 {enrolled ? (
                   <Link
                     href={`/lms/${programId}/watch/${c.contentId}`}
-                    className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-ys-blue/40 hover:shadow"
+                    className="group flex items-center gap-3 p-4"
                   >
                     {body}
                   </Link>
                 ) : (
-                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm opacity-70">
-                    {body}
+                  <div className="flex items-center gap-3 p-4 opacity-70">{body}</div>
+                )}
+
+                {c.attachments.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-ys-paper/50 px-4 py-2.5">
+                    <Paperclip className="h-3.5 w-3.5 shrink-0 text-ys-ink-soft/60" />
+                    {c.attachments.map((file) =>
+                      enrolled ? (
+                        <button
+                          key={file.id}
+                          type="button"
+                          onClick={() => handleDownload(file)}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] text-ys-ink transition hover:border-ys-blue/50 hover:text-ys-blue"
+                        >
+                          <Download className="h-3 w-3 shrink-0" />
+                          <span className="max-w-[14rem] truncate">{file.fileName}</span>
+                          <span className="text-ys-ink-soft/60">{formatFileSize(file.sizeBytes)}</span>
+                        </button>
+                      ) : (
+                        <span
+                          key={file.id}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2 py-1 text-[11px] text-ys-ink-soft/70"
+                        >
+                          <Lock className="h-3 w-3 shrink-0" />
+                          <span className="max-w-[14rem] truncate">{file.fileName}</span>
+                        </span>
+                      ),
+                    )}
                   </div>
                 )}
               </li>
@@ -266,9 +301,11 @@ export default function LmsProgramPage() {
         </ul>
       )}
 
+      {fileError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{fileError}</p>}
+
       {!enrolled && (
         <p className="mt-4 text-center text-xs text-ys-ink-soft/70">
-          신청하면 콘텐츠를 재생할 수 있습니다.
+          신청하면 콘텐츠를 재생하고 첨부 자료를 받을 수 있습니다.
         </p>
       )}
 
