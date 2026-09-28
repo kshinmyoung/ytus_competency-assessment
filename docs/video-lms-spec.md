@@ -200,7 +200,6 @@ create table if not exists public.extracurricular_contents (
   content_group      text,                      -- 동일 내용의 언어 변형 묶음 키
   content_order      int  not null default 0,
   is_required        boolean not null default true,
-  attachment_url     text,
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
@@ -212,7 +211,9 @@ alter table public.extracurricular_contents enable row level security;
 **`duration_sec`는 수기 입력받지 않는다.** video uid 등록 시 Cloudflare API에서 조회해 자동 저장한다. 이 값이 진도율 분모이므로 오타 하나로 이수 판정이 전부 틀어진다.
 
 > **2026-09-25 변경 (마이그레이션 `lms_content_attachments`)** — 콘텐츠별 첨부 자료를 **파일 업로드**로 바꿨다.
-> `attachment_url`(관리자가 URL을 붙여넣는 단일 칸)은 쓰지 않는다. 값이 전부 NULL이었고 컬럼은 그대로 남겨 두되 코드에서 참조하지 않는다.
+> 위 `create table` 에 있던 `attachment_url`(관리자가 URL을 붙여넣는 단일 칸)은 **삭제했다**
+> (마이그레이션 `drop_extracurricular_contents_attachment_url`). 8개 행이 전부 NULL이었고
+> 함수·뷰·인덱스·정책 어디에서도 참조하지 않았다.
 >
 > ```sql
 > create table public.content_attachments (
