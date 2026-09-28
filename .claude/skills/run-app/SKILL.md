@@ -79,7 +79,34 @@ const [download] = await Promise.all([
 fs.readFileSync(await download.path());   // 원본과 바이트 비교
 ```
 
-## 5. localhost 에서만 나는 것들 — 버그가 아니다
+## 5. 영상 재생까지 확인할 때
+
+**`window.Stream(iframe).play()` 로는 재생이 시작되지 않는다.** 페이지가 이미 만들어 둔
+플레이어와 별개의 래퍼가 생길 뿐이고, 그 래퍼의 `currentTime` 은 0 에 머문다.
+게다가 `play()` 가 돌려주는 프로미스는 풀리지 않아 `page.evaluate` 가 그대로 멈춘다
+(이걸로 7분을 날렸다). 재생 버튼도 `.vjs-big-play-button` 으로는 잡히지 않는다.
+
+**iframe 안의 `<video>` 를 직접 잡는다.** Playwright 는 교차 출처 프레임 안에도 들어간다.
+
+```js
+const frame = page.frameLocator("iframe").first();
+await frame.locator("video").waitFor();
+await frame.locator("video").evaluate((v) => { v.muted = true; v.play()?.catch(() => {}); });
+
+// 진짜 상태는 여기서 본다. SDK 래퍼 말고 video 요소가 근거다
+const s = await frame.locator("video").evaluate((v) => ({ t: v.currentTime, paused: v.paused, err: v.error?.code ?? null }));
+```
+
+헤드리스 크롬은 제스처 없이 재생을 막으므로 `chromium.launch({ channel: "chrome",
+args: ["--autoplay-policy=no-user-gesture-required"] })` 로 띄운다.
+
+**진도는 60초마다 나간다.** 75초를 재생하면 10초 구간 5개가 한 배치로 올라가
+`video_progress.watched_sec = 50` 이 된다. 진행 중이던 6번째 구간은 포함되지 않는다.
+재생 시간과 기록이 정확히 같지 않은 것이 정상이다.
+
+확인이 끝나면 `video_progress`·`video_watch_batches`·`student_extracurricular` 를 지운다.
+
+## 6. localhost 에서만 나는 것들 — 버그가 아니다
 
 - **`This video has not been configured to be allowed on this domain.`**
   Cloudflare 가 허용 도메인을 **Referer 로** 검사하는데 localhost 가 목록에 없다.
@@ -88,7 +115,7 @@ fs.readFileSync(await download.path());   // 원본과 바이트 비교
   화면에는 "신청한 학생만 이용할 수 있는 게시판입니다." 로 나온다.
 - 첫 진입은 라우트를 그때 컴파일하므로 느리다. 타임아웃을 60~90초로 잡는다.
 
-## 6. 배포본 확인
+## 7. 배포본 확인
 
 CLI 토큰이 만료돼 있으면 `npx vercel ls` 가 `token is not valid` 로 떨어진다.
 직접 로그인해야 한다 — 세션에 `! npx vercel login` 을 쳐 달라고 요청한다.
@@ -104,7 +131,7 @@ curl -s -o- -w ' [%{http_code}]' https://ytus-competency-assessment.vercel.app/a
 `drive.mjs` 의 `BASE` 만 운영 주소로 바꾸면 같은 시나리오를 배포본에 돌릴 수 있다.
 운영 데이터를 건드리므로 **끝나면 반드시 지운다.**
 
-## 7. 치우기
+## 8. 치우기
 
 ```bash
 lsof -ti:3000 -sTCP:LISTEN | xargs kill 2>/dev/null
