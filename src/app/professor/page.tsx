@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ClipboardCheck, Download, LogOut, Search, Send, Sparkles, Trash2, Trophy, Users } from "lucide-react";
+import { BookOpen, ClipboardCheck, Download, GraduationCap, LogOut, Search, Send, Sparkles, Trash2, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -187,6 +187,13 @@ export default function ProfessorPage() {
         { key: "referral", label: "리퍼럴", icon: Send },
       ];
 
+  // 교수도 영상 비교과를 수강한다. 전역 네비게이션은 학생용이라 숨겨져 있으므로
+  // 여기서 직접 진입점을 준다. 위 tabs 와 달리 화면을 갈아끼우지 않고 이동한다.
+  const linkTabs = [
+    { href: "/lms", label: "영상 학습", icon: GraduationCap },
+    { href: "/extracurricular", label: "비교과", icon: Trophy },
+  ];
+
   return (
     <div className="min-h-screen bg-ys-paper">
       <header className="border-b border-slate-200 bg-white shadow-sm">
@@ -215,6 +222,18 @@ export default function ProfessorPage() {
                   className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === tab.key ? "bg-ys-blue/10 text-ys-blue" : "text-ys-ink-soft hover:bg-ys-paper"}`}>
                   <Icon className="h-4 w-4" />{tab.label}
                 </button>
+              );
+            })}
+
+            <span className="mx-1 my-1 w-px bg-slate-200" aria-hidden />
+
+            {linkTabs.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href}
+                  className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-ys-ink-soft transition hover:bg-ys-paper">
+                  <Icon className="h-4 w-4" />{item.label}
+                </Link>
               );
             })}
           </div>

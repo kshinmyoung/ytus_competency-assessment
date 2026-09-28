@@ -3,16 +3,25 @@
 import { GraduationCap, Home, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
+import { getCurrentStudentId, supabase } from "@/lib/supabase";
 
 const LMS_NAV = [
   { label: "학습 홈", href: "/lms", icon: GraduationCap },
 ];
 
-const EXTERNAL_NAV = [
-  { label: "비교과 신청", href: "/extracurricular", icon: Trophy },
-  { label: "대시보드", href: "/dashboard", icon: Home },
-];
+/**
+ * 자기 화면으로 돌아가는 길.
+ * 학생이 아닌 역할은 전역 헤더(Navigation)가 숨겨져 있어서, 이 링크가 없으면
+ * 영상 학습에 들어온 뒤 빠져나갈 방법이 없다.
+ */
+function homeFor(role: string): { label: string; href: string } {
+  if (role === "professor" || role === "department_head") return { label: "교수 화면", href: "/professor" };
+  if (["admin", "ctl", "career_center", "counseling_center"].includes(role)) return { label: "관리자 화면", href: "/admin" };
+  if (role === "staff") return { label: "직원 화면", href: "/staff" };
+  return { label: "대시보드", href: "/dashboard" };
+}
 
 /** /lms/[id]/watch/[cid] 는 몰입형이므로 헤더·사이드바를 걷어낸다. */
 function isPlayerRoute(pathname: string): boolean {
@@ -21,6 +30,24 @@ function isPlayerRoute(pathname: string): boolean {
 
 export default function LmsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  // null = 아직 모름. 모르는 동안 기본값(학생 대시보드)을 그리면 교수가 그 틈에 눌러
+  // 엉뚱한 화면으로 간다. 확정될 때까지 이 링크를 내지 않는다.
+  const [myRole, setMyRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const studentId = await getCurrentStudentId();
+      if (!studentId?.trim()) return;
+      const { data } = await supabase
+        .from("students").select("role").eq("student_id", studentId.trim()).maybeSingle();
+      setMyRole((data?.role ?? "").trim().toLowerCase());
+    })();
+  }, []);
+
+  const externalNav = [
+    { label: "비교과 신청", href: "/extracurricular", icon: Trophy },
+    ...(myRole === null ? [] : [{ ...homeFor(myRole), icon: Home }]),
+  ];
 
   if (isPlayerRoute(pathname)) return <>{children}</>;
 
@@ -62,7 +89,7 @@ export default function LmsLayout({ children }: { children: React.ReactNode }) {
                 바로가기
               </p>
               <nav className="space-y-1">
-                {EXTERNAL_NAV.map((item) => {
+                {externalNav.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
