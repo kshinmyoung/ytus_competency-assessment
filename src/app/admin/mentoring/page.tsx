@@ -38,7 +38,8 @@ export default function AdminMentoringPage() {
       supabase.from("mentoring_groups").select("*").order("mentor_id"),
       supabase.from("departments").select("*"),
     ]);
-    setStudents(studentsRes ?? []);
+    // 권한이 없으면 이 API 는 배열이 아니라 { error } 를 준다. 그대로 믿으면 filter 에서 화면이 죽는다.
+    setStudents(Array.isArray(studentsRes) ? studentsRes : []);
     setGroups(groupsRes.data ?? []);
     setDepartments(deptRes.data ?? []);
   };
