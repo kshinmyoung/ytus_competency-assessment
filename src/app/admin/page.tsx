@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateTimeKorea } from "@/lib/date";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import { normalizeHeader, parseCsvRows } from "@/lib/csv";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout, { adminLandingPath } from "@/components/AdminLayout";
 
 type Student = {
   student_id: string;
@@ -243,9 +243,10 @@ export default function AdminPage() {
         .eq("student_id", studentId.trim())
         .maybeSingle();
       const userRole = (data?.role ?? "").trim().toLowerCase();
-      console.log("현재 유저의 역할:", data?.role ?? "(없음)", "→ 판단:", userRole || "(student)");
-      if (!["admin", "ctl", "career_center", "counseling_center", "department_head", "professor"].includes(userRole)) {
-        router.replace("/");
+      // 학생 개인정보와 역량진단 결과는 admin 만 본다 (설계서 3장, 감사 대응 항목).
+      // 센터·교수는 각자의 첫 화면으로 돌려보낸다.
+      if (userRole !== "admin") {
+        router.replace(adminLandingPath(userRole));
         return;
       }
       setAuthorized(true);

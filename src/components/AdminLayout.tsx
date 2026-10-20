@@ -75,6 +75,12 @@ const PROFESSOR_SCOPE = {
   allows: (pathname: string) => isUnder(pathname, "/admin/referrals") || LMS_PROGRESS_PATH.test(pathname),
 };
 
+// 센터는 학생 개인정보·역량진단을 보지 않는다. 각자 메뉴에 있는 화면까지다.
+const CENTER_SCOPE = {
+  fallback: "/admin/reservations",
+  allows: (pathname: string) => CENTER_TABS.some((t) => isUnder(pathname, t.href)),
+};
+
 /** 역할별 /admin 접근 범위. 여기에 없는 역할은 기존대로 둔다. */
 const RESTRICTED_SCOPES: Record<string, { fallback: string; allows: (pathname: string) => boolean }> = {
   staff: {
@@ -83,7 +89,22 @@ const RESTRICTED_SCOPES: Record<string, { fallback: string; allows: (pathname: s
   },
   professor: PROFESSOR_SCOPE,
   department_head: PROFESSOR_SCOPE,
+  ctl: CENTER_SCOPE,
+  career_center: CENTER_SCOPE,
+  counseling_center: CENTER_SCOPE,
 };
+
+/** 이 레이아웃을 쓸 수 있는 역할 */
+const ADMIN_AREA_ROLES = [
+  "admin", "ctl", "career_center", "counseling_center",
+  "professor", "department_head", "staff",
+];
+
+/** 관리자가 아닌 역할을 /admin 에서 돌려보낼 곳. 관리 영역 밖의 역할은 홈으로. */
+export function adminLandingPath(role: string): string {
+  if (!ADMIN_AREA_ROLES.includes(role)) return "/";
+  return RESTRICTED_SCOPES[role]?.fallback ?? "/admin/reservations";
+}
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "관리자",
@@ -113,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .eq("student_id", studentId.trim())
         .maybeSingle();
       const role = (data?.role ?? "").trim().toLowerCase();
-      if (!["admin", "ctl", "career_center", "counseling_center", "professor", "department_head", "staff"].includes(role)) {
+      if (!ADMIN_AREA_ROLES.includes(role)) {
         router.replace("/");
         return;
       }
@@ -121,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setAuthorized(true);
       // 관리자가 아닌 역할이 /admin 기본 페이지로 들어오면 각자의 첫 화면으로 보낸다
       if (role !== "admin" && window.location.pathname === "/admin") {
-        router.replace(RESTRICTED_SCOPES[role]?.fallback ?? "/admin/reservations");
+        router.replace(adminLandingPath(role));
       }
     })();
   }, [router]);
