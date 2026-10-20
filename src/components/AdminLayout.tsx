@@ -53,11 +53,44 @@ const CENTER_TABS = [
   { label: "설문조사", href: "/admin/survey", icon: MessageSquareText },
 ];
 
+// 직원은 영상 LMS 가 본업이다. 마일리지·설문조사만 곁들인다.
+const STAFF_TABS = [
+  { label: "영상 LMS", href: "/admin/lms", icon: Film },
+  { label: "마일리지", href: "/staff", icon: Coins },
+  { label: "설문조사", href: "/admin/survey", icon: MessageSquareText },
+];
+
+// 탭에서 감추는 것만으로는 주소를 직접 치면 열린다. 실제 차단은 아래 useEffect 가 한다.
+const STAFF_ALLOWED_PATHS = STAFF_TABS.map((t) => t.href);
+
+const isUnder = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);
+
+/** 진도 현황만 교수에게 열어 준다. 같은 /admin/lms 아래의 목록·콘텐츠는 관리 권한이다. */
+const LMS_PROGRESS_PATH = /^\/admin\/lms\/[^/]+\/progress$/;
+
+// 교수·학과장의 본진은 /professor 다. /admin 에서는 리퍼럴과 진도 조회까지만 둔다.
+// 진도 조회는 설계서 3장이 교수에게 준 권한이라 막지 않는다.
+const PROFESSOR_SCOPE = {
+  fallback: "/professor",
+  allows: (pathname: string) => isUnder(pathname, "/admin/referrals") || LMS_PROGRESS_PATH.test(pathname),
+};
+
+/** 역할별 /admin 접근 범위. 여기에 없는 역할은 기존대로 둔다. */
+const RESTRICTED_SCOPES: Record<string, { fallback: string; allows: (pathname: string) => boolean }> = {
+  staff: {
+    fallback: "/admin/lms",
+    allows: (pathname) => STAFF_ALLOWED_PATHS.some((base) => isUnder(pathname, base)),
+  },
+  professor: PROFESSOR_SCOPE,
+  department_head: PROFESSOR_SCOPE,
+};
+
 const ROLE_LABELS: Record<string, string> = {
   admin: "관리자",
   ctl: "교수학습지원센터",
   career_center: "취창업진로지원센터",
   counseling_center: "학생생활상담센터",
+  staff: "직원",
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -86,18 +119,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
       setUserRole(role);
       setAuthorized(true);
-      // 센터 직원이 /admin 기본 페이지 접속 시 예약 관리로 이동
+      // 관리자가 아닌 역할이 /admin 기본 페이지로 들어오면 각자의 첫 화면으로 보낸다
       if (role !== "admin" && window.location.pathname === "/admin") {
-        router.replace("/admin/reservations");
+        router.replace(RESTRICTED_SCOPES[role]?.fallback ?? "/admin/reservations");
       }
     })();
   }, [router]);
+
+  // 메뉴에 없는 관리 화면은 주소를 직접 쳐도 열리지 않게 한다.
+  // 레이아웃은 /admin 안에서 이동할 때 다시 마운트되지 않으므로 pathname 을 따로 본다.
+  useEffect(() => {
+    const scope = RESTRICTED_SCOPES[userRole];
+    if (!scope || scope.allows(pathname)) return;
+    router.replace(scope.fallback);
+  }, [userRole, pathname, router]);
 
   const PROFESSOR_TABS = [
     { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   ];
 
-  const tabs = userRole === "admin" ? ADMIN_TABS : ["professor", "department_head"].includes(userRole) ? PROFESSOR_TABS : CENTER_TABS;
+  const tabs = userRole === "admin"
+    ? ADMIN_TABS
+    : userRole === "staff"
+      ? STAFF_TABS
+      : ["professor", "department_head"].includes(userRole)
+        ? PROFESSOR_TABS
+        : CENTER_TABS;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
