@@ -71,10 +71,11 @@ export const LMS_MANAGER_ROLES = [
   'career_center',       // 취창업진로지원센터
   'counseling_center',   // 상담센터
   'ctl',                 // 교수학습개발원
+  'staff',               // 직원 — 소속 부처 영상을 직접 올린다
 ] as const;
 
 export const LMS_VIEWER_ROLES = [
-  ...LMS_MANAGER_ROLES, 'staff', 'professor',
+  ...LMS_MANAGER_ROLES, 'professor',
 ] as const;
 
 export function canManageLms(role?: string) {
@@ -87,13 +88,17 @@ export function canViewLmsProgress(role?: string) {
 
 | 권한 | 대상 role | 범위 |
 |---|---|---|
-| 관리 | `admin`, `career_center`, `counseling_center`, `ctl` | 프로그램 개설, 콘텐츠 등록, 이수 확인 |
-| 조회 | 위 + `staff`, `professor` | 진도 현황 조회만 |
+| 관리 | `admin`, `career_center`, `counseling_center`, `ctl`, `staff` | 프로그램 개설, 콘텐츠 등록, 이수 확인 |
+| 조회 | 위 + `professor` | 진도 현황 조회만 |
 | 학생 | `student` | 본인 학습 |
 
 **중요:** 센터 계정은 **역량진단 결과와 학생 개인정보에 접근할 수 없다.** `/admin/diagnosis*`, `/admin/students*` 경로는 `admin`만 통과시킨다. 감사 대응 항목이다.
 
-> 미결: 주관 부서가 확정되면 `LMS_MANAGER_ROLES`를 좁힌다. 현재는 3개 센터 모두 허용으로 시작.
+> 미결: 주관 부서가 확정되면 `LMS_MANAGER_ROLES`를 좁힌다. 현재는 3개 센터 + 직원 허용.
+>
+> `staff`는 부처에서 영상을 직접 올려야 해 관리로 올렸다. LMS 관리 권한일 뿐
+> 학생 개인정보·역량진단 접근권이 아니다 — `/admin`(학생 관리·진단 결과)의 역할
+> 목록에 `staff`는 없고, 그 경계는 그대로 둔다.
 
 ---
 

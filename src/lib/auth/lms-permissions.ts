@@ -11,12 +11,12 @@ export const LMS_MANAGER_ROLES = [
   "career_center", // 취창업진로지원센터
   "counseling_center", // 상담센터
   "ctl", // 교수학습개발원
+  "staff", // 직원 — 소속 부처 영상을 직접 올린다
 ] as const;
 
 /** 관리 권한 + 진도 현황 조회 전용 */
 export const LMS_VIEWER_ROLES = [
   ...LMS_MANAGER_ROLES,
-  "staff",
   "professor",
 ] as const;
 
