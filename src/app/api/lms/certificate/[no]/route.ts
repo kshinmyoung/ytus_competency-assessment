@@ -14,10 +14,23 @@ import { canViewLmsProgress } from "@/lib/auth/lms-permissions";
 
 type Params = { params: Promise<{ no: string }> };
 
+// 수료증 문구는 수료자의 role 에 맞춘다. role 값은 students.role 7개를 그대로 쓴다.
+// student 외 6개는 전부 교직원으로 묶어 한 가지 문구를 쓴다.
+const STAFF_ROLES = ["professor", "staff", "admin", "career_center", "counseling_center", "ctl"];
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// 제목 끝에 붙는 목적격 조사. 마지막 한글 음절의 종성으로 가린다. 한글이 없으면 "을".
+function objectParticle(value: string): string {
+  for (let i = value.length - 1; i >= 0; i -= 1) {
+    const code = value.charCodeAt(i);
+    if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 === 0 ? "를" : "을";
+  }
+  return "을";
 }
 
 function formatKoreanDate(iso: string): string {
@@ -52,10 +65,39 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ error: "취소된 수료증입니다." }, { status: 410 });
     }
 
-    const [{ data: student }, { data: program }] = await Promise.all([
-      admin.from("students").select("name").eq("student_id", completion.student_id).maybeSingle(),
-      admin.from("extracurricular").select("name, organizer").eq("id", completion.extracurricular_id).maybeSingle(),
+    const [{ data: student }, { data: program }, { data: contentRows }] = await Promise.all([
+      admin.from("students").select("name, role").eq("student_id", completion.student_id).maybeSingle(),
+      admin.from("extracurricular").select("name, organizer, delivery_type").eq("id", completion.extracurricular_id).maybeSingle(),
+      admin.from("extracurricular_contents").select("title, is_required, content_order, id")
+        .eq("extracurricular_id", completion.extracurricular_id).order("content_order").order("id"),
     ]);
+
+    // 조회자(role)가 아니라 수료자 본인의 role 로 문구를 고른다.
+    const holderRole = student?.role ?? "";
+    const isStaff = STAFF_ROLES.includes(holderRole);
+    const subject = isStaff ? "위 교직원은" : holderRole === "student" ? "위 학생은" : "위 사람은";
+    const idLabel = isStaff ? "직 번" : holderRole === "student" ? "학 번" : "번 호";
+
+    // 영상형은 필수 콘텐츠가 이수 단위다. 한 편이면 그 영상 제목이 이수 대상이다.
+    const contents = contentRows ?? [];
+    const required = contents.filter((c) => c.is_required);
+    const videoContents = required.length ? required : contents;
+    const isVideo = program?.delivery_type === "video";
+
+    const subjectTitle = isVideo && videoContents.length === 1
+      ? videoContents[0].title
+      : (program?.name ?? "-");
+
+    // 교직원 수료증은 제목을 본문 문장 안에 넣는다. 표제를 따로 두면 같은 제목이 두 번 찍힌다.
+    const sentence = isStaff
+      ? videoContents.length > 1
+        ? `${subject} \u201c${subjectTitle}\u201d 과정(총 ${videoContents.length}편)을`
+        : `${subject} \u201c${subjectTitle}\u201d${objectParticle(subjectTitle)}`
+      : !isVideo
+        ? `${subject} 본교 비교과 프로그램을`
+        : videoContents.length > 1
+          ? `${subject} 위 영상 과정(총 ${videoContents.length}편)을`
+          : `${subject} 위 영상을`;
 
     const html = `<!doctype html>
 <html lang="ko">
@@ -78,8 +120,9 @@ export async function GET(request: Request, { params }: Params) {
        margin: 6mm 0 14mm; text-indent: 1.2em; }
   .row { font-size: 12pt; color: #334155; margin: 2.5mm 0; }
   .row b { display: inline-block; width: 26mm; color: #64748b; font-weight: 400; }
-  .title { font-size: 17pt; font-weight: 600; color: #0f172a; margin: 12mm 0 10mm; text-align: center; line-height: 1.5; }
-  .body { font-size: 12.5pt; line-height: 2.1; color: #1f2937; text-align: center; margin-top: 6mm; }
+  .title { font-size: 17pt; font-weight: 600; color: #0f172a; margin: 12mm 0 10mm; text-align: center; line-height: 1.5; word-break: keep-all; }
+  .body { font-size: 12.5pt; line-height: 2.1; color: #1f2937; text-align: center; margin-top: 6mm; word-break: keep-all; }
+  .body.lead { font-size: 14pt; margin-top: 22mm; max-width: 150mm; }
   .date { margin-top: auto; padding-top: 16mm; font-size: 13pt; color: #0f172a; }
   .issuer { margin-top: 8mm; font-size: 15pt; font-weight: 700; color: #1e3a5f; letter-spacing: .12em; }
   .foot { margin-top: 10mm; font-size: 8.5pt; color: #94a3b8; text-align: center; line-height: 1.6; }
@@ -98,19 +141,19 @@ export async function GET(request: Request, { params }: Params) {
 
       <div style="align-self:flex-start">
         <div class="row"><b>성 명</b>${escapeHtml(student?.name ?? "-")}</div>
-        <div class="row"><b>학 번</b>${escapeHtml(completion.student_id)}</div>
+        <div class="row"><b>${escapeHtml(idLabel)}</b>${escapeHtml(completion.student_id)}</div>
         <div class="row"><b>이수일</b>${escapeHtml(formatKoreanDate(completion.completed_at))}</div>
       </div>
 
-      <div class="title">${escapeHtml(program?.name ?? "-")}</div>
+      ${isStaff ? "" : `<div class="title">${escapeHtml(subjectTitle)}</div>`}
 
-      <div class="body">
-        위 학생은 본교 비교과 프로그램을<br>
+      <div class="body${isStaff ? " lead" : ""}">
+        ${escapeHtml(sentence)}<br>
         성실히 이수하였기에 이 증서를 수여합니다.
       </div>
 
       <div class="date">${escapeHtml(formatKoreanDate(completion.completed_at))}</div>
-      <div class="issuer">${escapeHtml(program?.organizer ?? "영산선학대학교")}</div>
+      <div class="issuer">${escapeHtml(program?.organizer ?? "영남신학대학교")}</div>
 
       <div class="foot">
         최종 진도율 ${completion.final_progress}%<br>
