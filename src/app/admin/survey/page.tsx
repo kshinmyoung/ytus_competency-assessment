@@ -73,7 +73,9 @@ export default function AdminSurveyPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("설문과 모든 응답을 삭제하시겠습니까?")) return;
-    await supabase.from("survey_responses").delete().eq("survey_id", id);
+    // 응답은 여기서 지우지 않는다. survey_responses 에는 DELETE 정책이 없어
+    // 직접 지우면 오류 없이 0건만 처리되고 지워진 것처럼 보인다.
+    // survey_id FK 가 ON DELETE CASCADE 라 아래 설문 삭제로 응답까지 함께 지워진다.
     await supabase.from("survey_questions").delete().eq("survey_id", id);
     await supabase.from("surveys").delete().eq("id", id);
     await load();
