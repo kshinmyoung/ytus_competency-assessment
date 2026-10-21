@@ -22,6 +22,31 @@ type Student = {
   email: string | null;
 };
 
+/** students.role 7개 값. 새 role 을 만들지 않는다. */
+const ROLE_LABELS: Record<string, string> = {
+  student: "학생",
+  professor: "교수",
+  staff: "직원",
+  admin: "관리자",
+  career_center: "취창업진로지원센터",
+  counseling_center: "학생생활상담센터",
+  ctl: "교수학습지원센터",
+};
+
+const STUDENT_TYPE_LABELS: Record<string, string> = {
+  domestic: "내국인",
+  international: "유학생",
+};
+
+type SortKey = "name_asc" | "name_desc" | "id_asc" | "id_desc";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  name_asc: "이름 가나다순",
+  name_desc: "이름 역순",
+  id_asc: "학번 오름차순",
+  id_desc: "학번 내림차순",
+};
+
 type DiagnosisResult = {
   id?: string;
   student_id: string;
@@ -187,6 +212,10 @@ export default function AdminPage() {
   } | null>(null);
   const [searchStudent, setSearchStudent] = useState("");
   const [filterDiagnosis, setFilterDiagnosis] = useState<"all" | "core" | "learning" | "calling" | "none">("all");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterDept, setFilterDept] = useState("all");
+  const [filterStudentType, setFilterStudentType] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("name_asc");
   const [searchResult, setSearchResult] = useState("");
   const [showLowScore, setShowLowScore] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
@@ -474,6 +503,16 @@ export default function AdminPage() {
     return map;
   }, [resultsCore, resultsLearning, resultsCalling]);
 
+  /** 역할 필터 버튼에 붙는 인원수. 지금 목록에 실제로 있는 역할만 보여 준다. */
+  const roleCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    students.forEach((s) => {
+      const role = (s.role ?? "").trim().toLowerCase() || "student";
+      counts[role] = (counts[role] ?? 0) + 1;
+    });
+    return counts;
+  }, [students]);
+
   const filteredStudents = useMemo(() => {
     let list = students;
     const q = searchStudent.trim().toLowerCase();
@@ -484,13 +523,39 @@ export default function AdminPage() {
           (s.name ?? "").toLowerCase().includes(q)
       );
     }
+    if (filterRole !== "all") {
+      // role 이 비어 있는 계정은 학생으로 본다. 표에서도 그렇게 읽힌다.
+      list = list.filter((s) => ((s.role ?? "").trim().toLowerCase() || "student") === filterRole);
+    }
+    if (filterDept !== "all") {
+      list = list.filter((s) => String(s.department_id ?? "") === filterDept);
+    }
+    if (filterStudentType !== "all") {
+      list = list.filter((s) => ((s.student_type ?? "").trim().toLowerCase() || "domestic") === filterStudentType);
+    }
     if (filterDiagnosis === "none") {
       list = list.filter((s) => !studentDiagnosisMap[s.student_id] || studentDiagnosisMap[s.student_id].size === 0);
     } else if (filterDiagnosis !== "all") {
       list = list.filter((s) => studentDiagnosisMap[s.student_id]?.has(filterDiagnosis));
     }
-    return list;
-  }, [students, searchStudent, filterDiagnosis, studentDiagnosisMap]);
+
+    // 한글 이름은 localeCompare 의 ko 로 정렬해야 가나다순이 된다. 기본 비교는 유니코드 순서다.
+    // 이름이 없는 계정은 비교에서 빠지지 않도록 뒤로 모은다.
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      if (sortKey === "id_asc") return a.student_id.localeCompare(b.student_id, "ko", { numeric: true });
+      if (sortKey === "id_desc") return b.student_id.localeCompare(a.student_id, "ko", { numeric: true });
+      const an = (a.name ?? "").trim();
+      const bn = (b.name ?? "").trim();
+      if (!an && !bn) return a.student_id.localeCompare(b.student_id, "ko", { numeric: true });
+      if (!an) return 1;
+      if (!bn) return -1;
+      const cmp = an.localeCompare(bn, "ko");
+      // 동명이인은 학번으로 갈라 순서가 매번 달라지지 않게 한다
+      return sortKey === "name_asc" ? (cmp || a.student_id.localeCompare(b.student_id, "ko", { numeric: true })) : -cmp;
+    });
+    return sorted;
+  }, [students, searchStudent, filterRole, filterDept, filterStudentType, filterDiagnosis, studentDiagnosisMap, sortKey]);
 
   const filteredResults = useMemo(() => {
     const list = getResultsByTab();
@@ -669,11 +734,37 @@ export default function AdminPage() {
                 onChange={(e) => setFilterDiagnosis(e.target.value as typeof filterDiagnosis)}
                 className="rounded-lg border border-slate-300 py-2 pl-3 pr-8 text-sm"
               >
-                <option value="all">전체 학생</option>
+                <option value="all">진단 전체</option>
                 <option value="core">핵심역량 완료</option>
                 <option value="learning">학습역량 완료</option>
                 <option value="calling">소명진단 완료</option>
                 <option value="none">미진단 학생</option>
+              </select>
+              <select
+                value={filterDept}
+                onChange={(e) => setFilterDept(e.target.value)}
+                className="rounded-lg border border-slate-300 py-2 pl-3 pr-8 text-sm"
+              >
+                <option value="all">학과 전체</option>
+                {departments.map((d) => <option key={d.id} value={String(d.id)}>{d.name}</option>)}
+              </select>
+              <select
+                value={filterStudentType}
+                onChange={(e) => setFilterStudentType(e.target.value)}
+                className="rounded-lg border border-slate-300 py-2 pl-3 pr-8 text-sm"
+              >
+                <option value="all">내국인·유학생</option>
+                <option value="domestic">내국인</option>
+                <option value="international">유학생</option>
+              </select>
+              <select
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value as SortKey)}
+                className="rounded-lg border border-slate-300 py-2 pl-3 pr-8 text-sm"
+              >
+                {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+                  <option key={k} value={k}>{SORT_LABELS[k]}</option>
+                ))}
               </select>
               <button
                 type="button"
@@ -694,6 +785,33 @@ export default function AdminPage() {
               </button>
             </div>
           </div>
+          {/* 역할 분류는 가장 자주 쓰므로 셀렉트에 숨기지 않고 줄로 편다 */}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            {(["all", ...Object.keys(ROLE_LABELS)] as string[])
+              .filter((r) => r === "all" || roleCounts[r])
+              .map((r) => {
+                const isActive = filterRole === r;
+                const count = r === "all" ? students.length : roleCounts[r] ?? 0;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setFilterRole(r)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      isActive
+                        ? "border-ys-blue bg-ys-blue/10 text-ys-blue"
+                        : "border-slate-300 bg-white text-ys-ink-soft hover:bg-ys-paper"
+                    }`}
+                  >
+                    {r === "all" ? "전체" : ROLE_LABELS[r]}
+                    <span className="ml-1.5 text-ys-ink-soft/70">{count}</span>
+                  </button>
+                );
+              })}
+            <span className="ml-auto text-xs text-ys-ink-soft">
+              {filteredStudents.length}명 표시
+            </span>
+          </div>
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-ys-paper">
@@ -712,7 +830,9 @@ export default function AdminPage() {
                   <tr key={s.student_id} className="hover:bg-ys-paper">
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-ys-ink">{s.student_id}</td>
                     <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.name ?? "-"}</td>
-                    <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.role ?? "-"}</td>
+                    <td className="px-4 py-3 text-sm text-ys-ink-soft">
+                      {ROLE_LABELS[(s.role ?? "").trim().toLowerCase() || "student"] ?? s.role ?? "-"}
+                    </td>
                     <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.phone ?? "-"}</td>
                     <td className="px-4 py-3 text-sm text-ys-ink-soft">{s.email ?? "-"}</td>
                     <td className="px-4 py-3">
