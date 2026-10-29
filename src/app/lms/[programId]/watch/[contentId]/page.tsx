@@ -21,6 +21,7 @@ const MAX_RATE = 1.5;
 const SEGMENT_SEC = 10;        // 10초 단위로 구간을 끊는다
 const BATCH_SIZE = 6;          // 6구간 = 60초마다 전송
 const MAX_BATCH = 10;          // 한 번에 보낼 수 있는 최대 구간 수 (서버 상한)
+const MAX_DRAIN = 20;          // 밀린 큐를 한 번에 이어 비울 최대 횟수 (10구간 x 20 = 200구간)
 const FLUSH_INTERVAL_MS = 60_000;
 const SEEK_THRESHOLD_SEC = 2;  // 이보다 크게 튀면 시킹으로 본다
 
@@ -80,6 +81,7 @@ export default function LmsWatchPage() {
   const sendingRef = useRef(false);
   const rateRef = useRef(1.0);
   const tokenRef = useRef("");        // 페이지 이탈 시 동기적으로 써야 해서 캐시
+  const drainRef = useRef(0);         // 밀린 큐를 이어 비울 때의 재귀 깊이
 
   // 이수 확정
   const minProgressRef = useRef(0);
@@ -159,6 +161,14 @@ export default function LmsWatchPage() {
     const batch = queueRef.current.slice(0, MAX_BATCH);
     sendingRef.current = true;
     try {
+      // 액세스 토큰은 1시간이면 만료된다. 진입할 때 받아 둔 값을 계속 쓰면
+      // 한 시간 넘게 보는 긴 영상에서 어느 순간부터 전부 401 이 되어 진도가 멈춘다.
+      // getSession() 은 만료가 가까우면 알아서 갱신해 준다. 이탈 시(keepalive)에는
+      // 기다릴 수 없으므로 캐시해 둔 값을 그대로 쓴다.
+      if (!keepalive) {
+        const fresh = (await supabase.auth.getSession()).data.session?.access_token;
+        if (fresh) tokenRef.current = fresh;
+      }
       const res = await fetch("/api/lms/watch", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenRef.current}` },
@@ -189,6 +199,16 @@ export default function LmsWatchPage() {
         // 다시 보내도 거부될 배치는 버린다 (무한 재전송 방지)
         queueRef.current = queueRef.current.slice(batch.length);
         setNotice(body.error ?? "");
+      } else if (res.status === 401) {
+        // 세션이 만료됐다. 큐는 지키고 다음 전송에서 새 토큰으로 다시 보낸다.
+        tokenRef.current = "";
+        const fresh = (await supabase.auth.getSession()).data.session?.access_token;
+        if (fresh) {
+          tokenRef.current = fresh;
+          setNotice("세션을 갱신했습니다. 시청한 구간은 곧 저장됩니다.");
+        } else {
+          setNotice("로그인이 만료됐습니다. 이 탭을 새로고침한 뒤 이어서 보세요. 지금까지 본 구간은 저장돼 있습니다.");
+        }
       } else {
         // 일시적 실패 — 큐를 유지해 다음 전송에 함께 보낸다
         setNotice(body?.error ?? "진도 저장에 실패했습니다. 잠시 후 다시 시도합니다.");
@@ -199,7 +219,18 @@ export default function LmsWatchPage() {
     } finally {
       sendingRef.current = false;
     }
+    // 세션이 끊겼던 동안 큐가 쌓였을 수 있다. 한 번에 10구간씩만 나가므로
+    // 남은 것이 있으면 이어서 비운다. 그냥 두면 60초에 10구간씩만 복구된다.
+    if (!keepalive && queueRef.current.length > 0 && drainRef.current < MAX_DRAIN) {
+      drainRef.current += 1;
+      await flushRef.current?.(false);
+    }
+    drainRef.current = 0;
   }, [contentId, programId]);
+
+  // flush 가 스스로를 다시 부르기 위한 참조 (useCallback 순환 참조를 피한다)
+  const flushRef = useRef<((keepalive?: boolean) => Promise<void>) | null>(null);
+  useEffect(() => { flushRef.current = flush; }, [flush]);
 
   /** 현재 누적 구간을 마감해 큐에 넣는다. 1초 미만이거나 시킹으로 끊긴 조각은 버린다. */
   const closeSegment = useCallback((end: number) => {
