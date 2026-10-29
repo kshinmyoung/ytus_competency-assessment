@@ -48,7 +48,8 @@ export default function StaffPage() {
 
       // 모든 학생 + 마일리지
       const [studRes, deptRes, mileRes] = await Promise.all([
-        supabase.from("students").select("student_id, name, department_id").eq("role", "student"),
+        // 보관 계정(archived_at 있음)은 지급 대상이 아니다
+        supabase.from("students").select("student_id, name, department_id").eq("role", "student").is("archived_at", null),
         supabase.from("departments").select("id, name"),
         supabase.from("mileage_records").select("student_id, points"),
       ]);

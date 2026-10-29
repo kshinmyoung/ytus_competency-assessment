@@ -50,14 +50,25 @@ export async function GET(request: Request) {
     const result = await assertAdmin(request);
     if (result instanceof NextResponse) return result;
     const { admin } = result;
-    const { data: students, error: listError } = await admin
-      .from("students")
-      .select("student_id, name, role, student_type, department_id, grade_year, admission_year, phone, email")
-      .order("student_id");
-    if (listError) {
-      return NextResponse.json({ error: listError.message }, { status: 500 });
+    // PostgREST 는 한 번에 1000행까지만 준다. 재학생이 그보다 많아 끝까지 넘겨 받아야 한다.
+    // 한 번만 부르면 뒤쪽 학생이 통째로 빠지고 역할별 인원수도 틀린다.
+    const PAGE = 1000;
+    const students: Record<string, unknown>[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error: listError } = await admin
+        .from("students")
+        .select("student_id, name, role, student_type, department_id, grade_year, admission_year, phone, email")
+        // 보관 계정은 학번이 다른 사람에게 넘어간 뒤 기록만 남겨 둔 행이다. 명단에 섞이면 안 된다.
+        .is("archived_at", null)
+        .order("student_id")
+        .range(from, from + PAGE - 1);
+      if (listError) {
+        return NextResponse.json({ error: listError.message }, { status: 500 });
+      }
+      students.push(...(data ?? []));
+      if (!data || data.length < PAGE) break;
     }
-    return NextResponse.json(students ?? []);
+    return NextResponse.json(students);
   } catch (e) {
     const message = e instanceof Error ? e.message : "알 수 없는 오류";
     return NextResponse.json({ error: message }, { status: 500 });

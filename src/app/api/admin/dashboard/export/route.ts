@@ -83,6 +83,8 @@ export async function GET(request: Request) {
       const { data, error } = await admin
         .from("students")
         .select("student_id, name, role, department_id, grade_year, admission_year, phone, email")
+        // 보관 계정은 내보내기에서도 뺀다
+        .is("archived_at", null)
         .order("student_id");
       if (error) throw error;
       rows = (data ?? []) as Record<string, unknown>[];

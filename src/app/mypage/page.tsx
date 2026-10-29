@@ -1,8 +1,8 @@
 "use client";
 
-import { BookOpen, ClipboardCheck, Trophy } from "lucide-react";
+import { BookOpen, ClipboardCheck, Trophy, UserCog } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CompetencyCompass from "@/components/CompetencyCompass";
 import { CORE_MAX, toSixAxes } from "@/lib/competencies";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
@@ -59,6 +59,43 @@ export default function MyPage() {
   const [mileage, setMileage] = useState(0);
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "extra" | "diagnosis">("overview");
 
+  // 내 정보 — 학번·이름·학과는 학사 자료라 본인이 못 고친다. 연락처와 이메일만 연다.
+  const [profile, setProfile] = useState<{ studentId: string; name: string | null; phone: string | null; email: string | null; departmentName: string | null } | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [pForm, setPForm] = useState({ phone: "", email: "" });
+  const [pSaving, setPSaving] = useState(false);
+  const [pMsg, setPMsg] = useState("");
+  const [pErr, setPErr] = useState("");
+
+  const authHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` };
+  };
+
+  // 저장 직후에도 다시 부르므로 참조가 바뀌지 않게 고정한다
+  const loadProfile = useCallback(async () => {
+    const res = await fetch("/api/me/profile", { headers: await authHeaders() });
+    if (!res.ok) return;
+    const body = await res.json();
+    setProfile(body);
+    setPForm({ phone: body.phone ?? "", email: body.email ?? "" });
+  }, []);
+
+  const saveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPSaving(true); setPErr(""); setPMsg("");
+    const res = await fetch("/api/me/profile", {
+      method: "PATCH", headers: await authHeaders(),
+      body: JSON.stringify({ phone: pForm.phone, email: pForm.email }),
+    });
+    const body = await res.json().catch(() => null);
+    setPSaving(false);
+    if (!res.ok) { setPErr(body?.error ?? "저장하지 못했습니다."); return; }
+    setProfile((p) => (p ? { ...p, phone: body.phone, email: body.email } : p));
+    setPForm({ phone: body.phone ?? "", email: body.email ?? "" });
+    setPMsg("저장했습니다.");
+  };
+
   useEffect(() => {
     (async () => {
       const studentId = await getCurrentStudentId();
@@ -73,6 +110,8 @@ export default function MyPage() {
         supabase.from("core_competencies").select("id, name, color_code").order("id"),
         supabase.from("major_competencies").select("id, name").order("id"),
       ]);
+
+      void loadProfile();
 
       if (studentRes.data?.name) setUserName(studentRes.data.name);
       const dept = (deptRes.data ?? []).find((d: any) => d.id === studentRes.data?.department_id);
@@ -102,7 +141,7 @@ export default function MyPage() {
       const { data: mileData } = await supabase.from("mileage_records").select("points").eq("student_id", studentId.trim());
       setMileage((mileData ?? []).reduce((s: number, m: any) => s + (m.points ?? 0), 0));
     })();
-  }, []);
+  }, [loadProfile]);
 
   // Latest core diagnosis for radar
   const latestCore = diagnosisResults.find((d) => d.diagnosis_type === "core");
@@ -135,10 +174,76 @@ export default function MyPage() {
               {departmentName && `${departmentName} · `}역량 현황과 활동 이력을 확인하세요.
             </p>
           </div>
-          <Link href="/mypage/portfolio" className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
-            포트폴리오
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { setShowProfile((v) => !v); setPMsg(""); setPErr(""); }}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-ys-ink hover:bg-ys-paper"
+            >
+              <UserCog className="h-4 w-4" />
+              내 정보
+            </button>
+            <Link href="/mypage/portfolio" className="flex items-center gap-1.5 rounded-lg bg-ys-blue px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
+              포트폴리오
+            </Link>
+          </div>
         </div>
+
+        {/* 내 정보 — 연락처·이메일은 본인이 고치고, 학사 자료는 읽기 전용으로 보여 준다 */}
+        {showProfile && (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-base font-semibold text-ys-ink">내 정보</h2>
+            <div className="mb-5 grid gap-3 sm:grid-cols-3">
+              {[
+                ["학번", profile?.studentId],
+                ["이름", profile?.name],
+                ["학과", profile?.departmentName],
+              ].map(([label, value]) => (
+                <div key={label as string} className="rounded-lg bg-ys-paper px-3 py-2">
+                  <p className="text-[11px] text-ys-ink-soft">{label}</p>
+                  <p className="text-sm font-medium text-ys-ink">{value || "-"}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mb-4 text-xs text-ys-ink-soft">
+              학번·이름·학과는 학사 자료라 이곳에서 고칠 수 없습니다. 틀린 곳이 있으면 학사팀에 알려 주세요.
+            </p>
+
+            <form onSubmit={saveProfile} className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="my-phone" className="mb-1 block text-xs font-medium text-ys-ink-soft">휴대전화</label>
+                <input
+                  id="my-phone" type="tel" inputMode="numeric" placeholder="010-1234-5678"
+                  value={pForm.phone}
+                  onChange={(e) => setPForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="my-email" className="mb-1 block text-xs font-medium text-ys-ink-soft">이메일</label>
+                <input
+                  id="my-email" type="email" placeholder="name@example.com"
+                  value={pForm.email}
+                  onChange={(e) => setPForm((f) => ({ ...f, email: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                <button
+                  type="submit" disabled={pSaving}
+                  className="rounded-lg bg-ys-blue px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {pSaving ? "저장 중..." : "저장"}
+                </button>
+                <Link href="/password-reset" className="text-sm font-medium text-ys-blue hover:underline">
+                  비밀번호 변경
+                </Link>
+                {pMsg && <span className="text-sm text-emerald-600">{pMsg}</span>}
+                {pErr && <span className="text-sm text-rose-600">{pErr}</span>}
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="mb-6 flex gap-1 rounded-lg border border-slate-200 bg-white p-1">

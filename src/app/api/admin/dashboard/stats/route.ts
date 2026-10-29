@@ -90,7 +90,9 @@ export async function GET(request: Request) {
       countBy(admin, "diagnosis_results", { diagnosis_type: "custom" }),
       countBy(admin, "referrals"),
       countBy(admin, "center_reservations"),
-      countBy(admin, "students"),
+      // 보관 계정은 재학생 수에 넣지 않는다
+      admin.from("students").select("*", { count: "exact", head: true }).is("archived_at", null)
+        .then((r) => (r as unknown as CountResult).count ?? 0),
       admin.from("page_visits").select("session_id, created_at").not("session_id", "is", null).limit(500000),
       admin.from("referrals").select("status, to_type"),
       admin.from("center_reservations").select("status, center_type"),

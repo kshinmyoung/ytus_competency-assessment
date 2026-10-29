@@ -74,7 +74,7 @@ export default function ProfessorPage() {
 
       let studentList: Student[] = [];
       if (role === "department_head" && me?.department_id) {
-        const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").eq("department_id", me.department_id).eq("role", "student").order("student_id");
+        const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").eq("department_id", me.department_id).eq("role", "student").is("archived_at", null).order("student_id");
         studentList = data ?? [];
       } else if (role === "professor") {
         // 멘토링 그룹 학생 + 같은 학과 학생 합산
@@ -82,11 +82,11 @@ export default function ProfessorPage() {
         const { data: groups } = await supabase.from("mentoring_groups").select("student_id").eq("mentor_id", sid.trim());
         (groups ?? []).forEach((g: any) => allIds.add(g.student_id));
         if (me?.department_id) {
-          const { data: deptStudents } = await supabase.from("students").select("student_id").eq("department_id", me.department_id).eq("role", "student");
+          const { data: deptStudents } = await supabase.from("students").select("student_id").eq("department_id", me.department_id).eq("role", "student").is("archived_at", null);
           (deptStudents ?? []).forEach((s: any) => allIds.add(s.student_id));
         }
         if (allIds.size > 0) {
-          const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").in("student_id", Array.from(allIds)).order("student_id");
+          const { data } = await supabase.from("students").select("student_id, name, department_id, phone, email").in("student_id", Array.from(allIds)).is("archived_at", null).order("student_id");
           studentList = data ?? [];
         }
       }
