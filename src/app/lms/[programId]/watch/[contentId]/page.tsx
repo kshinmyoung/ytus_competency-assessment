@@ -317,6 +317,11 @@ export default function LmsWatchPage() {
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== "hidden") return;
+      // 멈춘 줄 모르고 "다 봤는데 진도가 안 올라간다"는 신고가 반복된다.
+      // 멈췄다는 사실을 돌아왔을 때 눈에 띄게 남겨 둔다.
+      if (!playerRef.current?.paused) {
+        setNotice("다른 화면으로 이동해 영상이 멈췄습니다. 이어서 보려면 재생을 눌러 주세요.");
+      }
       playerRef.current?.pause();
       closeSegment(lastTimeRef.current);
       void flush(true);
@@ -474,7 +479,10 @@ export default function LmsWatchPage() {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-ys-mist/70">건너뛴 구간은 진도에 포함되지 않습니다.</p>
+            <p className="text-[11px] text-ys-mist/70">
+              건너뛴 구간은 진도에 포함되지 않습니다. 다른 탭·앱으로 이동하거나 화면을 끄면
+              영상이 자동으로 멈추고, 멈춘 동안은 진도가 올라가지 않습니다.
+            </p>
             {notice && <p className="text-[11px] text-ys-gold">{notice}</p>}
           </div>
 
