@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Gothic_A1, IBM_Plex_Mono, IBM_Plex_Sans_KR } from "next/font/google";
 import "./globals.css";
 import PageViewTracker from "@/components/PageViewTracker";
+import InquiryButton from "@/components/InquiryButton";
 
 /* 제목 — 학교 사이트의 굵은 고딕 계열을 잇는다 */
 const gothicA1 = Gothic_A1({
@@ -43,6 +44,8 @@ export default function RootLayout({
       <body className={`${gothicA1.variable} ${plexKr.variable} ${plexMono.variable} antialiased`}>
         <PageViewTracker />
         {children}
+        {/* 전역 헤더가 없는 영상 시청 화면까지 덮으려면 여기여야 한다 */}
+        <InquiryButton />
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import {
   Calendar,
   Coins,
   Gauge,
+  MessageCircleQuestion,
   MessageSquareText,
   FileBarChart,
   FileText,
@@ -36,6 +37,7 @@ const ADMIN_TABS = [
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "상담기록", href: "/admin/counseling", icon: FileText },
   { label: "설문조사", href: "/admin/survey", icon: MessageSquareText },
+  { label: "학생 문의", href: "/admin/inquiries", icon: MessageCircleQuestion },
   { label: "마일리지", href: "/staff", icon: Coins },
   { label: "통합 등록", href: "/admin/import", icon: Upload },
 ];
