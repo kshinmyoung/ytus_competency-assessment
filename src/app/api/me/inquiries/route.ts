@@ -1,7 +1,8 @@
 /**
  * 본인 문의 (서버 전용)
- * GET  /api/me/inquiries — 내가 보낸 문의와 답변
- * POST /api/me/inquiries — 문의 보내기  body: { category, body, pagePath }
+ * GET   /api/me/inquiries — 내가 보낸 문의와 답변
+ * POST  /api/me/inquiries — 문의 보내기  body: { category, body, pagePath }
+ * PATCH /api/me/inquiries — 받은 답변을 확인했다고 표시한다 (읽음 시각만 남긴다)
  *
  * student_id 는 Bearer 토큰에서만 가져온다. 요청 body 의 학번은 믿지 않는다.
  * 답변·상태는 관리자만 쓸 수 있다. 여기서는 건드리지 않는다.
@@ -53,12 +54,37 @@ export async function GET(request: Request) {
     const admin = getAdminClient();
     const { data, error } = await admin
       .from("student_inquiries")
-      .select("id, category, body, status, answer, answered_at, created_at")
+      .select("id, category, body, status, answer, answered_at, answer_read_at, created_at")
       .eq("student_id", studentId)
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data ?? []);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "알 수 없는 오류" }, { status: 500 });
+  }
+}
+
+/**
+ * 답변을 확인했다고 표시한다. 본인 문의만, 읽음 시각만 건드린다.
+ * 관리자가 "답변은 저장했는데 학생이 봤는지 모르겠다"를 알 수 있게 하는 유일한 근거다.
+ */
+export async function PATCH(request: Request) {
+  try {
+    const studentId = await resolveStudentId(request);
+    if (studentId instanceof NextResponse) return studentId;
+
+    const admin = getAdminClient();
+    const { data, error } = await admin
+      .from("student_inquiries")
+      .update({ answer_read_at: new Date().toISOString() })
+      .eq("student_id", studentId)
+      .not("answer", "is", null)
+      .is("answer_read_at", null)
+      .select("id");
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ success: true, marked: (data ?? []).length });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "알 수 없는 오류" }, { status: 500 });
   }

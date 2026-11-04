@@ -6,7 +6,7 @@
  * 문의에는 학생 개인사정이 적힐 수 있어 서버에서도 admin 만 통과시킨다.
  * 여기 화면 가드는 그보다 앞서 돌려보내는 한 겹일 뿐이다.
  */
-import { ExternalLink, Lock, MessageSquareText, RefreshCw } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, Lock, MessageSquareText, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
@@ -17,7 +17,8 @@ type Inquiry = {
   id: number; student_id: string; name: string | null; department: string | null;
   category: string; body: string; page_path: string | null; user_agent: string | null;
   status: "접수" | "처리중" | "완료"; answer: string | null;
-  answered_by: string | null; answered_at: string | null; created_at: string;
+  answered_by: string | null; answered_at: string | null;
+  answer_read_at: string | null; created_at: string;
 };
 
 type BoardPost = {
@@ -48,6 +49,8 @@ export default function AdminInquiriesPage() {
   const [tab, setTab] = useState<"inquiry" | "board">("inquiry");
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [onlyUnanswered, setOnlyUnanswered] = useState(true);
+  /** 방금 저장한 문의. 저장이 실제로 됐는지 바로 알 수 있게 한 줄 남긴다 */
+  const [justSaved, setJustSaved] = useState<number | null>(null);
   const [reply, setReply] = useState<Record<number, string>>({});
 
   const authHeaders = async () => {
@@ -102,13 +105,14 @@ export default function AdminInquiriesPage() {
   }, [load, loadPosts]);
 
   const patch = async (id: number, payload: Record<string, unknown>) => {
-    setSaving(id); setError("");
+    setSaving(id); setError(""); setJustSaved(null);
     const res = await fetch("/api/admin/inquiries", {
       method: "PATCH", headers: await authHeaders(), body: JSON.stringify({ id, ...payload }),
     });
     const body = await res.json().catch(() => null);
     setSaving(null);
     if (!res.ok) { setError(body?.error ?? "저장하지 못했습니다."); return; }
+    setJustSaved(id);
     await load();
   };
 
@@ -121,6 +125,7 @@ export default function AdminInquiriesPage() {
   }
 
   const counts = STATUSES.map((s) => [s, rows.filter((r) => r.status === s).length] as const);
+  const unreadByStudent = rows.filter((r) => r.answer && !r.answer_read_at).length;
 
   return (
     <AdminLayout>
@@ -129,7 +134,11 @@ export default function AdminInquiriesPage() {
           <h1 className="flex items-center gap-2 text-base font-semibold text-ys-ink">
             <MessageSquareText className="h-4 w-4" /> 학생 문의
           </h1>
-          <p className="mt-1 text-sm text-ys-ink-soft">학생이 화면에서 바로 보낸 문의입니다. 답변은 학생 마이페이지에 보입니다.</p>
+          <p className="mt-1 text-sm text-ys-ink-soft">
+            학생이 화면에서 바로 보낸 문의입니다. 답변을 저장하면 학생 화면 오른쪽 아래
+            문의하기 버튼에 빨간 표시가 뜨고, &apos;내 문의&apos; 에서 답변을 읽습니다.
+            학생이 읽으면 아래에 확인 시각이 남습니다.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {tab === "inquiry" ? (
@@ -168,6 +177,11 @@ export default function AdminInquiriesPage() {
           {counts.map(([s, n]) => (
             <span key={s} className={`rounded-full border px-3 py-1 text-xs font-medium ${STATUS_STYLE[s]}`}>{s} {n}</span>
           ))}
+          {unreadByStudent > 0 && (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+              학생이 아직 안 읽은 답변 {unreadByStudent}
+            </span>
+          )}
         </div>
       )}
 
@@ -207,12 +221,33 @@ export default function AdminInquiriesPage() {
                 placeholder="학생에게 보일 답변을 적어 주세요."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
+              {/* 저장이 됐는지, 학생이 읽었는지를 여기서 알 수 있어야 한다 */}
+              {r.answer && (
+                <p className={`mt-2 flex flex-wrap items-center gap-1.5 text-xs font-medium ${
+                  r.answer_read_at ? "text-emerald-700" : "text-amber-700"}`}>
+                  {r.answer_read_at ? (
+                    <>
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      학생 확인 · {formatDateTimeKorea(r.answer_read_at)}
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="h-3.5 w-3.5" />
+                      학생 아직 안 읽음 — 학생 화면에 &apos;새 답변&apos; 표시가 떠 있습니다
+                    </>
+                  )}
+                </p>
+              )}
+
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button type="button" disabled={saving === r.id}
                   onClick={() => void patch(r.id, { answer: draft[r.id] ?? "", status: "완료" })}
                   className="rounded-lg bg-ys-blue px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
                   {saving === r.id ? "저장 중..." : "답변 저장 · 완료"}
                 </button>
+                {justSaved === r.id && saving === null && (
+                  <span className="text-xs font-medium text-emerald-700">저장했습니다. 학생에게 표시됩니다</span>
+                )}
                 {STATUSES.filter((s) => s !== r.status).map((s) => (
                   <button key={s} type="button" disabled={saving === r.id}
                     onClick={() => void patch(r.id, { status: s })}

@@ -19,7 +19,7 @@ const HIDDEN_PREFIXES = ["/login", "/password-reset", "/admin", "/staff", "/prof
 
 type Mine = {
   id: number; category: string; body: string; status: string;
-  answer: string | null; answered_at: string | null; created_at: string;
+  answer: string | null; answered_at: string | null; answer_read_at: string | null; created_at: string;
 };
 
 export default function InquiryButton() {
@@ -33,6 +33,8 @@ export default function InquiryButton() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [mine, setMine] = useState<Mine[]>([]);
+  /** 이번에 처음 본 답변. 읽음 표시를 서버에 보낸 뒤에도 이 화면에서는 '새 답변' 으로 보여 준다 */
+  const [freshIds, setFreshIds] = useState<number[]>([]);
 
   const authHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -58,10 +60,39 @@ export default function InquiryButton() {
     return () => { alive = false; };
   }, [pathname]);
 
-  const loadMine = useCallback(async () => {
+  const loadMine = useCallback(async (): Promise<Mine[]> => {
     const res = await fetch("/api/me/inquiries", { headers: await authHeaders() });
-    if (res.ok) setMine(await res.json());
+    if (!res.ok) return [];
+    const rows = (await res.json()) as Mine[];
+    setMine(rows);
+    return rows;
   }, []);
+
+  /**
+   * '내 문의' 를 열면 새 답변을 확인한 것으로 표시한다.
+   * 관리자 화면에서 "답변을 학생이 봤는지" 를 알 수 있는 근거가 이 시각이다.
+   */
+  const openMine = useCallback(async () => {
+    const rows = await loadMine();
+    const fresh = rows.filter((m) => m.answer && !m.answer_read_at).map((m) => m.id);
+    if (fresh.length === 0) return;
+    setFreshIds(fresh);
+    await fetch("/api/me/inquiries", { method: "PATCH", headers: await authHeaders() });
+    await loadMine();
+  }, [loadMine]);
+
+  // 답변이 왔는지 버튼에서 바로 알 수 있어야 한다. 화면이 뜨면 한 번 확인한다.
+  useEffect(() => {
+    if (!show) return;
+    let alive = true;
+    (async () => {
+      const rows = await loadMine();
+      if (!alive || rows.length === 0) return;
+    })();
+    return () => { alive = false; };
+  }, [show, loadMine]);
+
+  const unreadCount = mine.filter((m) => m.answer && !m.answer_read_at).length;
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +105,7 @@ export default function InquiryButton() {
     setSending(false);
     if (!res.ok) { setErr(data?.error ?? "보내지 못했습니다."); return; }
     setBody("");
-    setMsg("문의를 보냈습니다. 답변은 '내 문의'에서 확인하실 수 있습니다.");
+    setMsg("문의를 보냈습니다. 답변이 오면 이 버튼에 빨간 표시가 뜹니다.");
     void loadMine();
   };
 
@@ -85,12 +116,21 @@ export default function InquiryButton() {
       {!open && (
         <button
           type="button"
-          onClick={() => { setOpen(true); setMsg(""); setErr(""); }}
+          onClick={() => {
+            setOpen(true); setMsg(""); setErr("");
+            // 안 읽은 답변이 있으면 그것부터 보여 준다
+            if (unreadCount > 0) { setTab("mine"); void openMine(); }
+          }}
           className="fixed bottom-5 right-5 z-[60] flex items-center gap-2 rounded-full bg-ys-navy px-4 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-ys-navy-soft"
-          aria-label="관리자에게 문의하기"
+          aria-label={unreadCount > 0 ? `관리자 답변 ${unreadCount}건 도착` : "관리자에게 문의하기"}
         >
           <MessageCircleQuestion className="h-5 w-5" />
-          <span className="hidden sm:inline">문의하기</span>
+          <span className="hidden sm:inline">{unreadCount > 0 ? "답변 도착" : "문의하기"}</span>
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white shadow">
+              {unreadCount}
+            </span>
+          )}
         </button>
       )}
 
@@ -108,10 +148,13 @@ export default function InquiryButton() {
             <div className="mb-4 flex gap-1 rounded-lg border border-slate-200 bg-ys-paper p-1">
               {([["new", "문의하기"], ["mine", "내 문의"]] as const).map(([k, label]) => (
                 <button key={k} type="button"
-                  onClick={() => { setTab(k); setMsg(""); setErr(""); if (k === "mine") void loadMine(); }}
+                  onClick={() => { setTab(k); setMsg(""); setErr(""); if (k === "mine") void openMine(); }}
                   className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
                     tab === k ? "bg-white text-ys-blue shadow-sm" : "text-ys-ink-soft"}`}>
                   {label}
+                  {k === "mine" && unreadCount > 0 && (
+                    <span className="ml-1.5 rounded-full bg-rose-500 px-1.5 text-[11px] font-bold text-white">{unreadCount}</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -160,8 +203,15 @@ export default function InquiryButton() {
                     </div>
                     <p className="whitespace-pre-wrap text-sm text-ys-ink">{m.body}</p>
                     {m.answer && (
-                      <div className="mt-2 rounded-lg bg-ys-paper p-2.5">
-                        <p className="mb-1 text-[11px] font-medium text-ys-ink-soft">관리자 답변</p>
+                      <div className={`mt-2 rounded-lg p-2.5 ${
+                        freshIds.includes(m.id) ? "bg-rose-50 ring-1 ring-rose-200" : "bg-ys-paper"}`}>
+                        <p className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-ys-ink-soft">
+                          관리자 답변
+                          {freshIds.includes(m.id) && (
+                            <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">새 답변</span>
+                          )}
+                          {m.answered_at && <span className="font-normal text-ys-ink-soft/70">· {m.answered_at.slice(5, 10)}</span>}
+                        </p>
                         <p className="whitespace-pre-wrap text-sm text-ys-ink">{m.answer}</p>
                       </div>
                     )}

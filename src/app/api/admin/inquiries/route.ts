@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     const status = new URL(request.url).searchParams.get("status");
     let q = admin
       .from("student_inquiries")
-      .select("id, student_id, category, body, page_path, user_agent, status, answer, answered_by, answered_at, created_at")
+      .select("id, student_id, category, body, page_path, user_agent, status, answer, answered_by, answered_at, answer_read_at, created_at")
       .order("created_at", { ascending: false })
       .limit(500);
     if (status && (STATUSES as readonly string[]).includes(status)) q = q.eq("status", status);
@@ -105,6 +105,8 @@ export async function PATCH(request: Request) {
       // 답변을 쓰면 누가 언제 썼는지 같이 남긴다. 지우면 그 기록도 지운다.
       patch.answered_by = answer ? studentId : null;
       patch.answered_at = answer ? new Date().toISOString() : null;
+      // 답변을 고쳐 쓰면 다시 '학생 미확인' 으로 돌린다. 학생이 본 것은 이전 답변이다.
+      patch.answer_read_at = null;
     }
     if (typeof body.status === "string") {
       if (!(STATUSES as readonly string[]).includes(body.status)) {
@@ -120,7 +122,7 @@ export async function PATCH(request: Request) {
       .from("student_inquiries")
       .update(patch)
       .eq("id", id)
-      .select("id, status, answer, answered_at")
+      .select("id, status, answer, answered_at, answer_read_at")
       .maybeSingle();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!data) return NextResponse.json({ error: "문의를 찾을 수 없습니다." }, { status: 404 });
