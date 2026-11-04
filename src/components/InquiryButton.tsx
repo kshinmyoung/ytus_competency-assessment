@@ -12,6 +12,14 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const CATEGORIES = ["영상학습", "역량진단", "로그인", "비교과", "기타"] as const;
+
+/**
+ * 학생에게 보여 줄 상태 이름.
+ * '완료' 는 비교과 이수 완료로 읽힐 수 있다 — 특히 "완료가 안 뜬다"는 문의에
+ * '완료' 칩이 붙으면 이수된 것으로 오해한다. 보여 주는 글자만 바꾸고
+ * DB 값(접수/처리중/완료)과 관리자 화면은 그대로 둔다.
+ */
+const STATUS_LABEL: Record<string, string> = { 접수: "접수", 처리중: "처리중", 완료: "답변 완료" };
 const BODY_MAX = 2000;
 
 /** 로그인 전 화면에는 띄우지 않는다 */
@@ -198,7 +206,7 @@ export default function InquiryButton() {
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                         m.status === "완료" ? "bg-emerald-50 text-emerald-700"
                         : m.status === "처리중" ? "bg-amber-50 text-amber-700"
-                        : "bg-slate-100 text-ys-ink-soft"}`}>{m.status}</span>
+                        : "bg-slate-100 text-ys-ink-soft"}`}>{STATUS_LABEL[m.status] ?? m.status}</span>
                       <span className="ml-auto text-[11px] text-ys-ink-soft/70">{m.created_at.slice(0, 10)}</span>
                     </div>
                     <p className="whitespace-pre-wrap text-sm text-ys-ink">{m.body}</p>
