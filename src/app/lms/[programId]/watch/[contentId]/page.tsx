@@ -24,6 +24,8 @@ const MAX_BATCH = 10;          // 한 번에 보낼 수 있는 최대 구간 수
 const MAX_DRAIN = 20;          // 밀린 큐를 한 번에 이어 비울 최대 횟수 (10구간 x 20 = 200구간)
 const FLUSH_INTERVAL_MS = 60_000;
 const SEEK_THRESHOLD_SEC = 2;  // 이보다 크게 튀면 시킹으로 본다
+const SDK_POLL_MS = 200;       // Stream SDK 가 전역에 올라왔는지 확인하는 간격
+const SDK_WAIT_MS = 10_000;    // 이 시간 안에 플레이어가 안 붙으면 학생에게 알린다
 
 /** 워터마크 위치 (5분마다 순환) */
 const WATERMARK_SPOTS = [
@@ -56,7 +58,9 @@ export default function LmsWatchPage() {
   const programId = Number(params.programId);
   const contentId = Number(params.contentId);
 
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // iframe 은 ref 가 아니라 state 로 잡는다. 아래 플레이어 연결 effect 가
+  // iframe 이 화면에 생기는 시점에 다시 돌아야 한다 (ref 는 바뀌어도 effect 를 깨우지 않는다)
+  const [iframeEl, setIframeEl] = useState<HTMLIFrameElement | null>(null);
   const playerRef = useRef<StreamPlayer | null>(null);
 
   const [detail, setDetail] = useState<LmsProgramDetail | null>(null);
@@ -244,13 +248,49 @@ export default function LmsWatchPage() {
     queueRef.current.push([s, Math.min(e, s + 15)]);
   }, [durationSec]);
 
-  // ---- SDK 초기화 및 이벤트 연결 ----
-  const initPlayer = useCallback(() => {
-    if (!sdkReady || !iframeUrl || !iframeRef.current || !window.Stream) return;
-    if (playerRef.current) return;
+  // ---- SDK 준비 확인 ----
+  /**
+   * next/script 는 같은 src 를 두 번째로 마운트할 때 onLoad 를 부르지 않는다
+   * (LoadCache 에 이미 올라가 있으면 그냥 돌아간다). 그래서 한 번 로그인한 뒤
+   * 다른 영상으로 넘어가면 sdkReady 가 영원히 false 로 남았다.
+   * onLoad 를 믿지 않고 전역 Stream 을 직접 본다.
+   */
+  useEffect(() => {
+    if (sdkReady) return;
+    if (window.Stream) { setSdkReady(true); return; }
+    const timer = setInterval(() => {
+      if (window.Stream) { setSdkReady(true); clearInterval(timer); }
+    }, SDK_POLL_MS);
+    return () => clearInterval(timer);
+  }, [sdkReady]);
 
-    const player = window.Stream(iframeRef.current);
+  // 그래도 플레이어가 붙지 않으면 진도가 조용히 버려진다. 학생에게 보이게 알린다.
+  useEffect(() => {
+    if (!iframeUrl) return;
+    const timer = setTimeout(() => {
+      if (!playerRef.current) {
+        setNotice("진도 기록을 준비하지 못했습니다. 이 페이지를 새로고침한 뒤 다시 재생해 주세요.");
+      }
+    }, SDK_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [iframeUrl]);
+
+  // ---- SDK 초기화 및 이벤트 연결 ----
+  /**
+   * 플레이어는 iframe 이 화면에 있고 SDK 가 올라온 뒤에 붙는다. 이 둘이 준비되는
+   * 순서는 그때그때 다르다 — 영상 주소를 받은 시점과 iframe 이 그려지는 시점이
+   * 한 렌더가 아니어서, 예전 코드는 iframe 이 없는 동안 한 번 돌고는 다시 돌지
+   * 않아 이벤트가 하나도 붙지 않는 일이 생겼다 (영상은 iframe 이라 잘 나오고
+   * 진도만 0 으로 남았다). 그래서 iframe 요소 자체를 의존성에 둔다.
+   * 커리큘럼에서 다른 영상으로 옮길 때도 지난 플레이어를 떼고 새로 붙인다.
+   */
+  useEffect(() => {
+    if (!sdkReady || !iframeUrl || !iframeEl || !window.Stream) return;
+
+    const player = window.Stream(iframeEl);
     playerRef.current = player;
+    segStartRef.current = null;
+    lastTimeRef.current = 0;
 
     const onTimeUpdate = () => {
       const t = player.currentTime;
@@ -303,9 +343,15 @@ export default function LmsWatchPage() {
     player.addEventListener("pause", onPause);
     player.addEventListener("ended", onEnded);
     player.addEventListener("ratechange", onRateChange);
-  }, [sdkReady, iframeUrl, closeSegment, flush]);
 
-  useEffect(() => { initPlayer(); }, [initPlayer]);
+    return () => {
+      player.removeEventListener("timeupdate", onTimeUpdate);
+      player.removeEventListener("pause", onPause);
+      player.removeEventListener("ended", onEnded);
+      player.removeEventListener("ratechange", onRateChange);
+      if (playerRef.current === player) playerRef.current = null;
+    };
+  }, [sdkReady, iframeUrl, iframeEl, contentId, closeSegment, flush]);
 
   // ---- 60초 주기 전송 ----
   useEffect(() => {
@@ -430,7 +476,7 @@ export default function LmsWatchPage() {
           <div className="relative bg-black">
             <div className="relative aspect-video w-full">
               <iframe
-                ref={iframeRef}
+                ref={setIframeEl}
                 src={`${iframeUrl}?preload=auto&letterboxColor=transparent${resumeAt > 0 ? `&startTime=${resumeAt}s` : ""}`}
                 title={content.title}
                 allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
