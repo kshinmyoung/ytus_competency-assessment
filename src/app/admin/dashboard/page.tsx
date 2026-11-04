@@ -18,6 +18,11 @@ type Stats = {
     unique_today: number;
     unique_7d: number;
     unique_30d: number;
+    people_all_time: number;
+    people_today: number;
+    people_7d: number;
+    people_30d: number;
+    anonymous_visits: number;
     daily_7d: Record<string, number>;
   };
   diagnosis: {
@@ -193,9 +198,9 @@ export default function AdminDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               icon={<Users className="h-5 w-5 text-ys-blue" />}
-              title="총 방문자 (누적 고유)"
+              title="총 방문 (고유 세션)"
               value={stats.visits.unique_all_time.toLocaleString()}
-              subtitle={`오늘 고유 ${stats.visits.unique_today.toLocaleString()}명 · 30일 고유 ${stats.visits.unique_30d.toLocaleString()}명`}
+              subtitle={`오늘 ${stats.visits.unique_today.toLocaleString()} · 7일 ${stats.visits.unique_7d.toLocaleString()} · 30일 ${stats.visits.unique_30d.toLocaleString()}`}
             />
             <StatCard
               icon={<BarChart3 className="h-5 w-5 text-ys-blue" />}
@@ -216,6 +221,21 @@ export default function AdminDashboardPage() {
               subtitle={Object.entries(stats.reservations.by_status).map(([k, v]) => `${k} ${v}`).join(" · ") || "-"}
             />
           </div>
+
+          {/*
+            '고유 세션' 은 브라우저 탭 기준이라 한 사람이 여러 번 잡힌다.
+            사람 수는 학번으로 센다. 다만 2026-11-04 전에는 로그인 상태에서도 학번이
+            빠진 방문이 있어 과거 수치는 실제보다 작다.
+          */}
+          <p className="mt-3 text-xs text-ys-ink-soft">
+            <span className="font-medium text-ys-ink">사람 기준(학번)</span> 누적 {stats.visits.people_all_time.toLocaleString()}명 ·
+            오늘 {stats.visits.people_today.toLocaleString()}명 · 7일 {stats.visits.people_7d.toLocaleString()}명 ·
+            30일 {stats.visits.people_30d.toLocaleString()}명
+            <span className="text-ys-ink-soft/70">
+              {" "}— 고유 세션은 브라우저 탭 기준이라 한 사람이 여러 번 잡힙니다.
+              2026-11-04 이전에는 학번이 빠진 방문 {stats.visits.anonymous_visits.toLocaleString()}건이 있어 사람 수가 실제보다 작게 잡힙니다.
+            </span>
+          </p>
 
           {/* 진단 통계 */}
           <section className="mt-8">

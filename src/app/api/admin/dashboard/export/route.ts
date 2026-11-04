@@ -31,6 +31,29 @@ async function assertAdmin(request: Request): Promise<{ admin: SupabaseClient } 
 
 const DATASETS = new Set(["visits", "diagnosis", "referrals", "reservations", "students"]);
 
+/**
+ * PostgREST 는 한 번에 1000행까지만 준다. limit(100000) 을 적어도 1000행에서 잘린다.
+ * 방문 로그 11,000여 건이 1,000건으로, 재학생 1,132명이 1,000명으로 잘려 나갔다.
+ * 끝까지 넘겨 받는다 (학생 명단 API 와 같은 방식).
+ */
+const PAGE = 1000;
+
+async function fetchAll(
+  admin: SupabaseClient,
+  table: string,
+  columns: string,
+  shape: (q: ReturnType<ReturnType<SupabaseClient["from"]>["select"]>) => typeof q,
+): Promise<Record<string, unknown>[]> {
+  const rows: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await shape(admin.from(table).select(columns)).range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows.push(...((data ?? []) as Record<string, unknown>[]));
+    if (!data || data.length < PAGE) break;
+  }
+  return rows;
+}
+
 export async function GET(request: Request) {
   try {
     const gate = await assertAdmin(request);
@@ -45,49 +68,27 @@ export async function GET(request: Request) {
 
     let rows: Record<string, unknown>[] = [];
     if (dataset === "visits") {
-      const { data, error } = await admin
-        .from("page_visits")
-        .select("id, path, session_id, student_id, referrer, user_agent, created_at")
-        .order("created_at", { ascending: false })
-        .limit(100000);
-      if (error) throw error;
-      rows = (data ?? []) as Record<string, unknown>[];
+      rows = await fetchAll(admin, "page_visits",
+        "id, path, session_id, student_id, referrer, user_agent, created_at",
+        (q) => q.order("created_at", { ascending: false }));
     } else if (dataset === "diagnosis") {
-      const { data, error } = await admin
-        .from("diagnosis_results")
-        .select("id, student_id, diagnosis_type, total_score, scores, created_at")
-        .order("created_at", { ascending: false })
-        .limit(100000);
-      if (error) throw error;
-      rows = (data ?? []).map((r) => {
-        const row = r as Record<string, unknown>;
-        return { ...row, scores: row.scores ? JSON.stringify(row.scores) : "" };
-      });
+      const all = await fetchAll(admin, "diagnosis_results",
+        "id, student_id, diagnosis_type, total_score, scores, created_at",
+        (q) => q.order("created_at", { ascending: false }));
+      rows = all.map((row) => ({ ...row, scores: row.scores ? JSON.stringify(row.scores) : "" }));
     } else if (dataset === "referrals") {
-      const { data, error } = await admin
-        .from("referrals")
-        .select("id, student_id, from_staff_id, from_role, to_type, to_staff_id, reason, urgency, status, note, response_note, created_at, updated_at")
-        .order("created_at", { ascending: false })
-        .limit(100000);
-      if (error) throw error;
-      rows = (data ?? []) as Record<string, unknown>[];
+      rows = await fetchAll(admin, "referrals",
+        "id, student_id, from_staff_id, from_role, to_type, to_staff_id, reason, urgency, status, note, response_note, created_at, updated_at",
+        (q) => q.order("created_at", { ascending: false }));
     } else if (dataset === "reservations") {
-      const { data, error } = await admin
-        .from("center_reservations")
-        .select("id, student_id, center_type, reservation_date, time_slot, purpose, status, admin_note, created_at")
-        .order("created_at", { ascending: false })
-        .limit(100000);
-      if (error) throw error;
-      rows = (data ?? []) as Record<string, unknown>[];
+      rows = await fetchAll(admin, "center_reservations",
+        "id, student_id, center_type, reservation_date, time_slot, purpose, status, admin_note, created_at",
+        (q) => q.order("created_at", { ascending: false }));
     } else if (dataset === "students") {
-      const { data, error } = await admin
-        .from("students")
-        .select("student_id, name, role, department_id, grade_year, admission_year, phone, email")
+      rows = await fetchAll(admin, "students",
+        "student_id, name, role, department_id, grade_year, admission_year, phone, email",
         // 보관 계정은 내보내기에서도 뺀다
-        .is("archived_at", null)
-        .order("student_id");
-      if (error) throw error;
-      rows = (data ?? []) as Record<string, unknown>[];
+        (q) => q.is("archived_at", null).order("student_id"));
     }
 
     return NextResponse.json({ dataset, rows });

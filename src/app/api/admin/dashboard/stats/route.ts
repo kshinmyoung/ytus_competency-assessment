@@ -42,14 +42,6 @@ async function countBy(admin: SupabaseClient, table: string, filters: Record<str
   return count ?? 0;
 }
 
-async function countSince(admin: SupabaseClient, table: string, column: string, since: string): Promise<number> {
-  const { count } = (await admin
-    .from(table)
-    .select("*", { count: "exact", head: true })
-    .gte(column, since)) as unknown as CountResult;
-  return count ?? 0;
-}
-
 export async function GET(request: Request) {
   try {
     const gate = await assertAdmin(request);
@@ -57,15 +49,9 @@ export async function GET(request: Request) {
     const { admin } = gate;
 
     const now = new Date();
-    const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [
-      visitsTotal,
-      visitsToday,
-      visits7d,
-      visits30d,
+      visitStatsRes,
       diagCore,
       diagLearning,
       diagCalling,
@@ -74,15 +60,17 @@ export async function GET(request: Request) {
       referralsTotal,
       reservationsTotal,
       studentsTotal,
-      allSessionsRes,
       referralsRows,
       reservationsRows,
-      dailyVisitsRes,
     ] = await Promise.all([
-      countBy(admin, "page_visits"),
-      countSince(admin, "page_visits", "created_at", startOfDay.toISOString()),
-      countSince(admin, "page_visits", "created_at", sevenDaysAgo.toISOString()),
-      countSince(admin, "page_visits", "created_at", thirtyDaysAgo.toISOString()),
+      /**
+       * 방문 통계는 DB 함수가 집계한다.
+       * 예전에는 page_visits 를 받아 와 자바스크립트에서 세션을 셌는데, PostgREST 가
+       * 한 번에 1000행까지만 주므로 11,000여 건 중 앞 1000건만 세었다. 고유 방문자가
+       * 3,070 대신 425 로 나오고 오늘·7일·30일 고유 방문자는 0 이었다.
+       * 하루 경계도 서버 시간(UTC)이 아니라 Asia/Seoul 로 끊는다.
+       */
+      admin.rpc("dashboard_visit_stats"),
       countBy(admin, "diagnosis_results", { diagnosis_type: "core" }),
       countBy(admin, "diagnosis_results", { diagnosis_type: "learning" }),
       countBy(admin, "diagnosis_results", { diagnosis_type: "calling" }),
@@ -93,29 +81,14 @@ export async function GET(request: Request) {
       // 보관 계정은 재학생 수에 넣지 않는다
       admin.from("students").select("*", { count: "exact", head: true }).is("archived_at", null)
         .then((r) => (r as unknown as CountResult).count ?? 0),
-      admin.from("page_visits").select("session_id, created_at").not("session_id", "is", null).limit(500000),
       admin.from("referrals").select("status, to_type"),
       admin.from("center_reservations").select("status, center_type"),
-      admin.from("page_visits").select("created_at").gte("created_at", sevenDaysAgo.toISOString()).order("created_at", { ascending: true }).limit(50000),
     ]);
 
-    const uniqueAll = new Set<string>();
-    const unique30d = new Set<string>();
-    const unique7d = new Set<string>();
-    const uniqueToday = new Set<string>();
-    const startOfDayMs = startOfDay.getTime();
-    const sevenAgoMs = sevenDaysAgo.getTime();
-    const thirtyAgoMs = thirtyDaysAgo.getTime();
-    (allSessionsRes.data ?? []).forEach((r) => {
-      const row = r as { session_id: string | null; created_at: string };
-      const sid = row.session_id;
-      if (!sid) return;
-      uniqueAll.add(sid);
-      const t = new Date(row.created_at).getTime();
-      if (t >= thirtyAgoMs) unique30d.add(sid);
-      if (t >= sevenAgoMs) unique7d.add(sid);
-      if (t >= startOfDayMs) uniqueToday.add(sid);
-    });
+    if (visitStatsRes.error) {
+      return NextResponse.json({ error: visitStatsRes.error.message }, { status: 500 });
+    }
+    const visits = (visitStatsRes.data ?? {}) as Record<string, number | Record<string, number>>;
 
     const referralsByStatus: Record<string, number> = {};
     const referralsByType: Record<string, number> = {};
@@ -137,32 +110,9 @@ export async function GET(request: Request) {
       reservationsByCenter[ct] = (reservationsByCenter[ct] ?? 0) + 1;
     });
 
-    const dailyVisits: Record<string, number> = {};
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      dailyVisits[key] = 0;
-    }
-    (dailyVisitsRes.data ?? []).forEach((r) => {
-      const t = (r as { created_at: string }).created_at;
-      const d = new Date(t);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      if (key in dailyVisits) dailyVisits[key] += 1;
-    });
-
     return NextResponse.json({
       generated_at: now.toISOString(),
-      visits: {
-        total: visitsTotal,
-        today: visitsToday,
-        last_7d: visits7d,
-        last_30d: visits30d,
-        unique_all_time: uniqueAll.size,
-        unique_today: uniqueToday.size,
-        unique_7d: unique7d.size,
-        unique_30d: unique30d.size,
-        daily_7d: dailyVisits,
-      },
+      visits,
       diagnosis: {
         core: diagCore,
         learning: diagLearning,
