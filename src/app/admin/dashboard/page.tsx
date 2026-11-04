@@ -23,6 +23,7 @@ type Stats = {
     people_7d: number;
     people_30d: number;
     anonymous_visits: number;
+    excluded_automation: number;
     daily_7d: Record<string, number>;
   };
   diagnosis: {
@@ -234,6 +235,9 @@ export default function AdminDashboardPage() {
             <span className="text-ys-ink-soft/70">
               {" "}— 고유 세션은 브라우저 탭 기준이라 한 사람이 여러 번 잡힙니다.
               2026-11-04 이전에는 학번이 빠진 방문 {stats.visits.anonymous_visits.toLocaleString()}건이 있어 사람 수가 실제보다 작게 잡힙니다.
+              {stats.visits.excluded_automation > 0 && (
+                <> 확인 작업에 쓰는 자동화·테스트 방문 {stats.visits.excluded_automation.toLocaleString()}건은 위 수치에서 빼고 셉니다.</>
+              )}
             </span>
           </p>
 
