@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { downloadAttachment, formatClock, formatDuration, lmsGet, openCertificate, type LmsProgramDetail } from "@/lib/lms-client";
+import { unwatchedGaps } from "@/lib/lms-watched";
 import { formatFileSize, type LmsAttachment } from "@/lib/lms-attachments";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
 import LmsSurveyModal from "@/components/LmsSurveyModal";
@@ -208,6 +209,9 @@ export default function LmsProgramPage() {
       ) : (
         <ul className="space-y-2">
           {contents.map((c, idx) => {
+            // 진도가 모자란 콘텐츠는 어디를 안 봤는지 함께 알려 준다.
+            // 퍼센트만 보면 이미 본 데를 처음부터 다시 보게 되고, 그래도 진도는 오르지 않는다.
+            const gaps = c.passed ? [] : unwatchedGaps(c.watchedRanges ?? [], c.durationSec);
             const body = (
               <>
                 <div className="flex w-8 shrink-0 items-center justify-center">
@@ -232,14 +236,27 @@ export default function LmsProgramPage() {
 
                   {enrolled && (
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="h-1 w-24 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={`h-full rounded-full ${c.passed ? "bg-ys-gold" : "bg-ys-blue"}`}
-                          style={{ width: `${Math.min(c.progress, 100)}%` }}
-                        />
+                      {/* 막대는 본 구간을 제자리에 칠한다. 빈 칸이 안 본 구간이다 */}
+                      <div className="relative h-1 w-24 overflow-hidden rounded-full bg-slate-100">
+                        {c.durationSec > 0 && (c.watchedRanges ?? []).map(([from, to]) => (
+                          <div
+                            key={`${from}-${to}`}
+                            className={`absolute inset-y-0 ${c.passed ? "bg-ys-gold" : "bg-ys-blue"}`}
+                            style={{
+                              left: `${(from / c.durationSec) * 100}%`,
+                              width: `${Math.max(((to - from) / c.durationSec) * 100, 1)}%`,
+                            }}
+                          />
+                        ))}
                       </div>
                       <span className="text-[11px] text-ys-ink-soft">{c.progress}%</span>
-                      {c.lastPositionSec > 0 && !c.passed && (
+                      {gaps.length > 0 && (
+                        <span className="text-[11px] font-medium text-ys-blue">
+                          · {formatClock(gaps[0][0])}부터 안 봄
+                          {gaps.length > 1 && ` (안 본 구간 ${gaps.length}곳)`}
+                        </span>
+                      )}
+                      {gaps.length === 0 && c.lastPositionSec > 0 && !c.passed && (
                         <span className="text-[11px] text-ys-ink-soft/70">· {formatClock(c.lastPositionSec)}부터 이어보기</span>
                       )}
                     </div>

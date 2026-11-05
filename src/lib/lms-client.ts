@@ -44,6 +44,8 @@ export type LmsContent = {
   progress: number;
   watchedSec: number;
   lastPositionSec: number;
+  /** 실제로 본 구간 [시작초, 끝초). 안 본 구간을 화면에 그리는 근거다 */
+  watchedRanges: [number, number][];
   passed: boolean;
 };
 

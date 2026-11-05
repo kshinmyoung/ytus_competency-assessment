@@ -7,6 +7,7 @@
  */
 import { NextResponse } from "next/server";
 import { assertContentAccess, assertStudent, lmsErrorResponse } from "@/lib/auth/lms-api";
+import { parseWatchedRanges } from "@/lib/lms-watched";
 
 /** 학생에게 그대로 보여줄 수 있는 거부 사유 */
 const REJECT_MESSAGES: Record<string, string> = {
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       status: string; reason?: string;
       progress?: number; watched_sec?: number; duration_sec?: number;
       last_position_sec?: number; accepted?: number; rejected?: number;
+      watched?: string | null;
     };
 
     if (payload.status === "rejected") {
@@ -66,6 +68,8 @@ export async function POST(request: Request) {
       lastPositionSec: payload.last_position_sec ?? 0,
       accepted: payload.accepted ?? 0,
       rejected: payload.rejected ?? 0,
+      // 시청 중에도 "안 본 구간" 을 바로 갱신할 수 있게 합쳐진 구간을 함께 보낸다
+      watchedRanges: parseWatchedRanges(payload.watched),
     });
   } catch (e) {
     return lmsErrorResponse(e);

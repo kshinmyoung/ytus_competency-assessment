@@ -7,8 +7,16 @@
 import { NextResponse } from "next/server";
 import { assertStudent, audienceMatches, deriveStatus, earnsMileage, lmsErrorResponse } from "@/lib/auth/lms-api";
 import type { LmsAttachment } from "@/lib/lms-attachments";
+import { parseWatchedRanges } from "@/lib/lms-watched";
 
 type Params = { params: Promise<{ id: string }> };
+
+type ProgressRow = {
+  content_id: number; watched_sec: number; progress: number;
+  last_position_sec: number; watched: string | null; completed_at: string | null;
+};
+
+
 
 export async function GET(request: Request, { params }: Params) {
   try {
@@ -41,8 +49,8 @@ export async function GET(request: Request, { params }: Params) {
     const contents = contentRes.data ?? [];
     const contentIds = contents.map((c) => c.id);
     const { data: progressRows } = contentIds.length
-      ? await admin.from("video_progress").select("content_id, watched_sec, progress, last_position_sec, completed_at").eq("student_id", studentId).in("content_id", contentIds)
-      : { data: [] as { content_id: number; watched_sec: number; progress: number; last_position_sec: number; completed_at: string | null }[] };
+      ? await admin.from("video_progress").select("content_id, watched_sec, progress, last_position_sec, watched, completed_at").eq("student_id", studentId).in("content_id", contentIds)
+      : { data: [] as ProgressRow[] };
 
     // 첨부 자료는 목록만 내려보낸다. 실제 파일은 /api/lms/attachments/[id] 의 서명 URL 로만 나간다.
     const { data: attachmentRows } = contentIds.length
@@ -80,6 +88,7 @@ export async function GET(request: Request, { params }: Params) {
         progress: Number(vp?.progress ?? 0),
         watchedSec: Number(vp?.watched_sec ?? 0),
         lastPositionSec: Number(vp?.last_position_sec ?? 0),
+        watchedRanges: parseWatchedRanges(vp?.watched ?? null),
         passed: Number(vp?.progress ?? 0) >= minProgress,
       };
     });

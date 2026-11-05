@@ -9,6 +9,7 @@ import {
   downloadAttachment, formatClock, lmsGet, lmsPost, openCertificate,
   type CompleteResult, type LmsProgramDetail,
 } from "@/lib/lms-client";
+import { unwatchedGaps } from "@/lib/lms-watched";
 import { formatFileSize, type LmsAttachment } from "@/lib/lms-attachments";
 import { supabase, waitForAccessToken, waitForStudentId } from "@/lib/supabase";
 import LmsSurveyModal from "@/components/LmsSurveyModal";
@@ -76,6 +77,10 @@ export default function LmsWatchPage() {
   // 진도 — 서버가 계산한 값만 표시한다 (클라이언트 계산 금지)
   const [progress, setProgress] = useState(0);
   const [watchedSec, setWatchedSec] = useState(0);
+  /** 실제로 본 구간. 안 본 곳을 화면에 그리는 근거 */
+  const [watchedRanges, setWatchedRanges] = useState<[number, number][]>([]);
+  /** 플레이어가 붙었는지. ref 는 바뀌어도 렌더를 다시 하지 않으므로 state 로 둔다 */
+  const [playerReady, setPlayerReady] = useState(false);
   const [notice, setNotice] = useState("");
 
   // 구간 수집 상태
@@ -130,6 +135,7 @@ export default function LmsWatchPage() {
         if (c) {
           setProgress(c.progress);
           setWatchedSec(c.watchedSec);
+          setWatchedRanges(c.watchedRanges ?? []);
           // 이미 기준을 넘긴 콘텐츠는 재진입 시 이수 확정을 다시 시도하지 않는다
           if (data.completion) completeTriedRef.current = true;
         }
@@ -185,6 +191,7 @@ export default function LmsWatchPage() {
         queueRef.current = queueRef.current.slice(batch.length);
         setProgress(Number(body.progress ?? 0));
         setWatchedSec(Number(body.watchedSec ?? 0));
+        if (Array.isArray(body.watchedRanges)) setWatchedRanges(body.watchedRanges);
         setNotice("");
         // 이 콘텐츠가 기준을 넘으면 이수 확정을 한 번 시도한다.
         // 다른 필수 콘텐츠가 남았으면 서버가 incomplete 를 돌려주므로 모달을 띄우지 않는다.
@@ -291,6 +298,7 @@ export default function LmsWatchPage() {
     playerRef.current = player;
     segStartRef.current = null;
     lastTimeRef.current = 0;
+    setPlayerReady(true);
 
     const onTimeUpdate = () => {
       const t = player.currentTime;
@@ -350,6 +358,7 @@ export default function LmsWatchPage() {
       player.removeEventListener("ended", onEnded);
       player.removeEventListener("ratechange", onRateChange);
       if (playerRef.current === player) playerRef.current = null;
+      setPlayerReady(false);
     };
   }, [sdkReady, iframeUrl, iframeEl, contentId, closeSegment, flush]);
 
@@ -412,6 +421,7 @@ export default function LmsWatchPage() {
   }
 
   const passed = progress >= detail.program.minProgress;
+  const gaps = unwatchedGaps(watchedRanges, durationSec);
 
   const curriculum = (
     <ol className="space-y-1">
@@ -491,7 +501,7 @@ export default function LmsWatchPage() {
             </div>
           </div>
 
-          {/* 진도 — 서버 응답값 그대로 표시 */}
+          {/* 진도 — 서버 응답값 그대로 표시. 막대는 실제로 본 구간을 제 위치에 그린다 */}
           <div className="px-4 pt-3">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
               <span className="text-ys-mist/70">
@@ -501,12 +511,52 @@ export default function LmsWatchPage() {
                 {progress}%{passed && " · 완료"}
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className={`h-full rounded-full transition-all ${passed ? "bg-ys-gold" : "bg-ys-gold"}`}
-                style={{ width: `${Math.min(progress, 100)}%` }}
-              />
+            {/*
+              누적 퍼센트만 보여 주면 학생이 이미 본 데를 처음부터 다시 본다.
+              진도는 서로 다른 구간의 합이라 그래도 올라가지 않는다. 본 구간을
+              제자리에 칠하고 빈 곳을 남겨, 어디를 봐야 하는지 눈으로 알게 한다.
+            */}
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
+              {durationSec > 0 && watchedRanges.map(([from, to]) => (
+                <div
+                  key={`${from}-${to}`}
+                  className="absolute inset-y-0 bg-ys-gold"
+                  style={{
+                    left: `${(from / durationSec) * 100}%`,
+                    width: `${Math.max(((to - from) / durationSec) * 100, 0.4)}%`,
+                  }}
+                />
+              ))}
             </div>
+            {!passed && gaps.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="text-ys-gold">
+                  안 본 구간 {gaps.length}곳 · 모두 {formatClock(durationSec - watchedSec)}
+                </span>
+                <span className="text-ys-mist/70">
+                  {gaps.slice(0, 3).map(([from, to]) => `${formatClock(from)}~${formatClock(to)}`).join(", ")}
+                  {gaps.length > 3 && " …"}
+                </span>
+                {playerReady && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const player = playerRef.current;
+                      if (!player) return;
+                      closeSegment(lastTimeRef.current);
+                      player.currentTime = gaps[0][0];
+                      segStartRef.current = gaps[0][0];
+                      lastTimeRef.current = gaps[0][0];
+                      void player.play();
+                    }}
+                    className="rounded-md bg-ys-gold px-2 py-1 font-medium text-ys-navy transition hover:bg-ys-gold/90"
+                  >
+                    안 본 곳부터 보기 ({formatClock(gaps[0][0])})
+                  </button>
+                )}
+                <span className="text-ys-mist/60">이미 본 구간을 다시 봐도 진도는 올라가지 않습니다.</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 px-4 py-3">
