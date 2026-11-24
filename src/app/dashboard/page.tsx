@@ -5,20 +5,24 @@ import {
   Award,
   BookOpen,
   Brain,
+  ClipboardList,
   Compass,
   Flame,
+  GraduationCap,
   PlayCircle,
   Radar,
   Signpost,
   Trophy,
   Video,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase, waitForStudentId } from "@/lib/supabase";
 import { lmsGet, formatClock, openCertificate } from "@/lib/lms-client";
 import CompetencyCompass from "@/components/CompetencyCompass";
 import { CORE_MAX, toSixAxes, weakestCompetencyIds } from "@/lib/competencies";
+import { loadDiagnosisCards, type DiagnosisCard } from "@/lib/diagnosis-cards";
 import Navigation from "@/components/Navigation";
 import {
   Bar,
@@ -47,30 +51,23 @@ type Certificate = { certificateNo: string; programId: number; programName: stri
  * - 소명진단: 학교 문장의 횃불. 부르심의 불
  * - 나침반(Compass)은 사이트 시그니처라 특정 카드가 독점하지 않는다
  */
-const diagnosisCards = [
-  {
-    title: "핵심역량진단",
-    description: "나의 핵심 역량을 파악합니다",
-    href: "/diagnosis/core",
-    icon: Radar,
-  },
-  {
-    title: "학습역량진단",
-    description: "학습 스타일과 능력을 점검합니다",
-    href: "/diagnosis/learning",
-    icon: Brain,
-  },
-  {
-    title: "소명진단",
-    description: "나의 소명과 진로를 탐색합니다",
-    href: "/diagnosis/calling",
-    icon: Flame,
-  },
-];
+/**
+ * 카드 겉모습만 여기서 정한다. 무엇을 몇 개 보여 줄지와 순서는 diagnosis_types 가
+ * 정한다 — 하드코딩해 두면 관리자가 진단을 새로 올려도 대시보드에 나오지 않는다.
+ */
+const DIAGNOSIS_ICONS: Record<string, LucideIcon> = {
+  core_diagnosis: Radar,
+  learning_diagnosis: Brain,
+  calling_diagnosis: Flame,
+  major_competency_diagnosis: GraduationCap,
+};
 
 type MajorComp = { id: number; name: string; score: number };
 
 export default function DashboardPage() {
+  const [diagnosisCards, setDiagnosisCards] = useState<DiagnosisCard[]>([]);
+  useEffect(() => { void loadDiagnosisCards().then(setDiagnosisCards); }, []);
+
   const [userName, setUserName] = useState("학우");
   const [departmentName, setDepartmentName] = useState("");
   const [coreScores, setCoreScores] = useState<Record<string, number> | null>(null);
@@ -397,18 +394,18 @@ export default function DashboardPage() {
           <h2 className="font-display mb-4 text-base font-bold text-ys-ink">역량진단</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {diagnosisCards.map((card) => {
-              const Icon = card.icon;
+              const Icon = DIAGNOSIS_ICONS[card.key] ?? ClipboardList;
               return (
                 <Link
-                  key={card.href}
+                  key={card.key}
                   href={card.href}
                   className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 transition hover:border-ys-blue/40 hover:shadow-sm"
                 >
                   <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-ys-blue/10 text-ys-blue">
                     <Icon className="h-4.5 w-4.5" />
                   </span>
-                  <h3 className="text-sm font-semibold text-ys-ink">{card.title}</h3>
-                  <p className="mt-1 flex-1 text-xs text-ys-ink-soft">{card.description}</p>
+                  <h3 className="text-sm font-semibold text-ys-ink">{card.label}</h3>
+                  <p className="mt-1 flex-1 text-xs text-ys-ink-soft">{card.description ?? "역량진단"}</p>
                   <span className="mt-3 inline-flex items-center text-xs font-medium text-ys-blue">
                     시작하기 <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-0.5" />
                   </span>

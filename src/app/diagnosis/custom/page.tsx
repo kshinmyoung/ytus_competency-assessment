@@ -30,6 +30,8 @@ export default function CustomDiagnosisPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [optionsMap, setOptionsMap] = useState<Map<number, Option[]>>(new Map());
   const [competencies, setCompetencies] = useState<CompetencyInfo[]>([]);
+  const [typeLabels, setTypeLabels] = useState<Map<string, string>>(new Map());
+  const [subNames, setSubNames] = useState<Map<string, string>>(new Map());
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -62,6 +64,16 @@ export default function CustomDiagnosisPage() {
         supabase.from("major_competencies").select("id, name"),
       ]);
 
+      // 화면에 내부 key(Competency_Learners_1)가 그대로 나오면 학생이 읽을 수 없다.
+      // 진단 이름은 diagnosis_types, 영역 이름은 diagnosis_subcategories 가 갖고 있다.
+      const [typeRes, subRes] = await Promise.all([
+        supabase.from("diagnosis_types").select("key, label").eq("is_active", true),
+        supabase.from("diagnosis_subcategories").select("diagnosis_type_key, name, sort_order"),
+      ]);
+      setTypeLabels(new Map((typeRes.data ?? []).map((t) => [t.key as string, t.label as string])));
+      setSubNames(new Map((subRes.data ?? []).map((sc) =>
+        [`${sc.diagnosis_type_key}_${sc.sort_order}`, sc.name as string])));
+
       // 기존 진단 유형과 전공역량진단 제외, 커스텀 유형만 표시
       const builtinTypes = ["core_diagnosis", "learning_diagnosis", "calling_diagnosis", "major_competency_diagnosis"];
       const filteredQ = (qRes.data ?? []).filter((q: any) =>
@@ -89,8 +101,17 @@ export default function CustomDiagnosisPage() {
   }, [router]);
 
   const compName = (type: string, id: number) => {
-    return competencies.find((c) => c.type === type && c.id === id)?.name ?? "";
+    return subNames.get(`${type}_${id}`)
+      ?? competencies.find((c) => c.type === type && c.id === id)?.name
+      ?? "";
   };
+
+  /** 문항에 들어 있는 진단 유형의 이름. 여러 유형이 섞이면 공통 제목을 쓴다. */
+  const pageTitle = (() => {
+    const keys = [...new Set(questions.map((q) => q.competency_type))];
+    if (keys.length === 1) return typeLabels.get(keys[0]) ?? "역량진단";
+    return "역량진단";
+  })();
 
   const allAnswered = useMemo(
     () => questions.length > 0 && questions.every((q) => answers[q.id] !== undefined),
@@ -230,7 +251,7 @@ export default function CustomDiagnosisPage() {
   let lastKey = "";
   questions.forEach((q) => {
     const key = `${q.competency_type}_${q.competency_id}`;
-    const label = compName(q.competency_type, q.competency_id) || key;
+    const label = compName(q.competency_type, q.competency_id) || `${q.competency_id}영역`;
     if (key !== lastKey) {
       grouped.push({ label, questions: [] });
       lastKey = key;
@@ -251,7 +272,7 @@ export default function CustomDiagnosisPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-xl font-bold text-ys-ink sm:text-2xl">추가 역량진단</h1>
+        <h1 className="text-xl font-bold text-ys-ink sm:text-2xl">{pageTitle}</h1>
         <p className="mt-1 text-ys-ink-soft">각 문항에 대해 가장 적합한 보기를 선택해 주세요.</p>
 
         <div className="mt-8 space-y-10">
