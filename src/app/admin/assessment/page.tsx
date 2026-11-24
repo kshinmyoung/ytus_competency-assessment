@@ -245,20 +245,33 @@ export default function AdminAssessmentPage() {
       department_id: qForm.department_id,
     };
 
+    // 결과를 보지 않고 넘어가면, 지우기가 실패해도 넣기가 그대로 진행돼 보기가 두 벌이 된다.
+    // 실제로 5점 척도가 10개로 불어난 적이 있다. 한 단계라도 실패하면 멈추고 알린다.
     let questionId: number;
     if (editingQ) {
-      await supabase.from("assessment_questions").update(payload).eq("id", editingQ.id);
+      const { error: upErr } = await supabase.from("assessment_questions").update(payload).eq("id", editingQ.id);
+      if (upErr) { setSaving(false); alert(`문항을 저장하지 못했습니다: ${upErr.message}`); return; }
       questionId = editingQ.id;
-      await supabase.from("assessment_options").delete().eq("question_id", questionId);
+
+      const { error: delErr } = await supabase.from("assessment_options").delete().eq("question_id", questionId);
+      if (delErr) { setSaving(false); alert(`기존 보기를 지우지 못했습니다: ${delErr.message}`); return; }
     } else {
-      const { data } = await supabase.from("assessment_questions").insert(payload).select("id").single();
-      questionId = data!.id;
+      const { data, error: insErr } = await supabase.from("assessment_questions").insert(payload).select("id").single();
+      if (insErr || !data) { setSaving(false); alert(`문항을 추가하지 못했습니다: ${insErr?.message ?? "알 수 없는 오류"}`); return; }
+      questionId = data.id;
     }
 
     if (qForm.options.length > 0) {
-      await supabase.from("assessment_options").insert(
+      const { error: optErr } = await supabase.from("assessment_options").insert(
         qForm.options.map((o) => ({ question_id: questionId, option_text: o.option_text, option_value: o.option_value, option_order: o.option_order }))
       );
+      if (optErr) {
+        setSaving(false);
+        // DB 의 (문항, 순번) 유일 제약에 걸린 경우다. 같은 보기가 두 벌로 쌓이는 것을 막아 준다.
+        alert(`보기를 저장하지 못했습니다: ${optErr.message}`);
+        await load();
+        return;
+      }
     }
 
     setSaving(false);
