@@ -3,6 +3,7 @@
 import { Calendar, Check, Clock, Download, FileText, Filter, MessageSquare, Plus, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { formatDateTimeKorea } from "@/lib/date";
 import AdminLayout from "@/components/AdminLayout";
 
@@ -68,9 +69,11 @@ export default function AdminReservationsPage() {
         setFilterCenter(role);
       }
     }
-    const [resRes, studentsRes, deptRes] = await Promise.all([
+    const [resRes, studRows, deptRes] = await Promise.all([
       supabase.from("center_reservations").select("*").order("reservation_date", { ascending: true }).order("time_slot"),
-      supabase.from("students").select("student_id, name, department_id, phone"),
+      // 재학생이 1,000명을 넘는다. 한 번만 읽으면 뒤쪽 학생 이름이 빈칸이 되고 예약 등록에서도 빠진다.
+      fetchAllRows<{ student_id: string; name: string | null; department_id: number | null; phone: string | null }>((from, to) =>
+        supabase.from("students").select("student_id, name, department_id, phone").order("student_id").range(from, to)),
       supabase.from("departments").select("id, name"),
     ]);
     setReservations((resRes.data ?? []) as Reservation[]);
@@ -79,13 +82,13 @@ export default function AdminReservationsPage() {
     const dMap: Record<string, string> = {};
     const depts: Record<number, string> = {};
     (deptRes.data ?? []).forEach((d: any) => { depts[d.id] = d.name; });
-    (studentsRes.data ?? []).forEach((s: any) => {
+    studRows.forEach((s) => {
       nMap[s.student_id] = s.name ?? "";
       dMap[s.student_id] = s.department_id ? (depts[s.department_id] ?? "") : "";
     });
     setNameMap(nMap);
     setDeptMap(dMap);
-    setAllStudents((studentsRes.data ?? []).map((s: any) => ({ student_id: s.student_id, name: s.name })));
+    setAllStudents(studRows.map((s) => ({ student_id: s.student_id, name: s.name })));
 
     const { data: exData } = await supabase.from("extracurricular").select("id, name").eq("is_active", true).order("name");
     setExtraList((exData ?? []) as { id: number; name: string }[]);

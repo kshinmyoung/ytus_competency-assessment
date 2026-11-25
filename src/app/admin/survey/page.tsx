@@ -3,6 +3,7 @@
 import { Download, Edit3, Eye, Filter, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import AdminLayout from "@/components/AdminLayout";
 
 type Survey = { id: number; title: string; description: string | null; org_type: string; org_name: string; is_active: boolean; start_date: string | null; end_date: string | null };
@@ -44,13 +45,15 @@ export default function AdminSurveyPage() {
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
   const load = async () => {
-    const [sRes, studRes] = await Promise.all([
+    const [sRes, studRows] = await Promise.all([
       supabase.from("surveys").select("*").order("created_at", { ascending: false }),
-      supabase.from("students").select("student_id, name"),
+      // 재학생이 1,000명을 넘는다. 한 번만 읽으면 뒤쪽 학생 이름이 빈칸이 된다.
+      fetchAllRows<{ student_id: string; name: string | null }>((from, to) =>
+        supabase.from("students").select("student_id, name").order("student_id").range(from, to)),
     ]);
     setSurveys((sRes.data ?? []) as Survey[]);
     const m: Record<string, string> = {};
-    (studRes.data ?? []).forEach((s: any) => { m[s.student_id] = s.name ?? ""; });
+    studRows.forEach((s) => { m[s.student_id] = s.name ?? ""; });
     setNameMap(m);
   };
   useEffect(() => { load(); }, []);

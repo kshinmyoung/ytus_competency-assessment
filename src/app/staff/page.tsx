@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 type StudentMileage = {
   student_id: string;
@@ -46,21 +47,24 @@ export default function StaffPage() {
       setIsAdmin(role === "admin");
       setAuthorized(true);
 
-      // 모든 학생 + 마일리지
-      const [studRes, deptRes, mileRes] = await Promise.all([
+      // 모든 학생 + 마일리지.
+      // 둘 다 1,000행을 넘는다. 끝까지 받지 않으면 명단이 잘리고 합계가 작게 나온다.
+      const [studRows, deptRes, mileRows] = await Promise.all([
         // 보관 계정(archived_at 있음)은 지급 대상이 아니다
-        supabase.from("students").select("student_id, name, department_id").eq("role", "student").is("archived_at", null),
+        fetchAllRows<{ student_id: string; name: string | null; department_id: number | null }>((from, to) =>
+          supabase.from("students").select("student_id, name, department_id")
+            .eq("role", "student").is("archived_at", null).order("student_id").range(from, to)),
         supabase.from("departments").select("id, name"),
-        supabase.from("mileage_records").select("student_id, points"),
+        fetchAllRows<{ student_id: string; points: number | null }>((from, to) =>
+          supabase.from("mileage_records").select("student_id, points").order("id").range(from, to)),
       ]);
-
       const deptMap: Record<number, string> = {};
-      (deptRes.data ?? []).forEach((d: any) => { deptMap[d.id] = d.name; });
+      ((deptRes.data ?? []) as { id: number; name: string }[]).forEach((d) => { deptMap[d.id] = d.name; });
 
       const mileMap: Record<string, number> = {};
-      (mileRes.data ?? []).forEach((m: any) => { mileMap[m.student_id] = (mileMap[m.student_id] ?? 0) + (m.points ?? 0); });
+      mileRows.forEach((m) => { mileMap[m.student_id] = (mileMap[m.student_id] ?? 0) + (m.points ?? 0); });
 
-      const list: StudentMileage[] = (studRes.data ?? []).map((s: any) => ({
+      const list: StudentMileage[] = studRows.map((s) => ({
         student_id: s.student_id,
         name: s.name,
         department_name: s.department_id ? deptMap[s.department_id] ?? "" : "",

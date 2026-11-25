@@ -3,6 +3,7 @@
 import { Download, Filter, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import AdminLayout from "@/components/AdminLayout";
 
 type CounselRecord = {
@@ -29,13 +30,15 @@ export default function AdminCounselingPage() {
 
   useEffect(() => {
     (async () => {
-      const [recRes, studRes] = await Promise.all([
+      const [recRes, studRows] = await Promise.all([
         supabase.from("counseling_records").select("*").order("counseling_date", { ascending: false }),
-        supabase.from("students").select("student_id, name"),
+        // 재학생이 1,000명을 넘는다. 한 번만 읽으면 뒤쪽 학생 이름이 빈칸이 된다.
+        fetchAllRows<{ student_id: string; name: string | null }>((from, to) =>
+          supabase.from("students").select("student_id, name").order("student_id").range(from, to)),
       ]);
       setRecords((recRes.data ?? []) as CounselRecord[]);
       const m: Record<string, string> = {};
-      (studRes.data ?? []).forEach((s: any) => { m[s.student_id] = s.name ?? ""; });
+      studRows.forEach((s) => { m[s.student_id] = s.name ?? ""; });
       setNameMap(m);
     })();
   }, []);

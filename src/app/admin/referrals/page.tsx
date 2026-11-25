@@ -3,6 +3,7 @@
 import { ArrowRight, Download, Filter, Plus, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudentId, supabase } from "@/lib/supabase";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { formatDateTimeKorea } from "@/lib/date";
 import AdminLayout from "@/components/AdminLayout";
 
@@ -72,10 +73,12 @@ export default function AdminReferralsPage() {
     if (!sid) return;
     setMyId(sid.trim());
 
-    const [meRes, refRes, studRes] = await Promise.all([
+    const [meRes, refRes, studRows] = await Promise.all([
       supabase.from("students").select("role").eq("student_id", sid.trim()).maybeSingle(),
       supabase.from("referrals").select("*").order("created_at", { ascending: false }),
-      supabase.from("students").select("student_id, name, role"),
+      // 재학생이 1,000명을 넘는다. 한 번만 읽으면 뒤쪽 학생이 목록에서 빠진다.
+      fetchAllRows<{ student_id: string; name: string | null; role: string | null }>((from, to) =>
+        supabase.from("students").select("student_id, name, role").order("student_id").range(from, to)),
     ]);
 
     setMyRole((meRes.data?.role ?? "").trim().toLowerCase());
@@ -83,13 +86,13 @@ export default function AdminReferralsPage() {
 
     const nMap: Record<string, string> = {};
     const rMap: Record<string, string> = {};
-    (studRes.data ?? []).forEach((s: any) => {
+    studRows.forEach((s) => {
       nMap[s.student_id] = s.name ?? "";
       rMap[s.student_id] = (s.role ?? "").trim().toLowerCase();
     });
     setNameMap(nMap);
     setRoleMap(rMap);
-    setStudents((studRes.data ?? []).filter((s: any) => (s.role ?? "").trim().toLowerCase() === "student"));
+    setStudents(studRows.filter((s) => (s.role ?? "").trim().toLowerCase() === "student"));
   };
 
   useEffect(() => { load(); }, []);
