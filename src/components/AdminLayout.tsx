@@ -47,12 +47,21 @@ const CENTER_TABS = [
   { label: "교과목", href: "/admin/courses", icon: BookOpen },
   { label: "비교과", href: "/admin/extracurricular", icon: Trophy },
   { label: "영상 LMS", href: "/admin/lms", icon: Film },
-  { label: "진단 문항", href: "/admin/assessment", icon: Gauge },
-  { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
   { label: "예약 관리", href: "/admin/reservations", icon: Calendar },
   { label: "리퍼럴", href: "/admin/referrals", icon: Send },
   { label: "상담기록", href: "/admin/counseling", icon: FileText },
   { label: "설문조사", href: "/admin/survey", icon: MessageSquareText },
+];
+
+/**
+ * 교수학습지원센터는 역량진단 도구를 운영하는 부서다.
+ * 학습자 역량진단 문항과 그 응답까지 더 본다 — 취창업·상담센터는 보지 않는다.
+ */
+const CTL_TABS = [
+  ...CENTER_TABS.slice(0, 3),
+  { label: "진단 문항", href: "/admin/assessment", icon: Gauge },
+  { label: "응답 데이터", href: "/admin/assessment/results", icon: FileBarChart },
+  ...CENTER_TABS.slice(3),
 ];
 
 // 직원은 영상 LMS 가 본업이다. 마일리지·설문조사만 곁들인다.
@@ -83,6 +92,12 @@ const CENTER_SCOPE = {
   allows: (pathname: string) => CENTER_TABS.some((t) => isUnder(pathname, t.href)),
 };
 
+// 교수학습지원센터만 진단 문항·응답까지 들어간다
+const CTL_SCOPE = {
+  fallback: "/admin/assessment/results",
+  allows: (pathname: string) => CTL_TABS.some((t) => isUnder(pathname, t.href)),
+};
+
 /** 역할별 /admin 접근 범위. 여기에 없는 역할은 기존대로 둔다. */
 const RESTRICTED_SCOPES: Record<string, { fallback: string; allows: (pathname: string) => boolean }> = {
   staff: {
@@ -91,7 +106,7 @@ const RESTRICTED_SCOPES: Record<string, { fallback: string; allows: (pathname: s
   },
   professor: PROFESSOR_SCOPE,
   department_head: PROFESSOR_SCOPE,
-  ctl: CENTER_SCOPE,
+  ctl: CTL_SCOPE,
   career_center: CENTER_SCOPE,
   counseling_center: CENTER_SCOPE,
 };
@@ -167,7 +182,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ? STAFF_TABS
       : ["professor", "department_head"].includes(userRole)
         ? PROFESSOR_TABS
-        : CENTER_TABS;
+        : userRole === "ctl"
+          ? CTL_TABS
+          : CENTER_TABS;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

@@ -13,6 +13,8 @@
 - `student_id` 는 항상 서버 세션에서 가져온다. 요청 body 값을 신뢰하지 않는다.
 - `video_progress` / `video_watch_batches` / `extracurricular_completions` 에 브라우저에서 직접 접근 금지. `/api/lms/*` 경유.
 - 센터 role(career_center, counseling_center, ctl)은 역량진단 결과와 학생 개인정보에 접근할 수 없다.
+  - 예외: `ctl` 은 역량진단 도구를 운영하는 부서라 진단 문항과 문항별 응답(`/admin/assessment`, `/admin/assessment/results`)까지 본다. 연락처는 내려보내지 않는다. 취창업·상담센터는 그대로 막는다.
+- `assessment_responses` 의 RLS 는 '본인 또는 admin' 이다. admin 이 아닌 역할에게 보여 줄 때는 브라우저에서 직접 읽지 말고 `/api/admin/assessment/responses` 를 쓴다. 직접 읽으면 오류 없이 0건이 내려온다.
 
 ### 로직
 - 진도율을 클라이언트에서 계산하지 않는다. `lms_record_watch_batch` RPC만 사용한다.
