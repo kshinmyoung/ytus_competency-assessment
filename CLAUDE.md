@@ -15,6 +15,8 @@
 - 센터 role(career_center, counseling_center, ctl)은 역량진단 결과와 학생 개인정보에 접근할 수 없다.
   - 예외: `ctl` 은 역량진단 도구를 운영하는 부서라 진단 문항과 문항별 응답(`/admin/assessment`, `/admin/assessment/results`)까지 본다. 연락처는 내려보내지 않는다. 취창업·상담센터는 그대로 막는다.
 - `assessment_responses` 의 RLS 는 '본인 또는 admin' 이다. admin 이 아닌 역할에게 보여 줄 때는 브라우저에서 직접 읽지 말고 `/api/admin/assessment/responses` 를 쓴다. 직접 읽으면 오류 없이 0건이 내려온다.
+- `students` 는 본인 행과 교직원 역할만 읽는다(`students_read_own` / `students_read_staff`). 학생 계정으로는 자기 행 하나만 보인다. 역할 조건은 `public.app_role()` 로 쓴다 — 정책 안에서 `students` 를 다시 조회하면 재귀가 돈다.
+- `students` 의 컬럼 권한은 `authenticated` 에게 일부만 열려 있다. 권한 없는 컬럼을 `select` 나 **조건**에 쓰면 질의 전체가 403 이 된다(`password` 등). 새 컬럼을 화면에서 쓰려면 `grant select (컬럼)` 을 함께 넣는다.
 
 ### 로직
 - 진도율을 클라이언트에서 계산하지 않는다. `lms_record_watch_batch` RPC만 사용한다.
